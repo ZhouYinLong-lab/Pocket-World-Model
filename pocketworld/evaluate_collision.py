@@ -73,6 +73,8 @@ def _closed_loop_episode(
     candidates: int,
     uncertainty_radius_px: float = 0.0,
     uncertainty_growth_px: float = 0.0,
+    use_learned_velocity: bool = False,
+    probabilistic_uncertainty: bool = False,
 ) -> dict[str, float]:
     env = PocketWorldEnv(walls=WALLS, agent_start=start, goal=goal)
     observation, _ = env.reset()
@@ -89,8 +91,11 @@ def _closed_loop_episode(
         route_tolerance=6.0,
         learned_collision=True,
         use_history_velocity=True,
+        use_learned_velocity=use_learned_velocity,
         uncertainty_radius_px=uncertainty_radius_px,
         uncertainty_growth_px=uncertainty_growth_px,
+        probabilistic_uncertainty=probabilistic_uncertainty,
+        uncertainty_samples=16,
     )
     distance = float(result.final_info.get("distance_to_goal", float("inf")))
     return {
@@ -115,6 +120,7 @@ def evaluate_seed(
         "uncertainty_open": [],
         "history_closed": [],
         "history_uncertainty_closed": [],
+        "learned_velocity_probabilistic_closed": [],
     }
     for episode, (start, goal) in enumerate(_episode_cases(episodes, seed)):
         episode_seed = seed * 100_000 + episode
@@ -129,6 +135,18 @@ def evaluate_seed(
         torch.manual_seed(episode_seed)
         rows["history_uncertainty_closed"].append(
             _closed_loop_episode(model, start, goal, horizon, candidates, 0.25, 0.025)
+        )
+        torch.manual_seed(episode_seed)
+        rows["learned_velocity_probabilistic_closed"].append(
+            _closed_loop_episode(
+                model,
+                start,
+                goal,
+                horizon,
+                candidates,
+                use_learned_velocity=True,
+                probabilistic_uncertainty=True,
+            )
         )
     return {
         label: {

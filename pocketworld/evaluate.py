@@ -7,10 +7,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .data import _variant_walls
+from .data import _variant_walls, collect_random_rollouts
 from .env import PocketWorldEnv, Rect
 from .model import PocketWorldModel
-from .planner import extract_agent_position, random_shooting, receding_horizon_plan
+from .planner import estimate_agent_velocity, extract_agent_position, random_shooting, receding_horizon_plan
 
 
 def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int = 11, ood: bool = False) -> dict[str, dict[str, float]]:
@@ -290,6 +290,85 @@ def evaluate_collision_prediction(model: PocketWorldModel, episodes: int = 20, h
     }
 
 
+def evaluate_temporal_velocity(model: PocketWorldModel, episodes: int = 20, horizon: int = 8, seed: int = 97) -> dict[str, float]:
+    """Compare learned temporal velocity representation with finite differences."""
+    batch = collect_random_rollouts(
+        episodes=episodes,
+        horizon=horizon,
+        seed=seed,
+        sticky_probability=0.75,
+        full_state_range=True,
+    )
+    observations = torch.from_numpy(batch.observations).float() / 255.0
+    target = torch.from_numpy(batch.velocities).float()
+    learned_errors = []
+    finite_difference_errors = []
+    model.eval()
+    with torch.no_grad():
+        for step in range(horizon + 1):
+            history = observations[:, max(0, step + 1 - 4):step + 1]
+            predicted, _ = model.temporal_velocity_stats(history)
+            learned_error = (predicted * 3.0 - target[:, step]).norm(dim=-1)
+            learned_errors.extend(learned_error.tolist())
+            for episode in range(episodes):
+                estimated = estimate_agent_velocity(batch.observations[episode, :step + 1])
+                finite_difference_errors.append(float(np.linalg.norm(estimated - target[episode, step].numpy())))
+    learned_array = np.asarray(learned_errors, dtype=np.float32)
+    finite_array = np.asarray(finite_difference_errors, dtype=np.float32)
+    return {
+        "learned_velocity_mae_px": float(learned_array.mean()),
+        "learned_velocity_rmse_px": float(np.sqrt(np.mean(learned_array ** 2))),
+        "finite_difference_velocity_mae_px": float(finite_array.mean()),
+        "improvement_over_finite_difference": float(1.0 - learned_array.mean() / max(1e-6, finite_array.mean())),
+    }
+
+
+def evaluate_uncertainty_calibration(model: PocketWorldModel, episodes: int = 20, horizon: int = 8, seed: int = 101) -> dict[str, object]:
+    """Measure empirical coverage of calibrated diagonal Gaussian transitions."""
+    batch = collect_random_rollouts(
+        episodes=episodes,
+        horizon=horizon,
+        seed=seed,
+        sticky_probability=0.75,
+        full_state_range=True,
+    )
+    observations = torch.from_numpy(batch.observations).float() / 255.0
+    actions = torch.from_numpy(batch.actions)
+    positions = torch.from_numpy(batch.positions / 64.0).float()
+    velocities = torch.from_numpy(batch.velocities / 3.0).float().clamp(-1.0, 1.0)
+    normalized_states = torch.cat((positions, velocities), dim=-1)
+    residuals = []
+    scales = []
+    model.eval()
+    with torch.no_grad():
+        for step in range(horizon):
+            latent = model.encode(observations[:, step])
+            state = model.state_from_latent(latent)
+            target = normalized_states[:, step + 1]
+            mean, std = model.transition_state_stats(latent, state, actions[:, step])
+            residuals.append((target - mean).abs())
+            scales.append(std)
+    residual = torch.cat(residuals, dim=0)
+    scale = torch.cat(scales, dim=0).clamp_min(1e-6)
+    z_values = {"0.50": 0.6745, "0.80": 1.2816, "0.90": 1.6449, "0.95": 1.9600}
+    position_coverage = {}
+    velocity_coverage = {}
+    for level, z_value in z_values.items():
+        covered = residual <= z_value * scale
+        position_coverage[level] = float(covered[:, :2].float().mean())
+        velocity_coverage[level] = float(covered[:, 2:].float().mean())
+    nll = 0.5 * ((residual / scale).square() + 2.0 * scale.log()).mean()
+    return {
+        "position_coverage": position_coverage,
+        "velocity_coverage": velocity_coverage,
+        "position_coverage_error_90": abs(position_coverage["0.90"] - 0.90),
+        "velocity_coverage_error_90": abs(velocity_coverage["0.90"] - 0.90),
+        "mean_interval_width_px_90": float((2.0 * z_values["0.90"] * scale[:, :2] * 64.0).mean()),
+        "state_gaussian_nll": float(nll),
+        "calibration_scale": model.uncertainty_scale.detach().cpu().tolist(),
+    }
+
+
 def evaluate_action_effects(model: PocketWorldModel, repeat: int = 8) -> dict[str, dict[str, list[float] | float]]:
     """Compare predicted versus real displacement for each repeated action."""
     env = PocketWorldEnv(walls=(), agent_start=(32.0, 16.0), goal=(55.0, 55.0))
@@ -371,6 +450,8 @@ def main() -> None:
                 "in_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 5000),
                 "out_of_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 6000, ood=True),
             } if collision_supervision else None,
+            "temporal_velocity": evaluate_temporal_velocity(model, episodes=args.episodes, seed=seed + 9000),
+            "uncertainty_calibration": evaluate_uncertainty_calibration(model, episodes=args.episodes, seed=seed + 10000),
             "agent_rendering": {
                 "in_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 7000),
                 "out_of_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 8000, ood=True),

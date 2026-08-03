@@ -19,6 +19,7 @@ def test_collision_evaluation_compares_all_planner_variants():
         "uncertainty_open",
         "history_closed",
         "history_uncertainty_closed",
+        "learned_velocity_probabilistic_closed",
     }
     assert all("real_success" in metrics for metrics in report.values())
     assert all("collision_count" in metrics for metrics in report.values())

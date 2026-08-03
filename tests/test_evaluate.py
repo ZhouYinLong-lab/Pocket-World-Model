@@ -1,4 +1,11 @@
-from pocketworld.evaluate import evaluate_action_effects, evaluate_collision_prediction, evaluate_planning, evaluate_prediction
+from pocketworld.evaluate import (
+    evaluate_action_effects,
+    evaluate_collision_prediction,
+    evaluate_planning,
+    evaluate_prediction,
+    evaluate_temporal_velocity,
+    evaluate_uncertainty_calibration,
+)
 from pocketworld.model import PocketWorldModel
 
 
@@ -36,3 +43,14 @@ def test_action_effect_diagnostic_covers_all_actions():
 def test_collision_prediction_report_has_classification_metrics():
     report = evaluate_collision_prediction(PocketWorldModel(), episodes=1, horizon=2, seed=5)
     assert set(report) == {"accuracy", "positive_rate", "predicted_positive_rate", "precision", "recall"}
+
+
+def test_temporal_velocity_and_uncertainty_reports_are_calibratable():
+    model = PocketWorldModel()
+    velocity_report = evaluate_temporal_velocity(model, episodes=1, horizon=2, seed=5)
+    uncertainty_report = evaluate_uncertainty_calibration(model, episodes=1, horizon=2, seed=5)
+
+    assert "learned_velocity_mae_px" in velocity_report
+    assert "finite_difference_velocity_mae_px" in velocity_report
+    assert set(uncertainty_report["position_coverage"]) == {"0.50", "0.80", "0.90", "0.95"}
+    assert len(uncertainty_report["calibration_scale"]) == 4

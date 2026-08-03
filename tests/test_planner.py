@@ -89,6 +89,34 @@ def test_history_velocity_estimator_tracks_recent_motion_and_reset():
     assert np.linalg.norm(velocity) <= 2.3
 
 
+def test_random_shooting_accepts_learned_velocity_and_probability_flags():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    first, _ = env.reset()
+    second, _, _, _, _ = env.step(3)
+    torch.manual_seed(4)
+    result = random_shooting(
+        PocketWorldModel(),
+        second,
+        (54, 32),
+        horizon=3,
+        candidates=4,
+        collision_aware=True,
+        learned_collision=True,
+        observation_history=[first, second],
+        use_learned_velocity=True,
+        probabilistic_uncertainty=True,
+        uncertainty_samples=8,
+    )
+
+    assert result.actions.ndim == 1
+    assert np.isfinite(result.planning_score)
+
+
 def test_receding_horizon_reports_collision_and_replan_counts():
     from pocketworld.model import PocketWorldModel
     from pocketworld.planner import receding_horizon_plan

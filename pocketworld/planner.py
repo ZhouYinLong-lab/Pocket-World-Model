@@ -271,8 +271,11 @@ def random_shooting(
     learned_collision: bool = False,
     hybrid_collision: bool = False,
     observation_history: Sequence[np.ndarray] | None = None,
+    use_learned_velocity: bool = False,
     uncertainty_radius_px: float = 0.0,
     uncertainty_growth_px: float = 0.0,
+    probabilistic_uncertainty: bool = False,
+    uncertainty_samples: int = 16,
     robust_candidates: int = 64,
 ) -> PlanResult:
     model.eval()
@@ -288,7 +291,12 @@ def random_shooting(
     normalized_start_velocities = None
     start_velocity = None
     if observation_history is not None and len(observation_history) >= 2:
-        start_velocity = estimate_agent_velocity(observation_history)
+        if use_learned_velocity:
+            history_tensor = torch.from_numpy(np.stack(observation_history)).float().to(device) / 255.0
+            learned_velocity, _ = model.temporal_velocity_stats(history_tensor[None])
+            start_velocity = (learned_velocity[0].cpu().numpy() * 3.0).astype(np.float32)
+        else:
+            start_velocity = estimate_agent_velocity(observation_history)
         normalized_start_velocities = torch.as_tensor(start_velocity / 3.0, device=device, dtype=start.dtype).expand(candidates, -1)
     collision_response = learned_collision or hybrid_collision
     imagined_positions = model.imagine_positions(
@@ -298,6 +306,8 @@ def random_shooting(
         visual_collision_guard=hybrid_collision,
         initial_position=normalized_start_positions,
         initial_velocity=normalized_start_velocities,
+        probabilistic_uncertainty=False,
+        uncertainty_samples=uncertainty_samples,
     ).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
@@ -320,6 +330,8 @@ def random_shooting(
                 visual_collision_guard=hybrid_collision,
                 initial_position=normalized_start_positions[:count],
                 initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[:count],
+                probabilistic_uncertainty=False,
+                uncertainty_samples=uncertainty_samples,
             ).cpu().numpy() * 64.0
             positions[:count, 1:] = imagined_positions[:count]
             goal_distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
@@ -330,9 +342,12 @@ def random_shooting(
                 visual_collision_guard=hybrid_collision,
                 initial_position=normalized_start_positions,
                 initial_velocity=normalized_start_velocities,
+                probabilistic_uncertainty=False,
+                uncertainty_samples=uncertainty_samples,
             ).cpu().numpy()
             eligible = np.ones(candidates, dtype=bool)
-            if learned_collision and (uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+            uncertainty_active = probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0
+            if learned_collision and uncertainty_active:
                 point_risk = np.maximum.accumulate(collision_probabilities, axis=1)
                 point_risk = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), point_risk), axis=1)
                 preliminary_scores = goal_distances + point_risk * 64.0
@@ -348,6 +363,8 @@ def random_shooting(
                     initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[shortlist_tensor],
                     uncertainty_radius_px=uncertainty_radius_px,
                     uncertainty_growth_px=uncertainty_growth_px,
+                    probabilistic_uncertainty=probabilistic_uncertainty,
+                    uncertainty_samples=uncertainty_samples,
                 ).cpu().numpy() * 64.0
                 imagined_positions[shortlist] = robust_positions
                 positions[shortlist, 1:] = robust_positions
@@ -359,6 +376,8 @@ def random_shooting(
                     initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[shortlist_tensor],
                     uncertainty_radius_px=uncertainty_radius_px,
                     uncertainty_growth_px=uncertainty_growth_px,
+                    probabilistic_uncertainty=probabilistic_uncertainty,
+                    uncertainty_samples=uncertainty_samples,
                 ).cpu().numpy()
                 collision_probabilities[shortlist] = robust_probabilities
                 eligible.fill(False)
@@ -371,7 +390,7 @@ def random_shooting(
         collision_prefix = np.zeros_like(goal_distances, dtype=np.float32)
     planning_scores = goal_distances + collision_prefix * 64.0
     safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
-    if collision_aware and learned_collision and (uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+    if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
         safe_scores[~eligible] = 1e6
     best = int(np.argmin(np.min(safe_scores, axis=1)))
     best_step = int(np.argmin(safe_scores[best]))
@@ -400,8 +419,11 @@ def receding_horizon_plan(
     learned_collision: bool = False,
     hybrid_collision: bool = False,
     use_history_velocity: bool = False,
+    use_learned_velocity: bool = False,
     uncertainty_radius_px: float = 0.0,
     uncertainty_growth_px: float = 0.0,
+    probabilistic_uncertainty: bool = False,
+    uncertainty_samples: int = 16,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -432,8 +454,11 @@ def receding_horizon_plan(
                 learned_collision=learned_collision,
                 hybrid_collision=hybrid_collision,
                 observation_history=observation_history if use_history_velocity else None,
+                use_learned_velocity=use_learned_velocity,
                 uncertainty_radius_px=uncertainty_radius_px,
                 uncertainty_growth_px=uncertainty_growth_px,
+                probabilistic_uncertainty=probabilistic_uncertainty,
+                uncertainty_samples=uncertainty_samples,
             )
             pending_index = 0
         plan = pending_plan
