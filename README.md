@@ -1,5 +1,7 @@
 # PocketWorld
 
+Licensed under the MIT License. GitHub topics: `world-model`, `model-based-reinforcement-learning`, `reinforcement-learning`, `pytorch`, `gymnasium`.
+
 > A tiny and observable world model that learns 2D dynamics, imagines future trajectories, and plans through its learned environment.
 
 PocketWorld is a deliberately small world-model laboratory. A deterministic 64×64 simulator produces RGB transitions, a CNN encoder/dynamics/decoder learns one-step prediction, and a random-shooting planner searches in the model's imagined future.

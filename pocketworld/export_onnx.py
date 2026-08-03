@@ -20,7 +20,11 @@ class OneStepWrapper(torch.nn.Module):
 def export(checkpoint: str, output: str) -> Path:
     model = PocketWorldModel()
     payload = torch.load(checkpoint, map_location="cpu")
-    model.load_state_dict(payload["model"])
+    missing, unexpected = model.load_state_dict(payload["model"], strict=False)
+    if missing:
+        print(f"warning: checkpoint is missing {len(missing)} optional keys; exporting the compatible image model")
+    if unexpected:
+        print(f"warning: checkpoint has {len(unexpected)} legacy keys")
     model.eval()
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -46,4 +50,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
