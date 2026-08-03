@@ -56,6 +56,7 @@ The post-collision response is now implemented: predicted events freeze position
 - Repository metadata: MIT license committed; GitHub topics set for world models, model-based RL, PyTorch, Gymnasium, and machine learning.
 - Python verification: `19 passed`.
 - ONNX export: verified against the older `pocketworld-structured-wide.pt` checkpoint after installing the optional export dependencies; the compatible image model is written successfully.
+- ONNX contract: the exported graph exposes `next_observation[batch,3,64,64]` and `next_position[batch,2]`; the browser prefers the supervised position channel for its model marker.
 - Web verification: `npm install --no-audit --no-fund` followed by `npm run build` succeeds. Vite reports only a bundle-size warning for the ONNX Runtime WASM asset.
 
 The remaining product gap is not build or packaging: the browser can load the one-step ONNX image model, but the decoded RGB agent is not yet a reliable learned visualization, and the learned collision planner still fails the single-barrier real-execution test.
