@@ -185,7 +185,7 @@ def random_shooting(
     actions = torch.where(guided, torch.full_like(actions, preferred_action), actions)
     starts = start.expand(candidates, -1, -1, -1)
     start_position = extract_agent_position(observation).astype(np.float32)
-    imagined_positions = model.imagine_positions(starts, actions).cpu().numpy() * 64.0
+    imagined_positions = model.imagine_positions(starts, actions, collision_response=learned_collision).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     if collision_aware:
@@ -195,7 +195,7 @@ def random_shooting(
             template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
             count = min(len(templates), candidates)
             actions[:count] = template_tensor[:count]
-            imagined_positions[:count] = model.imagine_positions(starts[:count], actions[:count]).cpu().numpy() * 64.0
+            imagined_positions[:count] = model.imagine_positions(starts[:count], actions[:count], collision_response=learned_collision).cpu().numpy() * 64.0
             positions[:count, 1:] = imagined_positions[:count]
             distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
         if learned_collision:

@@ -107,12 +107,25 @@ class PocketWorldModel(nn.Module):
         return state[..., :2], state[..., 2:]
 
     @torch.no_grad()
-    def imagine_positions(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Return normalized [x, y] positions for every imagined future step."""
+    def imagine_positions(self, observation: torch.Tensor, actions: torch.Tensor, collision_response: bool = False) -> torch.Tensor:
+        """Return normalized [x, y] positions for every imagined future step.
+
+        With ``collision_response=True``, a predicted collision freezes position
+        and clears velocity before the next imagined action.
+        """
         state = self.state_from_latent(self.encode(observation))
+        static_latent = self.encode(observation)
         positions = []
         for index in range(actions.shape[1]):
-            state = self.state_transition(state, actions[:, index])
+            action = actions[:, index]
+            next_state = self.state_transition(state, action)
+            if collision_response:
+                collision_probability = torch.sigmoid(self.collision_logits(static_latent, state, action, observation=observation))
+                collision = (collision_probability >= 0.5).unsqueeze(-1)
+                stopped_state = torch.cat((state[..., :2], torch.zeros_like(state[..., 2:])), dim=-1)
+                state = torch.where(collision, stopped_state, next_state)
+            else:
+                state = next_state
             positions.append(state[..., :2])
         return torch.stack(positions, dim=1)
 
