@@ -66,12 +66,18 @@ class PocketWorldModel(nn.Module):
         ) * 64.0
         return torch.sigmoid((radius + 0.5 - distance) / 0.7).unsqueeze(1)
 
-    def compose_agent_rgb(self, frame: torch.Tensor, latent: torch.Tensor) -> torch.Tensor:
+    def compose_agent_rgb(
+        self,
+        frame: torch.Tensor,
+        latent: torch.Tensor,
+        state: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         """Overlay a state-conditioned RGB agent on a decoded background frame."""
-        state = self.state_from_latent(latent)
+        state = self.state_from_latent(latent) if state is None else state
         mask = self.agent_geometry_mask(state)
         color = frame.new_tensor((93.0 / 255.0, 224.0 / 255.0, 183.0 / 255.0))[None, :, None, None]
-        return frame * (1.0 - mask) + color * mask
+        hard_mask = (mask >= 0.5).to(frame.dtype)
+        return frame * (1.0 - hard_mask) + color * hard_mask
 
     def transition(self, latent: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         return self.dynamics(torch.cat((latent, self.action_embedding(action)), dim=-1), latent)
@@ -82,8 +88,9 @@ class PocketWorldModel(nn.Module):
 
     def predict_next_state(self, observation: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         latent = self.transition(self.encode(observation), action)
-        position, _ = self.kinematics(self.state_from_latent(latent))
-        return self.compose_agent_rgb(self.decode(latent), latent), position
+        state = self.state_transition(self.state_from_latent(self.encode(observation)), action)
+        position, _ = self.kinematics(state)
+        return self.compose_agent_rgb(self.decode(latent), latent, state=state), position
 
     def state_from_latent(self, latent: torch.Tensor) -> torch.Tensor:
         raw = self.state_encoder(latent)
@@ -197,9 +204,11 @@ class PocketWorldModel(nn.Module):
     def imagine(self, observation: torch.Tensor, actions: torch.Tensor, compose_agent: bool = True) -> torch.Tensor:
         """Return the starting frame plus imagined frames for [batch, horizon] actions."""
         latent = self.encode(observation)
+        state = self.state_from_latent(latent)
         frames = [observation]
         for index in range(actions.shape[1]):
             latent = self.transition(latent, actions[:, index])
+            state = self.state_transition(state, actions[:, index])
             decoded = self.decode(latent)
-            frames.append(self.compose_agent_rgb(decoded, latent) if compose_agent else decoded)
+            frames.append(self.compose_agent_rgb(decoded, latent, state=state) if compose_agent else decoded)
         return torch.stack(frames, dim=1)

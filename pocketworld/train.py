@@ -34,14 +34,15 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
     losses = []
     for rollout_observations, rollout_actions, rollout_positions, rollout_velocities, rollout_collisions in loader:
         open_state = model.state_from_latent(model.encode(rollout_observations[:, 0]))
+        open_latent = model.encode(rollout_observations[:, 0])
         initial_position, initial_velocity = model.kinematics(open_state)
         loss = 0.5 * nn.functional.mse_loss(initial_position, rollout_positions[:, 0])
         loss = loss + 0.2 * nn.functional.mse_loss(initial_velocity, rollout_velocities[:, 0])
         for step in range(unroll_horizon):
             action = rollout_actions[:, step]
             teacher_latent = model.transition(model.encode(rollout_observations[:, step]), action)
-            teacher_prediction = model.compose_agent_rgb(model.decode(teacher_latent), teacher_latent)
             teacher_state = model.state_transition(model.state_from_latent(model.encode(rollout_observations[:, step])), action)
+            teacher_prediction = model.compose_agent_rgb(model.decode(teacher_latent), teacher_latent, state=teacher_state)
             teacher_positions, teacher_velocities = model.kinematics(teacher_state)
             teacher_current_latent = model.encode(rollout_observations[:, step])
             teacher_current_state = model.state_from_latent(teacher_current_latent)
@@ -52,11 +53,19 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
                 pos_weight=torch.tensor(5.0, device=collision_logits.device),
             )
             agent_mask_logits = model.agent_mask_logits(teacher_latent.detach())
-            agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
+            teacher_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
                 agent_mask_logits,
                 _agent_mask_targets(rollout_positions[:, step + 1]),
                 pos_weight=torch.tensor(20.0, device=agent_mask_logits.device),
             )
+            open_latent = model.transition(open_latent, action)
+            open_agent_mask_logits = model.agent_mask_logits(open_latent.detach())
+            open_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
+                open_agent_mask_logits,
+                _agent_mask_targets(rollout_positions[:, step + 1]),
+                pos_weight=torch.tensor(20.0, device=open_agent_mask_logits.device),
+            )
+            agent_mask_loss = 0.5 * (teacher_agent_mask_loss + open_agent_mask_loss)
             target_frame = rollout_observations[:, step + 1]
             image_loss = nn.functional.smooth_l1_loss(teacher_prediction, target_frame)
             target_agent_signal = target_frame[:, 1:2] - target_frame[:, 0:1]
