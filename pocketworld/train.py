@@ -56,7 +56,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             teacher_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
                 agent_mask_logits,
                 _agent_mask_targets(rollout_positions[:, step + 1]),
-                pos_weight=torch.tensor(20.0, device=agent_mask_logits.device),
+                pos_weight=torch.tensor(100.0, device=agent_mask_logits.device),
             )
             open_latent = model.transition(open_latent, action)
             open_state = model.state_transition(open_state, action)
@@ -64,7 +64,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             open_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
                 open_agent_mask_logits,
                 _agent_mask_targets(rollout_positions[:, step + 1]),
-                pos_weight=torch.tensor(20.0, device=open_agent_mask_logits.device),
+                pos_weight=torch.tensor(100.0, device=open_agent_mask_logits.device),
             )
             agent_mask_loss = 0.5 * (teacher_agent_mask_loss + open_agent_mask_loss)
             target_frame = rollout_observations[:, step + 1]
