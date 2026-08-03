@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .env import PocketWorldEnv, Rect
+from .env import DEFAULT_WALLS, PocketWorldEnv, Rect
 
 
 @dataclass
@@ -54,7 +54,14 @@ def collect_random_transitions(
     )
 
 
-def collect_random_rollouts(episodes: int = 100, horizon: int = 8, seed: int = 7, map_variant: bool = False) -> RolloutBatch:
+def collect_random_rollouts(
+    episodes: int = 100,
+    horizon: int = 8,
+    seed: int = 7,
+    map_variant: bool = False,
+    sticky_probability: float = 0.55,
+    full_state_range: bool = False,
+) -> RolloutBatch:
     """Collect contiguous trajectories for multi-step world-model training."""
     rng = np.random.default_rng(seed)
     all_observations = []
@@ -63,18 +70,21 @@ def collect_random_rollouts(episodes: int = 100, horizon: int = 8, seed: int = 7
     all_velocities = []
     for _ in range(episodes):
         walls = _variant_walls(rng) if map_variant else None
-        env = PocketWorldEnv(
-            walls=walls,
-            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
-            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
-        )
+        start_low, start_high = (6, 58) if full_state_range else (6, 15)
+        goal_low, goal_high = (6, 58) if full_state_range else (49, 58)
+        sampling_walls = DEFAULT_WALLS if walls is None else walls
+        start = _sample_free_point(rng, sampling_walls, start_low, start_high)
+        goal = _sample_free_point(rng, sampling_walls, goal_low, goal_high)
+        env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
         observation, _ = env.reset()
         observations = [observation]
         positions = [env.position.copy()]
         velocities = [env.velocity.copy()]
         actions = []
+        previous_action: int | None = None
         for _ in range(horizon):
-            action = int(rng.integers(0, 4))
+            action = previous_action if previous_action is not None and rng.random() < sticky_probability else int(rng.integers(0, 4))
+            previous_action = action
             next_observation, _, terminated, truncated, _ = env.step(action)
             actions.append(action)
             observations.append(next_observation)
@@ -102,3 +112,16 @@ def _variant_walls(rng: np.random.Generator) -> tuple[Rect, ...]:
         Rect(40 - offset // 2, 31, 5, 25),
         Rect(10, 40 + offset // 2, 20, 5),
     )
+
+
+def _sample_free_point(rng: np.random.Generator, walls: tuple[Rect, ...], low: int, high: int) -> tuple[float, float]:
+    """Sample a point with enough clearance for the three-pixel agent."""
+    for _ in range(100):
+        point = np.asarray((rng.integers(low, high), rng.integers(low, high)), dtype=np.float32)
+        if not any(
+            wall.x - 3 <= point[0] <= wall.x + wall.width + 3
+            and wall.y - 3 <= point[1] <= wall.y + wall.height + 3
+            for wall in walls
+        ):
+            return float(point[0]), float(point[1])
+    return float(low), float(low)

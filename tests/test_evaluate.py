@@ -1,4 +1,4 @@
-from pocketworld.evaluate import evaluate_planning, evaluate_prediction
+from pocketworld.evaluate import evaluate_action_effects, evaluate_planning, evaluate_prediction
 from pocketworld.model import PocketWorldModel
 
 
@@ -17,3 +17,9 @@ def test_evaluation_reports_imagined_and_real_planning():
         "mean_imagined_final_distance_px",
         "mean_real_final_distance_px",
     }
+
+
+def test_action_effect_diagnostic_covers_all_actions():
+    report = evaluate_action_effects(PocketWorldModel(), repeat=2)
+    assert set(report) == {"up", "down", "left", "right"}
+    assert all("position_error_px" in value for value in report.values())

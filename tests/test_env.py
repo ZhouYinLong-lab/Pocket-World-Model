@@ -27,3 +27,10 @@ def test_goal_terminates_episode():
     _, _, terminated, _, _ = env.step(0)
     assert terminated is True
 
+
+def test_empty_wall_tuple_creates_open_world():
+    env = PocketWorldEnv(walls=(), agent_start=(32, 32))
+    env.reset()
+    for _ in range(4):
+        _, _, _, _, info = env.step(3)
+    assert info["collision"] is False

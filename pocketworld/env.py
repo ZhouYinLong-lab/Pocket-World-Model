@@ -47,7 +47,7 @@ class PocketWorldEnv(gym.Env[np.ndarray, int]):
         render_mode: str | None = None,
     ) -> None:
         super().__init__()
-        self.walls = tuple(walls or DEFAULT_WALLS)
+        self.walls = tuple(DEFAULT_WALLS if walls is None else walls)
         self.agent_start = np.asarray(agent_start, dtype=np.float32)
         self.goal = np.asarray(goal, dtype=np.float32)
         self.agent_speed_scale = float(agent_speed_scale)
@@ -130,4 +130,3 @@ def _draw_disc(image: np.ndarray, center: Sequence[float], radius: float, color:
     yy, xx = np.ogrid[y0:y1, x0:x1]
     mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= radius**2
     image[y0:y1, x0:x1][mask] = color
-

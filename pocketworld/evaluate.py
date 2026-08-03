@@ -59,7 +59,7 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
     }
 
 
-def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 12, candidates: int = 256, seed: int = 17) -> dict[str, float]:
+def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 16, candidates: int = 256, seed: int = 17) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     imagined_successes = 0
     real_successes = 0
@@ -94,6 +94,28 @@ def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizon
     return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
 
 
+def evaluate_action_effects(model: PocketWorldModel, repeat: int = 8) -> dict[str, dict[str, list[float] | float]]:
+    """Compare predicted versus real displacement for each repeated action."""
+    env = PocketWorldEnv(walls=(), agent_start=(32.0, 16.0), goal=(55.0, 55.0))
+    observation, info = env.reset()
+    start = torch.from_numpy(observation[None]).float() / 255.0
+    result = {}
+    for action, label in enumerate(("up", "down", "left", "right")):
+        actions = torch.full((1, repeat), action, dtype=torch.long)
+        predicted = model.imagine_positions(start, actions)[0, -1].cpu().numpy() * 64.0
+        actual_env = PocketWorldEnv(walls=(), agent_start=(32.0, 16.0), goal=(55.0, 55.0))
+        actual_env.reset()
+        for _ in range(repeat):
+            actual_env.step(action)
+        actual = actual_env.position.copy()
+        result[label] = {
+            "predicted_position": predicted.tolist(),
+            "actual_position": actual.tolist(),
+            "position_error_px": float(np.linalg.norm(predicted - actual)),
+        }
+    return result
+
+
 def _mean(values: list[float]) -> float | None:
     return float(np.mean(values)) if values else None
 
@@ -105,6 +127,9 @@ def _summarize(reports: list[dict]) -> dict:
         values = [report[key] for report in reports]
         if isinstance(values[0], dict):
             summary[key] = _summarize(values)
+        elif isinstance(values[0], list):
+            array = np.asarray(values, dtype=float)
+            summary[key] = {"mean": array.mean(axis=0).tolist(), "std": array.std(axis=0).tolist()}
         elif values[0] is None:
             summary[key] = None
         else:
@@ -122,7 +147,11 @@ def main() -> None:
     args = parser.parse_args()
     model = PocketWorldModel()
     payload = torch.load(args.checkpoint, map_location="cpu")
-    model.load_state_dict(payload["model"])
+    missing, unexpected = model.load_state_dict(payload["model"], strict=False)
+    if missing:
+        print(f"warning: checkpoint is missing {len(missing)} structured-dynamics keys; use a freshly trained checkpoint for planning")
+    if unexpected:
+        print(f"warning: checkpoint has {len(unexpected)} legacy keys")
     seeds = [int(value.strip()) for value in args.seeds.split(",") if value.strip()]
     runs = []
     for seed in seeds:
@@ -132,6 +161,7 @@ def main() -> None:
             "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed + 1000, ood=True),
             "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 2000),
             "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 3000),
+            "action_effects": evaluate_action_effects(model),
         })
     numeric_runs = [{key: value for key, value in run.items() if key != "seed"} for run in runs]
     report = {"config": {"episodes": args.episodes, "candidates": args.candidates, "seeds": seeds}, "runs": runs, "summary": _summarize(numeric_runs)}
