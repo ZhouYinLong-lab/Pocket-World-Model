@@ -1,10 +1,26 @@
 # PocketWorld
 
-Licensed under the MIT License. GitHub topics: `world-model`, `model-based-reinforcement-learning`, `reinforcement-learning`, `pytorch`, `gymnasium`.
+<p align="center">
+  <img src="docs/assets/pocketworld-hero.svg" alt="PocketWorld — a tiny observable world model laboratory" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
+  <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
+  <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
+  <img alt="Tests" src="https://img.shields.io/badge/tests-20%20passed-5DE0B7">
+</p>
 
 > A tiny and observable world model that learns 2D dynamics, imagines future trajectories, and plans through its learned environment.
 
 PocketWorld is a deliberately small world-model laboratory. A deterministic 64×64 simulator produces RGB transitions, a CNN encoder/dynamics/decoder learns one-step prediction, and a random-shooting planner searches in the model's imagined future.
+
+<p align="center">
+  <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
+</p>
+
+<p align="center"><sub>The same action sequence unfolds in the real simulator and the model's imagination while drift accumulates.</sub></p>
 
 ## The experiment
 
@@ -18,6 +34,20 @@ The repository keeps the research loop inspectable:
 - `pocketworld/planner.py` — model rollout and random-shooting planning utilities.
 - `pocketworld/train.py` — minimal one-step image-prediction training loop.
 - `src/` — browser demo with side-by-side real/model rollouts and planning controls.
+
+<p align="center">
+  <img src="docs/assets/pocketworld-architecture.svg" alt="PocketWorld encoder, dynamics, structured state, decoder, and planner architecture" width="100%" />
+</p>
+
+## Results at a glance
+
+<p align="center">
+  <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
+</p>
+
+The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. The single-barrier test is kept as an honest negative result: the pure learned collision planner still reaches 0% real success.
+
+The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
 ## Run the research core
 
@@ -55,7 +85,7 @@ python -m pocketworld.train --epochs 10 --episodes 1000 --validation-episodes 20
 
 The report contains both per-seed runs and recursive mean/std summaries so planning gaps are not based on one lucky rollout.
 
-The latest large-scale results and the remaining gap are recorded in [the evaluation report](docs/evaluation-2026-08.md). The main result is 98% imagined / 96% real success at 16 planning steps, with the real-vs-imagined gap reaching 7 percentage points at 24–32 steps.
+The latest large-scale result is 98% imagined / 96% real success at 16 planning steps, with the real-vs-imagined gap reaching 7 percentage points at 24–32 steps.
 
 The planner also includes an explicit `collision_aware=True` baseline, structured top/bottom detour proposals, and route-preserving replanning for barrier experiments. They are kept separate from the learned model so obstacle results remain honest: detour proposals improve the barrier distance, but reliable collision-state modeling is still needed for closed-loop success.
 
@@ -91,6 +121,14 @@ npm run dev
 The frontend uses a pinned, stable Vite 5 toolchain so the demo does not depend on Vite 8's platform-specific Rolldown bindings.
 
 The browser demo is intentionally self-contained so it can be deployed as a static site. It mirrors the simulator dynamics in the browser and makes model drift visible immediately. The ONNX export includes both the composited RGB frame and the supervised structured position, so the browser uses the stable position channel for the model marker while keeping RGB available for future visualization ablations.
+
+## Regenerate the README visuals
+
+The GIF and SVG files are generated locally with Pillow and contain no external assets:
+
+```bash
+python scripts/generate_readme_assets.py
+```
 
 ## Planned evaluation matrix
 
