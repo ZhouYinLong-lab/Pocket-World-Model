@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+from pocketworld.env import PocketWorldEnv, Rect
 from pocketworld.model import PocketWorldModel
 from pocketworld.planner import extract_agent_position
 
@@ -62,3 +63,31 @@ def test_structured_state_dynamics_preserves_action_effect():
     right = model.state_transition(state, torch.tensor([3]))
     assert right[0, 0] > state[0, 0]
     assert left[0, 0] < state[0, 0]
+
+
+def test_wall_patch_is_high_on_a_wall_and_low_in_free_space():
+    env = PocketWorldEnv(walls=(Rect(24, 8, 5, 29),), agent_start=(8, 8))
+    observation, _ = env.reset()
+    frame = torch.from_numpy(observation[None]).float() / 255.0
+    model = PocketWorldModel()
+    wall_state = torch.tensor([[26 / 64, 20 / 64, 0.0, 0.0]])
+    free_state = torch.tensor([[10 / 64, 20 / 64, 0.0, 0.0]])
+
+    assert model.wall_patch(frame, wall_state).max() > 0.9
+    assert model.wall_patch(frame, free_state).max() < 0.1
+
+
+def test_predicted_collision_response_freezes_the_compact_state():
+    model = PocketWorldModel()
+    with torch.no_grad():
+        model.collision_head[-1].weight.zero_()
+        model.collision_head[-1].bias.fill_(20.0)
+        model.spatial_collision_head[-1].weight.zero_()
+        model.spatial_collision_head[-1].bias.zero_()
+    observation = torch.zeros(1, 3, 64, 64)
+    actions = torch.tensor([[3, 3]])
+    initial_position = model.state_from_latent(model.encode(observation))[0, :2]
+    imagined = model.imagine_positions(observation, actions, collision_response=True)
+
+    assert torch.allclose(imagined[0, 0], initial_position)
+    assert torch.allclose(imagined[0, 1], initial_position)

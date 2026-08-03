@@ -22,9 +22,9 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[dev]"
+      - run: python -m pip install -e ".[dev,export]"
       - run: python -c "import pocketworld; print(pocketworld.__file__)"
-      - run: python -m pytest -q
+      - run: python -m pytest -q --cov=pocketworld --cov-report=term-missing --cov-fail-under=70
 
   web:
     runs-on: ubuntu-latest
