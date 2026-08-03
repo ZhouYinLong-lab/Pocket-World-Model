@@ -97,6 +97,8 @@ def train(
     sticky_probability: float = 0.55,
     full_state_range: bool = False,
     barrier_probability: float = 0.0,
+    resume: str | None = None,
+    agent_only: bool = False,
 ) -> Path:
     torch.manual_seed(seed)
     train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability)
@@ -104,7 +106,18 @@ def train(
     train_loader = _make_loader(train_batch, batch_size=batch_size, shuffle=True)
     validation_loader = _make_loader(validation_batch, batch_size=batch_size, shuffle=False)
     model = PocketWorldModel()
-    optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
+    if resume:
+        payload = torch.load(resume, map_location="cpu")
+        missing, unexpected = model.load_state_dict(payload["model"], strict=False)
+        if missing:
+            print(f"warning: checkpoint is missing {len(missing)} keys; newly initialized heads will be trained")
+        if unexpected:
+            print(f"warning: checkpoint has {len(unexpected)} legacy keys")
+    if agent_only:
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = name.startswith("state_agent_renderer")
+    trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    optimizer = torch.optim.Adam(trainable_parameters, lr=2e-3)
     for epoch in range(epochs):
         train_loss = _run_epoch(model, train_loader, optimizer, unroll_horizon)
         with torch.no_grad():
@@ -112,7 +125,7 @@ def train(
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "resume": resume, "agent_only": agent_only, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
@@ -128,6 +141,8 @@ def main() -> None:
     parser.add_argument("--sticky-probability", type=float, default=0.55)
     parser.add_argument("--full-state-range", action="store_true", help="sample starts and goals across the whole free map")
     parser.add_argument("--barrier-probability", type=float, default=0.0, help="mix single-barrier maps into rollout training")
+    parser.add_argument("--resume", default=None, help="initialize from an existing checkpoint")
+    parser.add_argument("--agent-only", action="store_true", help="freeze the world model and fine-tune only the state-conditioned agent renderer")
     args = parser.parse_args()
     train(**vars(args))
 
