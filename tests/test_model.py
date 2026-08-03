@@ -13,11 +13,14 @@ def test_model_preserves_image_shape_and_can_imagine():
     next_frame_with_state, next_position = model.predict_next_state(observation, actions[:, 0])
     imagined = model.imagine(observation, actions)
     imagined_positions = model.imagine_positions(observation, actions)
+    collision_probabilities = model.imagine_collision_probabilities(observation, actions)
     assert next_frame.shape == observation.shape
     assert next_frame_with_state.shape == observation.shape
     assert next_position.shape == (2, 2)
     assert imagined.shape == (2, 6, 3, 64, 64)
     assert imagined_positions.shape == (2, 5, 2)
+    assert collision_probabilities.shape == (2, 5)
+    assert torch.all((collision_probabilities >= 0) & (collision_probabilities <= 1))
 
 
 def test_agent_position_extractor_supports_batches():
@@ -47,4 +50,3 @@ def test_structured_state_dynamics_preserves_action_effect():
     right = model.state_transition(state, torch.tensor([3]))
     assert right[0, 0] > state[0, 0]
     assert left[0, 0] < state[0, 0]
-

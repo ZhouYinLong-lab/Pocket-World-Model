@@ -27,6 +27,9 @@ class PocketWorldModel(nn.Module):
         self.friction_logit = nn.Parameter(torch.tensor(0.8))
         self.max_speed_logit = nn.Parameter(torch.tensor(-0.2))
         self.state_dynamics = nn.Sequential(nn.Linear(8, 64), nn.ReLU(), nn.Linear(64, 4))
+        self.collision_head = nn.Sequential(
+            nn.Linear(latent_dim + 4 + 4, 64), nn.ReLU(), nn.Linear(64, 1)
+        )
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 64 * 8 * 8), nn.ReLU(),
             nn.Unflatten(1, (64, 8, 8)),
@@ -75,6 +78,10 @@ class PocketWorldModel(nn.Module):
         position = position.clamp(3.0 / 64.0, 61.0 / 64.0)
         return torch.cat((position, velocity.clamp(-1.0, 1.0)), dim=-1)
 
+    def collision_logits(self, latent: torch.Tensor, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+        action_one_hot = F.one_hot(action, num_classes=4).float()
+        return self.collision_head(torch.cat((latent, state, action_one_hot), dim=-1)).squeeze(-1)
+
     def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return state[..., :2], state[..., 2:]
 
@@ -87,6 +94,18 @@ class PocketWorldModel(nn.Module):
             state = self.state_transition(state, actions[:, index])
             positions.append(state[..., :2])
         return torch.stack(positions, dim=1)
+
+    @torch.no_grad()
+    def imagine_collision_probabilities(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """Predict collision probability for each imagined action step."""
+        latent = self.encode(observation)
+        state = self.state_from_latent(latent)
+        probabilities = []
+        for index in range(actions.shape[1]):
+            action = actions[:, index]
+            probabilities.append(torch.sigmoid(self.collision_logits(latent, state, action)))
+            state = self.state_transition(state, action)
+        return torch.stack(probabilities, dim=1)
 
     @torch.no_grad()
     def imagine(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:

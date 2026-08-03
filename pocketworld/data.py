@@ -20,6 +20,7 @@ class RolloutBatch:
     actions: np.ndarray
     positions: np.ndarray
     velocities: np.ndarray
+    collisions: np.ndarray
 
 
 def collect_random_transitions(
@@ -68,6 +69,7 @@ def collect_random_rollouts(
     all_actions = []
     all_positions = []
     all_velocities = []
+    all_collisions = []
     for _ in range(episodes):
         walls = _variant_walls(rng) if map_variant else None
         start_low, start_high = (6, 58) if full_state_range else (6, 15)
@@ -81,11 +83,13 @@ def collect_random_rollouts(
         positions = [env.position.copy()]
         velocities = [env.velocity.copy()]
         actions = []
+        collisions = []
         previous_action: int | None = None
         for _ in range(horizon):
             action = previous_action if previous_action is not None and rng.random() < sticky_probability else int(rng.integers(0, 4))
             previous_action = action
-            next_observation, _, terminated, truncated, _ = env.step(action)
+            next_observation, _, terminated, truncated, step_info = env.step(action)
+            collisions.append(float(step_info["collision"]))
             actions.append(action)
             observations.append(next_observation)
             positions.append(env.position.copy())
@@ -97,11 +101,13 @@ def collect_random_rollouts(
         all_actions.append(np.asarray(actions, dtype=np.int64))
         all_positions.append(np.stack(positions).astype(np.float32))
         all_velocities.append(np.stack(velocities).astype(np.float32))
+        all_collisions.append(np.asarray(collisions, dtype=np.float32))
     return RolloutBatch(
         observations=np.stack(all_observations),
         actions=np.stack(all_actions),
         positions=np.stack(all_positions),
         velocities=np.stack(all_velocities),
+        collisions=np.stack(all_collisions),
     )
 
 

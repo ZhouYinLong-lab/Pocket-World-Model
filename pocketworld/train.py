@@ -17,14 +17,15 @@ def _make_loader(batch: RolloutBatch, batch_size: int, shuffle: bool) -> DataLoa
     actions = torch.from_numpy(batch.actions)
     position_targets = torch.from_numpy(batch.positions / 64.0)
     velocity_targets = torch.from_numpy(batch.velocities / 3.0).clamp(-1.0, 1.0)
-    return DataLoader(TensorDataset(observations, actions, position_targets, velocity_targets), batch_size=batch_size, shuffle=shuffle)
+    collision_targets = torch.from_numpy(batch.collisions)
+    return DataLoader(TensorDataset(observations, actions, position_targets, velocity_targets, collision_targets), batch_size=batch_size, shuffle=shuffle)
 
 
 def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.optim.Optimizer | None, unroll_horizon: int) -> float:
     training = optimizer is not None
     model.train(training)
     losses = []
-    for rollout_observations, rollout_actions, rollout_positions, rollout_velocities in loader:
+    for rollout_observations, rollout_actions, rollout_positions, rollout_velocities, rollout_collisions in loader:
         open_state = model.state_from_latent(model.encode(rollout_observations[:, 0]))
         initial_position, initial_velocity = model.kinematics(open_state)
         loss = 0.5 * nn.functional.mse_loss(initial_position, rollout_positions[:, 0])
@@ -35,6 +36,14 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             teacher_prediction = model.decode(teacher_latent)
             teacher_state = model.state_transition(model.state_from_latent(model.encode(rollout_observations[:, step])), action)
             teacher_positions, teacher_velocities = model.kinematics(teacher_state)
+            teacher_current_latent = model.encode(rollout_observations[:, step])
+            teacher_current_state = model.state_from_latent(teacher_current_latent)
+            collision_logits = model.collision_logits(teacher_current_latent, teacher_current_state, action)
+            collision_loss = nn.functional.binary_cross_entropy_with_logits(
+                collision_logits,
+                rollout_collisions[:, step],
+                pos_weight=torch.tensor(5.0, device=collision_logits.device),
+            )
             target_frame = rollout_observations[:, step + 1]
             image_loss = nn.functional.smooth_l1_loss(teacher_prediction, target_frame)
             target_agent_signal = target_frame[:, 1:2] - target_frame[:, 0:1]
@@ -45,7 +54,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             open_state = model.state_transition(open_state, action)
             open_positions, _ = model.kinematics(open_state)
             open_loss = nn.functional.mse_loss(open_positions, rollout_positions[:, step + 1])
-            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss
+            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss
         loss = loss / (unroll_horizon + 0.5)
         if training:
             optimizer.zero_grad()
@@ -80,7 +89,7 @@ def train(
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "collision_supervision": True, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
