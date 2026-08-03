@@ -25,9 +25,11 @@ python -m venv .venv
 pip install -e ".[dev]"
 pytest
 python -m pocketworld.train --epochs 5 --episodes 100
+python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20
 ```
 
 The checkpoint is written to `artifacts/pocketworld.pt`.
+The evaluation command writes `artifacts/evaluation.json` with in-distribution and out-of-distribution multi-step error plus imagined/real planning success.
 
 To create a browser-loadable one-step model after training:
 

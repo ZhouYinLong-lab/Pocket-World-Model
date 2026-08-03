@@ -1,0 +1,113 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import numpy as np
+import torch
+
+from .data import _variant_walls
+from .env import PocketWorldEnv
+from .model import PocketWorldModel
+from .planner import extract_agent_position, random_shooting
+
+
+def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int = 11, ood: bool = False) -> dict[str, dict[str, float]]:
+    rng = np.random.default_rng(seed)
+    horizons = (1, 5, 10, 20)
+    image_errors = {str(horizon): [] for horizon in horizons}
+    position_errors = {str(horizon): [] for horizon in horizons}
+    model.eval()
+    for _ in range(episodes):
+        walls = _variant_walls(rng) if ood else None
+        env = PocketWorldEnv(
+            walls=walls,
+            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
+            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
+            agent_speed_scale=float(rng.choice((0.8, 1.0, 1.2))) if ood else 1.0,
+        )
+        observation, _ = env.reset()
+        actions = rng.integers(0, 4, size=max(horizons), dtype=np.int64)
+        actual = [observation]
+        for action in actions:
+            next_observation, _, terminated, truncated, _ = env.step(int(action))
+            actual.append(next_observation)
+            if terminated or truncated:
+                actual.extend([next_observation] * (len(actions) - len(actual) + 1))
+                break
+        start = torch.from_numpy(observation[None]).float() / 255.0
+        action_tensor = torch.from_numpy(actions[None])
+        imagined = model.imagine(start, action_tensor)[0].cpu()
+        for horizon in horizons:
+            target = torch.from_numpy(actual[horizon]).float() / 255.0
+            prediction = imagined[horizon]
+            image_errors[str(horizon)].append(float(torch.abs(prediction - target).mean()))
+            predicted_position = extract_agent_position(prediction.numpy())
+            actual_position = extract_agent_position(actual[horizon])
+            if np.all(np.isfinite(predicted_position)) and np.all(np.isfinite(actual_position)):
+                position_errors[str(horizon)].append(float(np.linalg.norm(predicted_position - actual_position)))
+    return {
+        "image_mae": {horizon: _mean(values) for horizon, values in image_errors.items()},
+        "position_error_px": {horizon: _mean(values) for horizon, values in position_errors.items()},
+    }
+
+
+def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 12, candidates: int = 256, seed: int = 17) -> dict[str, float]:
+    rng = np.random.default_rng(seed)
+    imagined_successes = 0
+    real_successes = 0
+    imagined_distances = []
+    real_distances = []
+    for _ in range(episodes):
+        env = PocketWorldEnv(
+            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
+            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
+        )
+        observation, info = env.reset()
+        result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates)
+        imagined_distances.append(result.imagined_distance)
+        imagined_successes += int(result.imagined_distance <= env.goal_radius)
+        for action in result.actions:
+            _, _, terminated, truncated, info = env.step(int(action))
+            if terminated or truncated:
+                break
+        real_distances.append(float(info["distance_to_goal"]))
+        real_successes += int(info["distance_to_goal"] <= env.goal_radius)
+    return {
+        "imagined_success_rate": imagined_successes / episodes,
+        "real_success_rate": real_successes / episodes,
+        "planning_gap": (imagined_successes - real_successes) / episodes,
+        "mean_imagined_final_distance_px": _mean(imagined_distances),
+        "mean_real_final_distance_px": _mean(real_distances),
+    }
+
+
+def _mean(values: list[float]) -> float:
+    return float(np.mean(values)) if values else float("nan")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Evaluate multi-step prediction, OOD generalization, and imagined planning")
+    parser.add_argument("checkpoint", nargs="?", default="artifacts/pocketworld.pt")
+    parser.add_argument("--episodes", type=int, default=20)
+    parser.add_argument("--candidates", type=int, default=256)
+    parser.add_argument("--output", default="artifacts/evaluation.json")
+    args = parser.parse_args()
+    model = PocketWorldModel()
+    payload = torch.load(args.checkpoint, map_location="cpu")
+    model.load_state_dict(payload["model"])
+    report = {
+        "in_distribution": evaluate_prediction(model, episodes=args.episodes),
+        "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, ood=True),
+        "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates),
+    }
+    destination = Path(args.output)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(json.dumps(report, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+

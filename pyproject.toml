@@ -20,6 +20,7 @@ dev = ["pytest>=8.0"]
 [project.scripts]
 pocketworld-train = "pocketworld.train:main"
 pocketworld-export-onnx = "pocketworld.export_onnx:main"
+pocketworld-evaluate = "pocketworld.evaluate:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
