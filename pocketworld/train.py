@@ -38,7 +38,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             teacher_positions, teacher_velocities = model.kinematics(teacher_state)
             teacher_current_latent = model.encode(rollout_observations[:, step])
             teacher_current_state = model.state_from_latent(teacher_current_latent)
-            collision_logits = model.collision_logits(teacher_current_latent, teacher_current_state, action)
+            collision_logits = model.collision_logits(teacher_current_latent, teacher_current_state, action, observation=rollout_observations[:, step])
             collision_loss = nn.functional.binary_cross_entropy_with_logits(
                 collision_logits,
                 rollout_collisions[:, step],

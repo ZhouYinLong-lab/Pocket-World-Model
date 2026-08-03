@@ -30,6 +30,11 @@ class PocketWorldModel(nn.Module):
         self.collision_head = nn.Sequential(
             nn.Linear(latent_dim + 4 + 4, 64), nn.ReLU(), nn.Linear(64, 1)
         )
+        self.spatial_collision_head = nn.Sequential(
+            nn.Linear(latent_dim + 4 + 4 + 49, 64), nn.ReLU(), nn.Linear(64, 1)
+        )
+        nn.init.zeros_(self.spatial_collision_head[-1].weight)
+        nn.init.zeros_(self.spatial_collision_head[-1].bias)
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 64 * 8 * 8), nn.ReLU(),
             nn.Unflatten(1, (64, 8, 8)),
@@ -78,9 +83,25 @@ class PocketWorldModel(nn.Module):
         position = position.clamp(3.0 / 64.0, 61.0 / 64.0)
         return torch.cat((position, velocity.clamp(-1.0, 1.0)), dim=-1)
 
-    def collision_logits(self, latent: torch.Tensor, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+    def wall_patch(self, observation: torch.Tensor, state: torch.Tensor, radius: int = 3) -> torch.Tensor:
+        """Sample a 7x7 wall occupancy patch around the predicted next position."""
+        red, green, blue = observation[:, 0], observation[:, 1], observation[:, 2]
+        wall = ((red >= 60 / 255) & (red <= 140 / 255) & (green >= 70 / 255) & (green <= 160 / 255) & (blue >= 80 / 255) & (blue <= 180 / 255)).float()
+        center = state[..., :2] * 2.0 - 1.0
+        offsets = torch.arange(-radius, radius + 1, device=observation.device, dtype=observation.dtype) * (2.0 / 63.0)
+        yy, xx = torch.meshgrid(offsets, offsets, indexing="ij")
+        grid = torch.stack((xx, yy), dim=-1)[None] + center[:, None, None, :]
+        patch = F.grid_sample(wall[:, None], grid, mode="bilinear", padding_mode="zeros", align_corners=True)
+        return patch.flatten(1)
+
+    def collision_logits(self, latent: torch.Tensor, state: torch.Tensor, action: torch.Tensor, observation: torch.Tensor | None = None) -> torch.Tensor:
         action_one_hot = F.one_hot(action, num_classes=4).float()
-        return self.collision_head(torch.cat((latent, state, action_one_hot), dim=-1)).squeeze(-1)
+        base_features = torch.cat((latent, state, action_one_hot), dim=-1)
+        logits = self.collision_head(base_features).squeeze(-1)
+        if observation is not None:
+            spatial_features = torch.cat((base_features, self.wall_patch(observation, self.state_transition(state, action))), dim=-1)
+            logits = logits + self.spatial_collision_head(spatial_features).squeeze(-1)
+        return logits
 
     def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return state[..., :2], state[..., 2:]
@@ -103,7 +124,7 @@ class PocketWorldModel(nn.Module):
         probabilities = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
-            probabilities.append(torch.sigmoid(self.collision_logits(latent, state, action)))
+            probabilities.append(torch.sigmoid(self.collision_logits(latent, state, action, observation=observation)))
             state = self.state_transition(state, action)
         return torch.stack(probabilities, dim=1)
 
