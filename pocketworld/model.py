@@ -36,6 +36,9 @@ class PocketWorldModel(nn.Module):
         self.agent_renderer = nn.Sequential(
             nn.Linear(latent_dim, 128), nn.ReLU(), nn.Linear(128, 64 * 64)
         )
+        self.state_agent_renderer = nn.Sequential(
+            nn.Linear(4, 128), nn.ReLU(), nn.Linear(128, 64 * 64)
+        )
         nn.init.zeros_(self.spatial_collision_head[-1].weight)
         nn.init.zeros_(self.spatial_collision_head[-1].bias)
         self.decoder = nn.Sequential(
@@ -52,8 +55,10 @@ class PocketWorldModel(nn.Module):
     def decode(self, latent: torch.Tensor) -> torch.Tensor:
         return self.decoder(latent)
 
-    def agent_mask_logits(self, latent: torch.Tensor) -> torch.Tensor:
-        return self.agent_renderer(latent).view(-1, 1, 64, 64)
+    def agent_mask_logits(self, latent: torch.Tensor, state: torch.Tensor | None = None) -> torch.Tensor:
+        """Decode an agent mask from the compact state, with a latent fallback for compatibility."""
+        features = self.state_from_latent(latent) if state is None else state
+        return self.state_agent_renderer(features).view(-1, 1, 64, 64)
 
     def agent_geometry_mask(self, state: torch.Tensor, radius: float = 3.0) -> torch.Tensor:
         """Render a soft circular agent mask from the normalized state position."""
@@ -194,10 +199,12 @@ class PocketWorldModel(nn.Module):
     def imagine_agent_masks(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Return detached agent-renderer masks for each imagined step."""
         latent = self.encode(observation)
+        state = self.state_from_latent(latent)
         masks = []
         for index in range(actions.shape[1]):
             latent = self.transition(latent, actions[:, index])
-            masks.append(torch.sigmoid(self.agent_mask_logits(latent)))
+            state = self.state_transition(state, actions[:, index])
+            masks.append(torch.sigmoid(self.agent_mask_logits(latent, state=state)))
         return torch.stack(masks, dim=1)
 
     @torch.no_grad()

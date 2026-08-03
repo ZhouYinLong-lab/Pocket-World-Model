@@ -21,7 +21,7 @@ def _make_loader(batch: RolloutBatch, batch_size: int, shuffle: bool) -> DataLoa
     return DataLoader(TensorDataset(observations, actions, position_targets, velocity_targets, collision_targets), batch_size=batch_size, shuffle=shuffle)
 
 
-def _agent_mask_targets(positions: torch.Tensor, size: int = 64, radius: float = 4.0) -> torch.Tensor:
+def _agent_mask_targets(positions: torch.Tensor, size: int = 64, radius: float = 3.0) -> torch.Tensor:
     coordinate = torch.linspace(0.0, 1.0, size, device=positions.device)
     yy, xx = torch.meshgrid(coordinate, coordinate, indexing="ij")
     distance = (xx[None] - positions[:, 0, None, None]) ** 2 + (yy[None] - positions[:, 1, None, None]) ** 2
@@ -52,14 +52,15 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
                 rollout_collisions[:, step],
                 pos_weight=torch.tensor(5.0, device=collision_logits.device),
             )
-            agent_mask_logits = model.agent_mask_logits(teacher_latent.detach())
+            agent_mask_logits = model.agent_mask_logits(teacher_latent.detach(), state=teacher_state.detach())
             teacher_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
                 agent_mask_logits,
                 _agent_mask_targets(rollout_positions[:, step + 1]),
                 pos_weight=torch.tensor(20.0, device=agent_mask_logits.device),
             )
             open_latent = model.transition(open_latent, action)
-            open_agent_mask_logits = model.agent_mask_logits(open_latent.detach())
+            open_state = model.state_transition(open_state, action)
+            open_agent_mask_logits = model.agent_mask_logits(open_latent.detach(), state=open_state.detach())
             open_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
                 open_agent_mask_logits,
                 _agent_mask_targets(rollout_positions[:, step + 1]),
@@ -73,7 +74,6 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             agent_color_loss = nn.functional.smooth_l1_loss(predicted_agent_signal, target_agent_signal)
             position_loss = nn.functional.mse_loss(teacher_positions, rollout_positions[:, step + 1])
             velocity_loss = nn.functional.mse_loss(teacher_velocities, rollout_velocities[:, step + 1])
-            open_state = model.state_transition(open_state, action)
             open_positions, _ = model.kinematics(open_state)
             open_loss = nn.functional.mse_loss(open_positions, rollout_positions[:, step + 1])
             loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss + 0.1 * agent_mask_loss
