@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 import torch
@@ -13,6 +14,14 @@ class PlanResult:
     actions: np.ndarray
     imagined_positions: np.ndarray
     imagined_distance: float
+
+
+@dataclass
+class RecedingHorizonResult:
+    actions: np.ndarray
+    first_plan_distance: float
+    final_observation: np.ndarray
+    final_info: dict
 
 
 def extract_wall_mask(frame: np.ndarray) -> np.ndarray:
@@ -98,4 +107,46 @@ def random_shooting(
         actions=actions[best, :best_step].cpu().numpy(),
         imagined_positions=positions[best, :best_step + 1],
         imagined_distance=float(safe_distances[best, best_step]),
+    )
+
+
+@torch.no_grad()
+def receding_horizon_plan(
+    model: PocketWorldModel,
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    step_fn: Callable[[int], tuple[np.ndarray, float, bool, bool, dict]],
+    max_steps: int = 40,
+    rollout_horizon: int = 16,
+    candidates: int = 512,
+    collision_aware: bool = True,
+) -> RecedingHorizonResult:
+    """Replan after every real action and return the closed-loop execution trace."""
+    current_observation = observation
+    executed_actions = []
+    first_plan_distance = float("nan")
+    final_info: dict = {}
+    for step in range(max_steps):
+        plan = random_shooting(
+            model,
+            current_observation,
+            goal,
+            horizon=min(rollout_horizon, max_steps - step),
+            candidates=candidates,
+            collision_aware=collision_aware,
+        )
+        if step == 0:
+            first_plan_distance = plan.imagined_distance
+        if len(plan.actions) == 0:
+            break
+        action = int(plan.actions[0])
+        current_observation, _, terminated, truncated, final_info = step_fn(action)
+        executed_actions.append(action)
+        if terminated or truncated:
+            break
+    return RecedingHorizonResult(
+        actions=np.asarray(executed_actions, dtype=np.int64),
+        first_plan_distance=first_plan_distance,
+        final_observation=current_observation,
+        final_info=final_info,
     )

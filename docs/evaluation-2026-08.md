@@ -38,3 +38,7 @@ The repeated-action diagnostic averages 4.04 px position error across up/down/le
 The next evaluation adds a single-barrier challenge. It compares the existing unconstrained planner with a collision-aware planner that extracts wall pixels from the current observation and penalizes trajectories after the first wall intersection. This is an explicit planning baseline; it is not counted as learned wall dynamics until the compact state model predicts collision events itself.
 
 The first barrier result is intentionally a negative result: the unconstrained planner reached 100% imagined success but 0% real success, while the pixel-penalized planner also reached 0% real success (mean final distance improved only from 28.21px to 27.24px). The model can detect that a route is invalid, but the current open-loop random shooting budget does not reliably discover the narrow route around a barrier. The next useful step is collision-event supervision plus receding-horizon replanning.
+
+The implementation now includes `receding_horizon_plan`, which replans from the latest real observation after every action. Its barrier result is tracked separately from the open-loop baselines so closed-loop correction can be measured without changing the headline planning numbers.
+
+The quick closed-loop check (10 episodes, 40 steps, 512 candidates) reached 0% real success for both collision-aware modes. Receding horizon reduced mean final distance only from 28.27px to 27.96px, so it is infrastructure for the next experiment, not a claimed solution.
