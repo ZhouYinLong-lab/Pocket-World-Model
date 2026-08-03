@@ -4,6 +4,13 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 ## [Unreleased]
 
+### Planned
+
+- Multi-seed validation of learned barrier planning and uncertainty-aware narrow-passage risk.
+- Published raw multi-seed evaluation data and an online demo deployment.
+
+## [0.2.0] - 2026-08-03
+
 ### Added
 
 - Collision-seeking barrier curriculum and collision-only fine-tuning mode.
@@ -15,11 +22,6 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 - Focused single-barrier learned planning improves from 0% to 75% real success.
 - Python verification now covers 30 tests at approximately 76% line coverage.
-
-### Planned
-
-- Multi-seed validation of learned barrier planning and uncertainty-aware narrow-passage risk.
-- Published raw multi-seed evaluation data and an online demo deployment.
 
 ## [0.1.0] - 2026-08-03
 
@@ -38,5 +40,6 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Pure learned collision planning still fails the real single-barrier benchmark.
 - The learned agent-mask head has low shape IoU and remains an ablation.
 
-[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0

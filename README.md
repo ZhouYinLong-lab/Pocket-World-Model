@@ -58,6 +58,11 @@ The `v0.1.0` release publishes the final renderer checkpoint and browser-ready O
 - [`pocketworld-renderer-v5.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.1.0/pocketworld-renderer-v5.pt) — PyTorch training/evaluation checkpoint.
 - [`pocketworld-renderer-v5.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.1.0/pocketworld-renderer-v5.onnx) — one-step RGB and structured-position inference.
 
+The `v0.2.0` learned-collision milestone adds the focused barrier checkpoint and its compatible ONNX graph:
+
+- [`pocketworld-collision-v5.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.2.0/pocketworld-collision-v5.pt) — collision curriculum, learned risk head, and calibrated kinematics.
+- [`pocketworld-collision-v5.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.2.0/pocketworld-collision-v5.onnx) — browser-compatible RGB and position outputs from the same checkpoint.
+
 Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
 ## Run the research core
