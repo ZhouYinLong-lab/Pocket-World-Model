@@ -31,7 +31,7 @@ The renderer checkpoint adds a separate agent-mask head and a state-conditioned 
 
 The learned mask head is useful as a diagnostic but is not yet a good shape decoder: its 20-episode mask IoU is about 0.03–0.04 ID/OOD, despite 100% thresholded coverage after focused fine-tuning. This is why the final RGB path uses the structured position plus the known circular agent geometry rather than claiming that the mask head has solved pixel rendering.
 
-The pure learned collision planner still reaches roughly 93% imagined / 0% real success on the 20-episode barrier check. A new `hybrid` planner adds a local wall-patch guard and post-collision freeze; it reaches about 5% real success and reduces mean final distance to about 25px, while the explicit pixel-wall baseline remains the stronger obstacle reference. The gap is now localized to event localization and detour selection, not missing API plumbing.
+The original pure learned collision planner reached roughly 93% imagined / 0% real success on the 20-episode barrier check. A first `hybrid` planner added a local wall-patch guard and post-collision freeze; it reached about 5% real success and reduced mean final distance to about 25px, while the explicit pixel-wall baseline remained the stronger obstacle reference. That negative result motivated the focused follow-up below.
 
 Next work should focus on wall-relative state transitions or a closed-loop planner that learns from collision-free waypoint progress. The current RGB deployment path, ONNX position contract, and negative collision result are already reproducible.
 
@@ -57,4 +57,14 @@ The post-collision response is now implemented: predicted events freeze position
 - ONNX contract: the exported graph exposes `next_observation[batch,3,64,64]` and `next_position[batch,2]`; the browser prefers the supervised position channel for its model marker.
 - Web verification: `npm install --no-audit --no-fund` followed by `npm run build` succeeds. Vite reports only a bundle-size warning for the ONNX Runtime WASM asset.
 
-The remaining research gap is not build or packaging: the browser can load the one-step ONNX composited RGB model, while pure learned collision planning still fails the single-barrier real-execution test. The remaining product-level visualization path is usable; the remaining scientific question is whether collision-aware planning can learn wall-relative dynamics rather than rely on a visual guard.
+## Learned-collision follow-up
+
+The focused follow-up separates three previously entangled errors:
+
+1. A collision-seeking curriculum raises useful barrier-event density from about 10.8% to 47–60% while retaining safe approach negatives and corner/boundary examples.
+2. The collision-probability rollout now freezes state after a predicted impact, and the planner ranks map-agnostic two-bend routes by continuous peak risk rather than a brittle binary threshold.
+3. A system-identification stage learns only acceleration, friction, and speed limit from collision-free transitions. The learned values moved from approximately `0.188/0.807/0.647` to `0.242/0.813/0.762`, close to the simulator's normalized `0.250/0.840/0.767` values.
+
+On the same 20-episode single-barrier distribution (`seed=71`, horizon 48, 512 candidates), `pocketworld-collision-v5.pt` reaches **100% imagined success / 75% real success**. Mean collision count is 1.85 per episode, concentrated in the five failed routes; successful routes generally complete without wall collisions. This is a focused single-seed result and does not replace a future three-seed large-scale benchmark.
+
+The remaining scientific gap has therefore narrowed from basic event localization to conservative uncertainty near the map's narrow top/bottom passages. A recurrent velocity estimate or uncertainty-aware risk margin is the next justified model change.

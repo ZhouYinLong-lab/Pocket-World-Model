@@ -4,9 +4,21 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 ## [Unreleased]
 
+### Added
+
+- Collision-seeking barrier curriculum and collision-only fine-tuning mode.
+- Kinematics-only system identification for acceleration, friction, and speed limit.
+- Map-agnostic learned-risk waypoint proposals and post-impact rollout response.
+- Separate geometric imagined distance, collision risk, and planning score metrics.
+
+### Changed
+
+- Focused single-barrier learned planning improves from 0% to 75% real success.
+- Python verification now covers 30 tests at approximately 76% line coverage.
+
 ### Planned
 
-- Stronger wall-relative learned dynamics and collision-aware planning.
+- Multi-seed validation of learned barrier planning and uncertainty-aware narrow-passage risk.
 - Published raw multi-seed evaluation data and an online demo deployment.
 
 ## [0.1.0] - 2026-08-03

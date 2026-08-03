@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-25%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-74%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-30%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-76%25-69A94E">
 </p>
 
 > A tiny and observable world model that learns 2D dynamics, imagines future trajectories, and plans through its learned environment.
@@ -47,7 +47,7 @@ The repository keeps the research loop inspectable:
   <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
 </p>
 
-The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. The single-barrier test is kept as an honest negative result: the pure learned collision planner still reaches 0% real success.
+The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. The learned single-barrier planner has now moved from the original **0%** negative result to **100% imagined / 75% real success** on the 20-episode focused check.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
@@ -94,6 +94,13 @@ To train the collision-event ablation with single-barrier maps mixed into the da
 python -m pocketworld.train --epochs 10 --episodes 1000 --validation-episodes 200 --batch-size 32 --unroll-horizon 16 --sticky-probability 0.75 --full-state-range --barrier-probability 0.25 --output artifacts/pocketworld-collision-barrier.pt
 ```
 
+For the focused learned-collision result, fine-tune the wall-relative risk head and then identify the three compact kinematic parameters from free transitions:
+
+```bash
+python -m pocketworld.train --resume artifacts/pocketworld-renderer-v5.pt --collision-only --epochs 10 --episodes 1500 --validation-episodes 300 --batch-size 64 --unroll-horizon 16 --sticky-probability 0.75 --full-state-range --barrier-probability 1 --collision-seek-probability 0.8 --output artifacts/pocketworld-collision-v4.pt
+python -m pocketworld.train --resume artifacts/pocketworld-collision-v4.pt --kinematics-only --epochs 40 --episodes 500 --validation-episodes 100 --batch-size 64 --unroll-horizon 16 --sticky-probability 0.8 --full-state-range --output artifacts/pocketworld-collision-v5.pt
+```
+
 The report contains both per-seed runs and recursive mean/std summaries so planning gaps are not based on one lucky rollout.
 
 The latest large-scale result is 98% imagined / 96% real success at 16 planning steps, with the real-vs-imagined gap reaching 7 percentage points at 24–32 steps.
@@ -102,7 +109,9 @@ The planner also includes an explicit `collision_aware=True` baseline, structure
 
 Collision-event and wall-relative-head variants are tracked as ablations in the evaluation report; the main checkpoint remains the structured-kinematics model without barrier-mix training.
 
-Learned imagined collisions now freeze the compact state and zero velocity after an event. This response is evaluated separately because the current barrier OOD head still under-detects the exact detour collision locations.
+Learned imagined collisions now freeze the compact state and zero velocity after an event. Peak collision risk is kept separate from geometric goal distance, so imagined success is no longer distorted by the planner's risk penalty.
+
+The learned planner proposes map-agnostic two-bend waypoint routes and lets the wall-relative collision head rank them. It does not inspect wall boxes when running in pure learned mode; the explicit pixel planner remains a separately reported baseline.
 
 The planner also exposes `hybrid_collision=True`: it combines the learned collision event with a local wall-patch guard and is reported separately from the pure learned planner. This makes the engineering improvement useful without overstating what the learned collision head has solved.
 
