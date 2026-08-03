@@ -28,6 +28,19 @@ def _agent_mask_targets(positions: torch.Tensor, size: int = 64, radius: float =
     return (distance <= (radius / size) ** 2).float().unsqueeze(1)
 
 
+def _agent_mask_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    weighted_bce = nn.functional.binary_cross_entropy_with_logits(
+        logits,
+        target,
+        pos_weight=torch.tensor(100.0, device=logits.device),
+    )
+    probability = torch.sigmoid(logits)
+    intersection = (probability * target).flatten(1).sum(dim=1)
+    denominator = probability.flatten(1).sum(dim=1) + target.flatten(1).sum(dim=1)
+    dice_loss = 1.0 - ((2.0 * intersection + 1.0) / (denominator + 1.0)).mean()
+    return weighted_bce + 0.5 * dice_loss
+
+
 def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.optim.Optimizer | None, unroll_horizon: int) -> float:
     training = optimizer is not None
     model.train(training)
@@ -53,19 +66,12 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
                 pos_weight=torch.tensor(5.0, device=collision_logits.device),
             )
             agent_mask_logits = model.agent_mask_logits(teacher_latent.detach(), state=teacher_state.detach())
-            teacher_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
-                agent_mask_logits,
-                _agent_mask_targets(rollout_positions[:, step + 1]),
-                pos_weight=torch.tensor(100.0, device=agent_mask_logits.device),
-            )
+            agent_mask_target = _agent_mask_targets(rollout_positions[:, step + 1])
+            teacher_agent_mask_loss = _agent_mask_loss(agent_mask_logits, agent_mask_target)
             open_latent = model.transition(open_latent, action)
             open_state = model.state_transition(open_state, action)
             open_agent_mask_logits = model.agent_mask_logits(open_latent.detach(), state=open_state.detach())
-            open_agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
-                open_agent_mask_logits,
-                _agent_mask_targets(rollout_positions[:, step + 1]),
-                pos_weight=torch.tensor(100.0, device=open_agent_mask_logits.device),
-            )
+            open_agent_mask_loss = _agent_mask_loss(open_agent_mask_logits, agent_mask_target)
             agent_mask_loss = 0.5 * (teacher_agent_mask_loss + open_agent_mask_loss)
             target_frame = rollout_observations[:, step + 1]
             image_loss = nn.functional.smooth_l1_loss(teacher_prediction, target_frame)
