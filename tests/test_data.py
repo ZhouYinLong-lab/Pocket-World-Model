@@ -18,6 +18,7 @@ def test_full_state_range_samples_beyond_default_start_region():
 
 
 def test_collision_labels_are_present_for_barrier_rollouts():
-    batch = collect_random_rollouts(episodes=8, horizon=16, seed=4, full_state_range=True, barrier_probability=1.0)
+    batch = collect_random_rollouts(episodes=8, horizon=16, seed=4, full_state_range=True, barrier_probability=1.0, collision_seek_probability=0.8)
     assert batch.collisions.shape == (8, 16)
     assert np.any(batch.collisions > 0)
+    assert np.any(batch.collisions == 0)

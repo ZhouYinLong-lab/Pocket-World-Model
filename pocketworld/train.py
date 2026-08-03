@@ -41,11 +41,54 @@ def _agent_mask_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor
     return weighted_bce + 0.5 * dice_loss
 
 
-def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.optim.Optimizer | None, unroll_horizon: int) -> float:
+def _run_epoch(
+    model: PocketWorldModel,
+    loader: DataLoader,
+    optimizer: torch.optim.Optimizer | None,
+    unroll_horizon: int,
+    collision_only: bool = False,
+    kinematics_only: bool = False,
+) -> float:
     training = optimizer is not None
     model.train(training)
     losses = []
     for rollout_observations, rollout_actions, rollout_positions, rollout_velocities, rollout_collisions in loader:
+        if kinematics_only:
+            loss = torch.zeros((), dtype=rollout_observations.dtype)
+            valid_steps = torch.zeros((), dtype=rollout_observations.dtype)
+            for step in range(unroll_horizon):
+                current_state = torch.cat((rollout_positions[:, step], rollout_velocities[:, step]), dim=-1)
+                target_state = torch.cat((rollout_positions[:, step + 1], rollout_velocities[:, step + 1]), dim=-1)
+                predicted_state = model.state_transition(current_state, rollout_actions[:, step])
+                free_transition = 1.0 - rollout_collisions[:, step]
+                per_sample_loss = nn.functional.mse_loss(predicted_state, target_state, reduction="none").mean(dim=-1)
+                loss = loss + (per_sample_loss * free_transition).sum()
+                valid_steps = valid_steps + free_transition.sum()
+            loss = loss / valid_steps.clamp_min(1.0)
+            if training:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            losses.append(float(loss.detach()))
+            continue
+        if collision_only:
+            loss = torch.zeros((), dtype=rollout_observations.dtype)
+            for step in range(unroll_horizon):
+                latent = model.encode(rollout_observations[:, step]).detach()
+                state = model.state_from_latent(latent).detach()
+                logits = model.collision_logits(latent, state, rollout_actions[:, step], observation=rollout_observations[:, step])
+                targets = rollout_collisions[:, step]
+                positives = targets.sum().clamp_min(1.0)
+                negatives = (targets.numel() - targets.sum()).clamp_min(1.0)
+                positive_weight = (negatives / positives).clamp(1.0, 12.0)
+                loss = loss + nn.functional.binary_cross_entropy_with_logits(logits, targets, pos_weight=positive_weight)
+            loss = loss / unroll_horizon
+            if training:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            losses.append(float(loss.detach()))
+            continue
         open_state = model.state_from_latent(model.encode(rollout_observations[:, 0]))
         open_latent = model.encode(rollout_observations[:, 0])
         initial_position, initial_velocity = model.kinematics(open_state)
@@ -105,10 +148,13 @@ def train(
     barrier_probability: float = 0.0,
     resume: str | None = None,
     agent_only: bool = False,
+    collision_only: bool = False,
+    collision_seek_probability: float = 0.0,
+    kinematics_only: bool = False,
 ) -> Path:
     torch.manual_seed(seed)
-    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability)
-    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability)
+    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability)
+    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability)
     train_loader = _make_loader(train_batch, batch_size=batch_size, shuffle=True)
     validation_loader = _make_loader(validation_batch, batch_size=batch_size, shuffle=False)
     model = PocketWorldModel()
@@ -119,19 +165,28 @@ def train(
             print(f"warning: checkpoint is missing {len(missing)} keys; newly initialized heads will be trained")
         if unexpected:
             print(f"warning: checkpoint has {len(unexpected)} legacy keys")
+    if sum((agent_only, collision_only, kinematics_only)) > 1:
+        raise ValueError("agent_only, collision_only, and kinematics_only are mutually exclusive")
     if agent_only:
         for name, parameter in model.named_parameters():
             parameter.requires_grad = name.startswith("state_agent_renderer")
+    elif collision_only:
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = name.startswith("spatial_collision_head")
+    elif kinematics_only:
+        kinematic_parameters = {"action_acceleration_logit", "friction_logit", "max_speed_logit"}
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = name in kinematic_parameters
     trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
-    optimizer = torch.optim.Adam(trainable_parameters, lr=2e-3)
+    optimizer = torch.optim.Adam(trainable_parameters, lr=1e-2 if kinematics_only else 2e-3)
     for epoch in range(epochs):
-        train_loss = _run_epoch(model, train_loader, optimizer, unroll_horizon)
+        train_loss = _run_epoch(model, train_loader, optimizer, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only)
         with torch.no_grad():
-            validation_loss = _run_epoch(model, validation_loader, None, unroll_horizon)
+            validation_loss = _run_epoch(model, validation_loader, None, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only)
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "resume": resume, "agent_only": agent_only, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_seek_probability": collision_seek_probability, "resume": resume, "agent_only": agent_only, "collision_only": collision_only, "kinematics_only": kinematics_only, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
@@ -149,6 +204,9 @@ def main() -> None:
     parser.add_argument("--barrier-probability", type=float, default=0.0, help="mix single-barrier maps into rollout training")
     parser.add_argument("--resume", default=None, help="initialize from an existing checkpoint")
     parser.add_argument("--agent-only", action="store_true", help="freeze the world model and fine-tune only the state-conditioned agent renderer")
+    parser.add_argument("--collision-only", action="store_true", help="freeze the world model and fine-tune only the wall-relative collision head")
+    parser.add_argument("--collision-seek-probability", type=float, default=0.0, help="probability of collision-seeking actions in barrier curriculum episodes")
+    parser.add_argument("--kinematics-only", action="store_true", help="identify acceleration, friction, and speed limit from collision-free transitions")
     args = parser.parse_args()
     train(**vars(args))
 

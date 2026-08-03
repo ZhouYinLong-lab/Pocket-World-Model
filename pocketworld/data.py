@@ -63,6 +63,7 @@ def collect_random_rollouts(
     sticky_probability: float = 0.55,
     full_state_range: bool = False,
     barrier_probability: float = 0.0,
+    collision_seek_probability: float = 0.0,
 ) -> RolloutBatch:
     """Collect contiguous trajectories for multi-step world-model training."""
     rng = np.random.default_rng(seed)
@@ -72,15 +73,21 @@ def collect_random_rollouts(
     all_velocities = []
     all_collisions = []
     for _ in range(episodes):
-        if barrier_probability > 0 and rng.random() < barrier_probability:
-            walls = (Rect(29, 10, 5, 44),)
+        barrier_episode = barrier_probability > 0 and rng.random() < barrier_probability
+        preferred_collision_action: int | None = None
+        if barrier_episode:
+            barrier = Rect(29, 10, 5, 44)
+            walls = (barrier,)
         else:
             walls = _variant_walls(rng) if map_variant else None
-        start_low, start_high = (6, 58) if full_state_range else (6, 15)
-        goal_low, goal_high = (6, 58) if full_state_range else (49, 58)
-        sampling_walls = DEFAULT_WALLS if walls is None else walls
-        start = _sample_free_point(rng, sampling_walls, start_low, start_high)
-        goal = _sample_free_point(rng, sampling_walls, goal_low, goal_high)
+        if barrier_episode and collision_seek_probability > 0:
+            start, goal, preferred_collision_action = _sample_barrier_approach(rng, barrier)
+        else:
+            start_low, start_high = (6, 58) if full_state_range else (6, 15)
+            goal_low, goal_high = (6, 58) if full_state_range else (49, 58)
+            sampling_walls = DEFAULT_WALLS if walls is None else walls
+            start = _sample_free_point(rng, sampling_walls, start_low, start_high)
+            goal = _sample_free_point(rng, sampling_walls, goal_low, goal_high)
         env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
         observation, _ = env.reset()
         observations = [observation]
@@ -90,7 +97,10 @@ def collect_random_rollouts(
         collisions = []
         previous_action: int | None = None
         for _ in range(horizon):
-            action = previous_action if previous_action is not None and rng.random() < sticky_probability else int(rng.integers(0, 4))
+            if preferred_collision_action is not None and rng.random() < collision_seek_probability:
+                action = preferred_collision_action
+            else:
+                action = previous_action if previous_action is not None and rng.random() < sticky_probability else int(rng.integers(0, 4))
             previous_action = action
             next_observation, _, terminated, truncated, step_info = env.step(action)
             collisions.append(float(step_info["collision"]))
@@ -135,3 +145,37 @@ def _sample_free_point(rng: np.random.Generator, walls: tuple[Rect, ...], low: i
         ):
             return float(point[0]), float(point[1])
     return float(low), float(low)
+
+
+def _sample_barrier_approach(
+    rng: np.random.Generator,
+    barrier: Rect,
+) -> tuple[tuple[float, float], tuple[float, float], int]:
+    """Sample a free approach state that reaches a barrier within one rollout.
+
+    Random full-map starts produce very few first-impact events. This curriculum
+    keeps both safe approach steps and collision steps in each trajectory while
+    random actions still provide negatives around the wall.
+    """
+    side = int(rng.integers(0, 4))
+    if side < 2:
+        y = float(rng.integers(max(4, int(barrier.y - 7)), min(61, int(barrier.y + barrier.height + 8))))
+    else:
+        x = float(rng.integers(max(4, int(barrier.x - 7)), min(61, int(barrier.x + barrier.width + 8))))
+    if side == 0:
+        start = (float(rng.integers(15, 23)), y)
+        goal = (float(rng.integers(42, 56)), y)
+        action = 3
+    elif side == 1:
+        start = (float(rng.integers(41, 49)), y)
+        goal = (float(rng.integers(8, 22)), y)
+        action = 2
+    elif side == 2:
+        start = (x, float(rng.integers(4, 8)))
+        goal = (x, float(rng.integers(56, 61)))
+        action = 1
+    else:
+        start = (x, float(rng.integers(58, 61)))
+        goal = (x, float(rng.integers(4, 8)))
+        action = 0
+    return start, goal, action

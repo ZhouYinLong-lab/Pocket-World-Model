@@ -123,6 +123,9 @@ class PocketWorldModel(nn.Module):
         """Sample a 7x7 wall occupancy patch around the predicted next position."""
         red, green, blue = observation[:, 0], observation[:, 1], observation[:, 2]
         wall = ((red >= 60 / 255) & (red <= 140 / 255) & (green >= 70 / 255) & (green <= 160 / 255) & (blue >= 80 / 255) & (blue <= 180 / 255)).float()
+        wall = wall.clone()
+        wall[:, (0, -1), :] = 1.0
+        wall[:, :, (0, -1)] = 1.0
         center = state[..., :2] * 2.0 - 1.0
         offsets = torch.arange(-radius, radius + 1, device=observation.device, dtype=observation.dtype) * (2.0 / 63.0)
         yy, xx = torch.meshgrid(offsets, offsets, indexing="ij")
@@ -133,11 +136,10 @@ class PocketWorldModel(nn.Module):
     def collision_logits(self, latent: torch.Tensor, state: torch.Tensor, action: torch.Tensor, observation: torch.Tensor | None = None) -> torch.Tensor:
         action_one_hot = F.one_hot(action, num_classes=4).float()
         base_features = torch.cat((latent, state, action_one_hot), dim=-1)
-        logits = self.collision_head(base_features).squeeze(-1)
-        if observation is not None:
-            spatial_features = torch.cat((base_features, self.wall_patch(observation, self.state_transition(state, action))), dim=-1)
-            logits = logits + self.spatial_collision_head(spatial_features).squeeze(-1)
-        return logits
+        if observation is None:
+            return self.collision_head(base_features).squeeze(-1)
+        spatial_features = torch.cat((base_features, self.wall_patch(observation, self.state_transition(state, action))), dim=-1)
+        return self.spatial_collision_head(spatial_features).squeeze(-1)
 
     def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return state[..., :2], state[..., 2:]
@@ -149,6 +151,7 @@ class PocketWorldModel(nn.Module):
         actions: torch.Tensor,
         collision_response: bool = False,
         visual_collision_guard: bool = False,
+        initial_position: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Return normalized [x, y] positions for every imagined future step.
 
@@ -156,6 +159,8 @@ class PocketWorldModel(nn.Module):
         and clears velocity before the next imagined action.
         """
         state = self.state_from_latent(self.encode(observation))
+        if initial_position is not None:
+            state = torch.cat((initial_position.to(state), state[..., 2:]), dim=-1)
         static_latent = self.encode(observation)
         positions = []
         for index in range(actions.shape[1]):
@@ -180,10 +185,14 @@ class PocketWorldModel(nn.Module):
         observation: torch.Tensor,
         actions: torch.Tensor,
         visual_collision_guard: bool = False,
+        collision_response: bool = True,
+        initial_position: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Predict collision probability for each imagined action step."""
         latent = self.encode(observation)
         state = self.state_from_latent(latent)
+        if initial_position is not None:
+            state = torch.cat((initial_position.to(state), state[..., 2:]), dim=-1)
         probabilities = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
@@ -192,7 +201,12 @@ class PocketWorldModel(nn.Module):
             if visual_collision_guard:
                 probability = torch.maximum(probability, self.wall_patch(observation, next_state).amax(dim=1))
             probabilities.append(probability)
-            state = next_state
+            if collision_response:
+                collision = (probability >= 0.5).unsqueeze(-1)
+                stopped_state = torch.cat((state[..., :2], torch.zeros_like(state[..., 2:])), dim=-1)
+                state = torch.where(collision, stopped_state, next_state)
+            else:
+                state = next_state
         return torch.stack(probabilities, dim=1)
 
     @torch.no_grad()

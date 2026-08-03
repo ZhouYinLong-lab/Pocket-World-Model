@@ -77,13 +77,23 @@ def test_wall_patch_is_high_on_a_wall_and_low_in_free_space():
     assert model.wall_patch(frame, free_state).max() < 0.1
 
 
+def test_wall_patch_treats_world_boundary_as_collision_geometry():
+    observation = torch.zeros(1, 3, 64, 64)
+    model = PocketWorldModel()
+    edge_state = torch.tensor([[2 / 64, 20 / 64, 0.0, 0.0]])
+    center_state = torch.tensor([[32 / 64, 32 / 64, 0.0, 0.0]])
+
+    assert model.wall_patch(observation, edge_state).max() > 0.9
+    assert model.wall_patch(observation, center_state).max() < 0.1
+
+
 def test_predicted_collision_response_freezes_the_compact_state():
     model = PocketWorldModel()
     with torch.no_grad():
         model.collision_head[-1].weight.zero_()
         model.collision_head[-1].bias.fill_(20.0)
         model.spatial_collision_head[-1].weight.zero_()
-        model.spatial_collision_head[-1].bias.zero_()
+        model.spatial_collision_head[-1].bias.fill_(20.0)
     observation = torch.zeros(1, 3, 64, 64)
     actions = torch.tensor([[3, 3]])
     initial_position = model.state_from_latent(model.encode(observation))[0, :2]
@@ -91,3 +101,16 @@ def test_predicted_collision_response_freezes_the_compact_state():
 
     assert torch.allclose(imagined[0, 0], initial_position)
     assert torch.allclose(imagined[0, 1], initial_position)
+
+
+def test_collision_probability_rollout_stops_after_predicted_impact():
+    model = PocketWorldModel()
+    with torch.no_grad():
+        model.spatial_collision_head[-1].weight.zero_()
+        model.spatial_collision_head[-1].bias.fill_(20.0)
+    observation = torch.zeros(1, 3, 64, 64)
+    actions = torch.tensor([[3, 3, 3]])
+    stopped = model.imagine_collision_probabilities(observation, actions)
+    passthrough = model.imagine_collision_probabilities(observation, actions, collision_response=False)
+
+    assert stopped.shape == passthrough.shape == (1, 3)
