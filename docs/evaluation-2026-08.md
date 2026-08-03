@@ -65,6 +65,26 @@ The focused follow-up separates three previously entangled errors:
 2. The collision-probability rollout now freezes state after a predicted impact, and the planner ranks map-agnostic two-bend routes by continuous peak risk rather than a brittle binary threshold.
 3. A system-identification stage learns only acceleration, friction, and speed limit from collision-free transitions. The learned values moved from approximately `0.188/0.807/0.647` to `0.242/0.813/0.762`, close to the simulator's normalized `0.250/0.840/0.767` values.
 
-On the same 20-episode single-barrier distribution (`seed=71`, horizon 48, 512 candidates), `pocketworld-collision-v5.pt` reaches **100% imagined success / 75% real success**. Mean collision count is 1.85 per episode, concentrated in the five failed routes; successful routes generally complete without wall collisions. This is a focused single-seed result and does not replace a future three-seed large-scale benchmark.
+On the same 20-episode single-barrier distribution (`seed=71`, horizon 48, 512 candidates), `pocketworld-collision-v5.pt` reaches **100% imagined success / 75% real success**. Mean collision count is 1.85 per episode, concentrated in the five failed routes; successful routes generally complete without wall collisions. This result was used only for focused tuning before the frozen validation below.
 
-The remaining scientific gap has therefore narrowed from basic event localization to conservative uncertainty near the map's narrow top/bottom passages. A recurrent velocity estimate or uncertainty-aware risk margin is the next justified model change.
+## History and uncertainty validation
+
+The next planner adds two scoped mechanisms without changing the checkpoint:
+
+- A velocity estimator uses the latest 2–4 RGB agent positions to initialize the compact velocity state. It activates only when at least two frames exist; forcing zero velocity from one reset frame reduced the focused result from 75% to 55% and was rejected.
+- A robust collision boundary evaluates the learned collision head at the mean landing position and four nearby positions. Radius grows with `sqrt(step)`. To control cost, all candidates receive point scoring and the best 64 candidates, including every structured waypoint proposal, receive robust rescoring.
+
+Focused tuning on seed 71 selected `0.5 + 0.05*sqrt(step)` pixels for open uncertainty and `0.25 + 0.025*sqrt(step)` for history-aware closed loop. Parameters were then frozen.
+
+The final protocol uses 50 episodes for each of seeds 71, 83, and 97, horizon 48, and 1,024 candidates. Results are means across seed-level rates:
+
+| Planner | Imagined success | Real success | Final distance | Collisions |
+| --- | ---: | ---: | ---: | ---: |
+| Point open | 98.7% ± 0.9pp | 64.0% ± 0.0pp | 10.77 ± 1.21px | 1.89 ± 0.17 |
+| Uncertainty open | 87.3% ± 2.5pp | 61.3% ± 5.0pp | 11.48 ± 0.65px | 1.48 ± 0.15 |
+| History closed | 98.7% ± 0.9pp | 73.3% ± 0.9pp | 9.77 ± 0.32px | 0.63 ± 0.03 |
+| History + uncertainty | 96.0% ± 1.6pp | **76.7% ± 2.5pp** | **9.31 ± 0.83px** | **0.56 ± 0.06** |
+
+Combined per-seed real success is 80% / 76% / 74%, compared with 64% / 64% / 64% for point-open planning. The combined planner improves real success by 12.7 percentage points and cuts mean collisions by about 70%. Uncertainty alone is not beneficial to success, so the evidence supports its use as a boundary inside history-aware closed-loop recovery rather than as a standalone conservative planner.
+
+The full machine-readable report is committed at [`docs/results/evaluation-collision-v3.json`](results/evaluation-collision-v3.json). The remaining gap is a 19.3pp combined imagined-versus-real success difference, now concentrated in narrow-passage recovery and model calibration rather than missing temporal state.

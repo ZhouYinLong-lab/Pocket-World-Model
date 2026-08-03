@@ -1,0 +1,150 @@
+{
+  "config": {
+    "checkpoint": "artifacts/pocketworld-collision-v5.pt",
+    "episodes": 50,
+    "horizon": 48,
+    "candidates": 1024,
+    "seeds": [71, 83, 97]
+  },
+  "runs": [
+    {
+      "seed": 71,
+      "point_open": {
+        "imagined_success": 0.98,
+        "real_success": 0.64,
+        "real_final_distance_px": 11.60825481891632,
+        "collision_count": 1.96,
+        "executed_actions": 43.88,
+        "imagined_collision_risk": 0.22479745429009199
+      },
+      "uncertainty_open": {
+        "imagined_success": 0.9,
+        "real_success": 0.68,
+        "real_final_distance_px": 11.0997953414917,
+        "collision_count": 1.44,
+        "executed_actions": 41.76,
+        "imagined_collision_risk": 0.23853007029742002
+      },
+      "history_closed": {
+        "imagined_success": 0.98,
+        "real_success": 0.74,
+        "real_final_distance_px": 10.220326663399206,
+        "collision_count": 0.58,
+        "executed_actions": 38.5,
+        "replans": 1.6
+      },
+      "history_uncertainty_closed": {
+        "imagined_success": 0.98,
+        "real_success": 0.8,
+        "real_final_distance_px": 9.019062515640723,
+        "collision_count": 0.48,
+        "executed_actions": 39.84,
+        "replans": 1.48
+      }
+    },
+    {
+      "seed": 83,
+      "point_open": {
+        "imagined_success": 0.98,
+        "real_success": 0.64,
+        "real_final_distance_px": 11.63646845817566,
+        "collision_count": 2.06,
+        "executed_actions": 44.1,
+        "imagined_collision_risk": 0.23760126881301402
+      },
+      "uncertainty_open": {
+        "imagined_success": 0.84,
+        "real_success": 0.6,
+        "real_final_distance_px": 12.403676900863648,
+        "collision_count": 1.32,
+        "executed_actions": 40.32,
+        "imagined_collision_risk": 0.23659852631390094
+      },
+      "history_closed": {
+        "imagined_success": 0.98,
+        "real_success": 0.74,
+        "real_final_distance_px": 9.502851914790092,
+        "collision_count": 0.64,
+        "executed_actions": 40.0,
+        "replans": 1.66
+      },
+      "history_uncertainty_closed": {
+        "imagined_success": 0.96,
+        "real_success": 0.76,
+        "real_final_distance_px": 8.470106853869376,
+        "collision_count": 0.58,
+        "executed_actions": 40.96,
+        "replans": 1.58
+      }
+    },
+    {
+      "seed": 97,
+      "point_open": {
+        "imagined_success": 1.0,
+        "real_success": 0.64,
+        "real_final_distance_px": 9.0549946975708,
+        "collision_count": 1.66,
+        "executed_actions": 44.72,
+        "imagined_collision_risk": 0.2594575174152851
+      },
+      "uncertainty_open": {
+        "imagined_success": 0.88,
+        "real_success": 0.56,
+        "real_final_distance_px": 10.943497376441956,
+        "collision_count": 1.68,
+        "executed_actions": 43.3,
+        "imagined_collision_risk": 0.2766514206305146
+      },
+      "history_closed": {
+        "imagined_success": 1.0,
+        "real_success": 0.72,
+        "real_final_distance_px": 9.574851279258729,
+        "collision_count": 0.66,
+        "executed_actions": 40.5,
+        "replans": 1.72
+      },
+      "history_uncertainty_closed": {
+        "imagined_success": 0.94,
+        "real_success": 0.74,
+        "real_final_distance_px": 10.429222617149353,
+        "collision_count": 0.62,
+        "executed_actions": 39.96,
+        "replans": 1.66
+      }
+    }
+  ],
+  "summary": {
+    "point_open": {
+      "imagined_success": {"mean": 0.9866666666666667, "std": 0.009428090415820642},
+      "real_success": {"mean": 0.64, "std": 0.0},
+      "real_final_distance_px": {"mean": 10.766572658220925, "std": 1.2103231906939842},
+      "collision_count": {"mean": 1.8933333333333333, "std": 0.16996731711975954},
+      "executed_actions": {"mean": 44.23333333333333, "std": 0.3556527644893089},
+      "imagined_collision_risk": {"mean": 0.24061874683946372, "std": 0.014309877106173275}
+    },
+    "uncertainty_open": {
+      "imagined_success": {"mean": 0.8733333333333334, "std": 0.024944382578492966},
+      "real_success": {"mean": 0.6133333333333334, "std": 0.04988876515698589},
+      "real_final_distance_px": {"mean": 11.482323206265768, "std": 0.6546127284542852},
+      "collision_count": {"mean": 1.4799999999999998, "std": 0.1496662954709576},
+      "executed_actions": {"mean": 41.79333333333333, "std": 1.2168082109446086},
+      "imagined_collision_risk": {"mean": 0.2505933390806119, "std": 0.01844271176890037}
+    },
+    "history_closed": {
+      "imagined_success": {"mean": 0.9866666666666667, "std": 0.009428090415820642},
+      "real_success": {"mean": 0.7333333333333334, "std": 0.009428090415820642},
+      "real_final_distance_px": {"mean": 9.766009952482676, "std": 0.3225923459357361},
+      "collision_count": {"mean": 0.6266666666666666, "std": 0.033993463423951924},
+      "executed_actions": {"mean": 39.666666666666664, "std": 0.8498365855987975},
+      "replans": {"mean": 1.66, "std": 0.048989794855663515}
+    },
+    "history_uncertainty_closed": {
+      "imagined_success": {"mean": 0.96, "std": 0.016329931618554536},
+      "real_success": {"mean": 0.7666666666666666, "std": 0.024944382578492966},
+      "real_final_distance_px": {"mean": 9.306130662219818, "std": 0.8251625028111287},
+      "collision_count": {"mean": 0.56, "std": 0.05887840577551898},
+      "executed_actions": {"mean": 40.25333333333334, "std": 0.5020845435670055},
+      "replans": {"mean": 1.5733333333333333, "std": 0.07363574011458171}
+    }
+  }
+}

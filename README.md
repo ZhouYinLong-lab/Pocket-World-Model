@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-30%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-35%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-76%25-69A94E">
 </p>
 
@@ -47,7 +47,7 @@ The repository keeps the research loop inspectable:
   <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
 </p>
 
-The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. The learned single-barrier planner has now moved from the original **0%** negative result to **100% imagined / 75% real success** on the 20-episode focused check.
+The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the 150-episode, three-seed barrier validation, the point-estimate learned planner reaches 64% real success; history-aware uncertainty planning raises this to **76.7% ± 2.5pp** and reduces mean collisions by about 70%.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
@@ -117,6 +117,16 @@ Collision-event and wall-relative-head variants are tracked as ablations in the 
 Learned imagined collisions now freeze the compact state and zero velocity after an event. Peak collision risk is kept separate from geometric goal distance, so imagined success is no longer distorted by the planner's risk penalty.
 
 The learned planner proposes map-agnostic two-bend waypoint routes and lets the wall-relative collision head rank them. It does not inspect wall boxes when running in pure learned mode; the explicit pixel planner remains a separately reported baseline.
+
+Recent RGB frames can initialize velocity when temporal evidence exists, resolving information that is absent from a single frame. The uncertainty-aware planner re-scores a 64-candidate shortlist at the predicted position and four nearby states; its risk boundary grows with rollout depth.
+
+To reproduce the frozen three-seed barrier comparison:
+
+```bash
+python -m pocketworld.evaluate_collision artifacts/pocketworld-collision-v5.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --output artifacts/evaluation-collision-v3.json
+```
+
+The committed [three-seed result](docs/results/evaluation-collision-v3.json) reports all four variants, per-seed metrics, and recursive mean/std summaries.
 
 The planner also exposes `hybrid_collision=True`: it combines the learned collision event with a local wall-patch guard and is reported separately from the pure learned planner. This makes the engineering improvement useful without overstating what the learned collision head has solved.
 

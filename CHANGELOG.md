@@ -4,10 +4,21 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 ## [Unreleased]
 
+### Added
+
+- RGB-history velocity estimation for compact-state rollout initialization.
+- Horizon-growing learned uncertainty boundaries with robust shortlist rescoring.
+- Reproducible three-seed collision planner evaluation and committed result data.
+
+### Changed
+
+- History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
+- Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
+- Python verification now covers 35 tests at approximately 76% line coverage.
+
 ### Planned
 
-- Multi-seed validation of learned barrier planning and uncertainty-aware narrow-passage risk.
-- Published raw multi-seed evaluation data and an online demo deployment.
+- Online demo deployment and browser controls for history/uncertainty planning.
 
 ## [0.2.0] - 2026-08-03
 
