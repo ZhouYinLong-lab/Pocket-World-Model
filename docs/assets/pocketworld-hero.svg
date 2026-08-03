@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">PocketWorld — an observable world model laboratory</title>
+  <desc id="desc">A real simulator and model imagination panel connected by a learned dynamics bridge.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fdef"/><stop offset="1" stop-color="#edf3e7"/></linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#419400"/><stop offset="1" stop-color="#8acb68"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#d9e4d2" stroke-width="1"/></pattern>
+  </defs>
+  <rect width="1200" height="360" rx="26" fill="url(#bg)"/>
+  <circle cx="1050" cy="-30" r="230" fill="#86c96a" opacity=".13"/><circle cx="100" cy="390" r="240" fill="#a7d890" opacity=".16"/>
+  <g transform="translate(72 66)">
+    <text fill="#419400" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="4">TINY WORLD · VISIBLE IMAGINATION</text>
+    <text y="70" fill="#151614" font-family="Segoe UI,Arial,sans-serif" font-size="62" font-weight="700">PocketWorld</text>
+    <text y="112" fill="#687063" font-family="Segoe UI,Arial,sans-serif" font-size="21">Learn 2D dynamics. Imagine future trajectories. Plan inside the model.</text>
+    <g transform="translate(0 154)"><rect width="152" height="36" rx="18" fill="#eff6e9" stroke="#a9c79a"/><text x="76" y="23" text-anchor="middle" fill="#419400" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">64×64 RGB WORLD</text></g>
+    <g transform="translate(166 154)"><rect width="146" height="36" rx="18" fill="#edf5e7" stroke="#b6d5a7"/><text x="73" y="23" text-anchor="middle" fill="#4e8b35" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">MODEL PLANNING</text></g>
+  </g>
+  <g transform="translate(760 48)">
+    <rect width="162" height="250" rx="18" fill="#fbfef6" stroke="#a9c79a"/><rect x="14" y="42" width="134" height="160" rx="8" fill="url(#grid)"/>
+    <text x="18" y="27" fill="#419400" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">REAL</text>
+    <rect x="78" y="68" width="12" height="92" rx="2" fill="#9ca994"/><circle cx="42" cy="152" r="7" fill="#419400" filter="url(#glow)"/><circle cx="126" cy="86" r="9" fill="none" stroke="#c4a900" stroke-width="4"/>
+    <path d="M42 152 C45 100 58 84 75 84 M94 84 C108 84 118 85 126 86" fill="none" stroke="#419400" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 5"/>
+    <text x="18" y="230" fill="#687063" font-family="Segoe UI,Arial,sans-serif" font-size="11">GROUND TRUTH</text>
+  </g>
+  <path d="M936 173h48" stroke="url(#line)" stroke-width="4" stroke-linecap="round"/><path d="m978 165 10 8-10 8" fill="none" stroke="#8acb68" stroke-width="3"/><text x="960" y="151" text-anchor="middle" fill="#687063" font-family="Segoe UI,Arial,sans-serif" font-size="10">LEARN</text>
+  <g transform="translate(998 48)">
+    <rect width="162" height="250" rx="18" fill="#fbfef6" stroke="#b6d5a7"/><rect x="14" y="42" width="134" height="160" rx="8" fill="url(#grid)"/>
+    <text x="18" y="27" fill="#8acb68" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">IMAGINE</text>
+    <rect x="78" y="68" width="12" height="92" rx="2" fill="#9ca994"/><circle cx="44" cy="150" r="7" fill="#8acb68" filter="url(#glow)"/><circle cx="126" cy="86" r="9" fill="none" stroke="#c4a900" stroke-width="4"/>
+    <path d="M44 150 C49 105 61 88 76 86 M94 86 C108 88 118 88 126 86" fill="none" stroke="#8acb68" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 5"/>
+    <text x="18" y="230" fill="#687063" font-family="Segoe UI,Arial,sans-serif" font-size="11">LEARNED FUTURE</text>
+  </g>
+</svg>
