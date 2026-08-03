@@ -33,6 +33,9 @@ class PocketWorldModel(nn.Module):
         self.spatial_collision_head = nn.Sequential(
             nn.Linear(latent_dim + 4 + 4 + 49, 64), nn.ReLU(), nn.Linear(64, 1)
         )
+        self.agent_renderer = nn.Sequential(
+            nn.Linear(latent_dim, 128), nn.ReLU(), nn.Linear(128, 64 * 64)
+        )
         nn.init.zeros_(self.spatial_collision_head[-1].weight)
         nn.init.zeros_(self.spatial_collision_head[-1].bias)
         self.decoder = nn.Sequential(
@@ -49,6 +52,27 @@ class PocketWorldModel(nn.Module):
     def decode(self, latent: torch.Tensor) -> torch.Tensor:
         return self.decoder(latent)
 
+    def agent_mask_logits(self, latent: torch.Tensor) -> torch.Tensor:
+        return self.agent_renderer(latent).view(-1, 1, 64, 64)
+
+    def agent_geometry_mask(self, state: torch.Tensor, radius: float = 3.0) -> torch.Tensor:
+        """Render a soft circular agent mask from the normalized state position."""
+        coordinate = torch.linspace(0.0, 1.0, 64, device=state.device, dtype=state.dtype)
+        yy, xx = torch.meshgrid(coordinate, coordinate, indexing="ij")
+        distance = torch.sqrt(
+            (xx[None] - state[:, 0, None, None]) ** 2
+            + (yy[None] - state[:, 1, None, None]) ** 2
+            + 1e-8
+        ) * 64.0
+        return torch.sigmoid((radius + 0.5 - distance) / 0.7).unsqueeze(1)
+
+    def compose_agent_rgb(self, frame: torch.Tensor, latent: torch.Tensor) -> torch.Tensor:
+        """Overlay a state-conditioned RGB agent on a decoded background frame."""
+        state = self.state_from_latent(latent)
+        mask = self.agent_geometry_mask(state)
+        color = frame.new_tensor((93.0 / 255.0, 224.0 / 255.0, 183.0 / 255.0))[None, :, None, None]
+        return frame * (1.0 - mask) + color * mask
+
     def transition(self, latent: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         return self.dynamics(torch.cat((latent, self.action_embedding(action)), dim=-1), latent)
 
@@ -59,7 +83,7 @@ class PocketWorldModel(nn.Module):
     def predict_next_state(self, observation: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         latent = self.transition(self.encode(observation), action)
         position, _ = self.kinematics(self.state_from_latent(latent))
-        return self.decode(latent), position
+        return self.compose_agent_rgb(self.decode(latent), latent), position
 
     def state_from_latent(self, latent: torch.Tensor) -> torch.Tensor:
         raw = self.state_encoder(latent)
@@ -142,11 +166,22 @@ class PocketWorldModel(nn.Module):
         return torch.stack(probabilities, dim=1)
 
     @torch.no_grad()
-    def imagine(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+    def imagine_agent_masks(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """Return detached agent-renderer masks for each imagined step."""
+        latent = self.encode(observation)
+        masks = []
+        for index in range(actions.shape[1]):
+            latent = self.transition(latent, actions[:, index])
+            masks.append(torch.sigmoid(self.agent_mask_logits(latent)))
+        return torch.stack(masks, dim=1)
+
+    @torch.no_grad()
+    def imagine(self, observation: torch.Tensor, actions: torch.Tensor, compose_agent: bool = True) -> torch.Tensor:
         """Return the starting frame plus imagined frames for [batch, horizon] actions."""
         latent = self.encode(observation)
         frames = [observation]
         for index in range(actions.shape[1]):
             latent = self.transition(latent, actions[:, index])
-            frames.append(self.decode(latent))
+            decoded = self.decode(latent)
+            frames.append(self.compose_agent_rgb(decoded, latent) if compose_agent else decoded)
         return torch.stack(frames, dim=1)

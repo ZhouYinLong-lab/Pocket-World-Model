@@ -15,6 +15,8 @@ def test_model_preserves_image_shape_and_can_imagine():
     imagined_positions = model.imagine_positions(observation, actions)
     collision_probabilities = model.imagine_collision_probabilities(observation, actions)
     collision_response_positions = model.imagine_positions(observation, actions, collision_response=True)
+    agent_masks = model.imagine_agent_masks(observation, actions)
+    composed = model.compose_agent_rgb(model.decode(model.encode(observation)), model.encode(observation))
     wall_patch = model.wall_patch(observation, model.state_from_latent(model.encode(observation)))
     assert next_frame.shape == observation.shape
     assert next_frame_with_state.shape == observation.shape
@@ -23,6 +25,8 @@ def test_model_preserves_image_shape_and_can_imagine():
     assert imagined_positions.shape == (2, 5, 2)
     assert collision_probabilities.shape == (2, 5)
     assert collision_response_positions.shape == (2, 5, 2)
+    assert agent_masks.shape == (2, 5, 1, 64, 64)
+    assert composed.shape == observation.shape
     assert wall_patch.shape == (2, 49)
     assert torch.all((collision_probabilities >= 0) & (collision_probabilities <= 1))
 

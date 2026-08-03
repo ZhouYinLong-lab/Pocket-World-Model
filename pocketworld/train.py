@@ -21,6 +21,13 @@ def _make_loader(batch: RolloutBatch, batch_size: int, shuffle: bool) -> DataLoa
     return DataLoader(TensorDataset(observations, actions, position_targets, velocity_targets, collision_targets), batch_size=batch_size, shuffle=shuffle)
 
 
+def _agent_mask_targets(positions: torch.Tensor, size: int = 64, radius: float = 4.0) -> torch.Tensor:
+    coordinate = torch.linspace(0.0, 1.0, size, device=positions.device)
+    yy, xx = torch.meshgrid(coordinate, coordinate, indexing="ij")
+    distance = (xx[None] - positions[:, 0, None, None]) ** 2 + (yy[None] - positions[:, 1, None, None]) ** 2
+    return (distance <= (radius / size) ** 2).float().unsqueeze(1)
+
+
 def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.optim.Optimizer | None, unroll_horizon: int) -> float:
     training = optimizer is not None
     model.train(training)
@@ -33,7 +40,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
         for step in range(unroll_horizon):
             action = rollout_actions[:, step]
             teacher_latent = model.transition(model.encode(rollout_observations[:, step]), action)
-            teacher_prediction = model.decode(teacher_latent)
+            teacher_prediction = model.compose_agent_rgb(model.decode(teacher_latent), teacher_latent)
             teacher_state = model.state_transition(model.state_from_latent(model.encode(rollout_observations[:, step])), action)
             teacher_positions, teacher_velocities = model.kinematics(teacher_state)
             teacher_current_latent = model.encode(rollout_observations[:, step])
@@ -43,6 +50,12 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
                 collision_logits,
                 rollout_collisions[:, step],
                 pos_weight=torch.tensor(5.0, device=collision_logits.device),
+            )
+            agent_mask_logits = model.agent_mask_logits(teacher_latent.detach())
+            agent_mask_loss = nn.functional.binary_cross_entropy_with_logits(
+                agent_mask_logits,
+                _agent_mask_targets(rollout_positions[:, step + 1]),
+                pos_weight=torch.tensor(20.0, device=agent_mask_logits.device),
             )
             target_frame = rollout_observations[:, step + 1]
             image_loss = nn.functional.smooth_l1_loss(teacher_prediction, target_frame)
@@ -54,7 +67,7 @@ def _run_epoch(model: PocketWorldModel, loader: DataLoader, optimizer: torch.opt
             open_state = model.state_transition(open_state, action)
             open_positions, _ = model.kinematics(open_state)
             open_loss = nn.functional.mse_loss(open_positions, rollout_positions[:, step + 1])
-            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss
+            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss + 0.1 * agent_mask_loss
         loss = loss / (unroll_horizon + 0.5)
         if training:
             optimizer.zero_grad()
@@ -90,7 +103,7 @@ def train(
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_supervision": True, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 

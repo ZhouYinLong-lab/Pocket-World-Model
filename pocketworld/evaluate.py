@@ -17,7 +17,9 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
     rng = np.random.default_rng(seed)
     horizons = (1, 5, 10, 20)
     image_errors = {str(horizon): [] for horizon in horizons}
+    composited_image_errors = {str(horizon): [] for horizon in horizons}
     position_errors = {str(horizon): [] for horizon in horizons}
+    composited_position_errors = {str(horizon): [] for horizon in horizons}
     latent_position_errors = {str(horizon): [] for horizon in horizons}
     model.eval()
     for _ in range(episodes):
@@ -39,23 +41,84 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
                 break
         start = torch.from_numpy(observation[None]).float() / 255.0
         action_tensor = torch.from_numpy(actions[None])
-        imagined = model.imagine(start, action_tensor)[0].cpu()
+        imagined = model.imagine(start, action_tensor, compose_agent=False)[0].cpu()
+        composited = model.imagine(start, action_tensor, compose_agent=True)[0].cpu()
         imagined_positions = model.imagine_positions(start, action_tensor)[0].cpu().numpy() * 64.0
         for horizon in horizons:
             target = torch.from_numpy(actual[horizon]).float() / 255.0
             prediction = imagined[horizon]
+            composited_prediction = composited[horizon]
             image_errors[str(horizon)].append(float(torch.abs(prediction - target).mean()))
+            composited_image_errors[str(horizon)].append(float(torch.abs(composited_prediction - target).mean()))
             predicted_position = extract_agent_position(prediction.numpy())
+            composited_position = extract_agent_position(composited_prediction.numpy())
             actual_position = extract_agent_position(actual[horizon])
             if np.all(np.isfinite(predicted_position)) and np.all(np.isfinite(actual_position)):
                 position_errors[str(horizon)].append(float(np.linalg.norm(predicted_position - actual_position)))
+            if np.all(np.isfinite(composited_position)) and np.all(np.isfinite(actual_position)):
+                composited_position_errors[str(horizon)].append(float(np.linalg.norm(composited_position - actual_position)))
             if np.all(np.isfinite(imagined_positions[horizon - 1])) and np.all(np.isfinite(actual_position)):
                 latent_position_errors[str(horizon)].append(float(np.linalg.norm(imagined_positions[horizon - 1] - actual_position)))
     return {
         "image_mae": {horizon: _mean(values) for horizon, values in image_errors.items()},
+        "composited_image_mae": {horizon: _mean(values) for horizon, values in composited_image_errors.items()},
         "position_error_px": {horizon: _mean(values) for horizon, values in position_errors.items()},
+        "composited_position_error_px": {horizon: _mean(values) for horizon, values in composited_position_errors.items()},
         "latent_position_error_px": {horizon: _mean(values) for horizon, values in latent_position_errors.items()},
         "position_coverage": {horizon: len(position_errors[horizon]) / episodes for horizon in position_errors},
+        "composited_position_coverage": {horizon: len(composited_position_errors[horizon]) / episodes for horizon in composited_position_errors},
+    }
+
+
+def _agent_circle_mask(position: np.ndarray, radius: float = 3.0) -> np.ndarray:
+    yy, xx = np.mgrid[:64, :64]
+    return ((xx - position[0]) ** 2 + (yy - position[1]) ** 2 <= radius**2)
+
+
+def evaluate_agent_rendering(model: PocketWorldModel, episodes: int = 20, seed: int = 31, ood: bool = False) -> dict[str, dict[str, float]]:
+    """Measure the learned mask head separately from the RGB decoder."""
+    rng = np.random.default_rng(seed)
+    horizons = (1, 5, 10, 20)
+    position_errors = {str(horizon): [] for horizon in horizons}
+    mask_ious = {str(horizon): [] for horizon in horizons}
+    coverage = {str(horizon): 0 for horizon in horizons}
+    model.eval()
+    for _ in range(episodes):
+        walls = _variant_walls(rng) if ood else None
+        env = PocketWorldEnv(
+            walls=walls,
+            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
+            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
+            agent_speed_scale=float(rng.choice((0.8, 1.0, 1.2))) if ood else 1.0,
+        )
+        observation, info = env.reset()
+        actions = rng.integers(0, 4, size=max(horizons), dtype=np.int64)
+        actual_positions = []
+        for action in actions:
+            _, _, terminated, truncated, info = env.step(int(action))
+            actual_positions.append(np.asarray(info["position"], dtype=np.float32))
+            if terminated or truncated:
+                actual_positions.extend([actual_positions[-1]] * (len(actions) - len(actual_positions)))
+                break
+        start = torch.from_numpy(observation[None]).float() / 255.0
+        action_tensor = torch.from_numpy(actions[None])
+        predicted_masks = model.imagine_agent_masks(start, action_tensor)[0, :, 0].cpu().numpy()
+        for horizon in horizons:
+            target_position = actual_positions[horizon - 1]
+            predicted_mask = predicted_masks[horizon - 1] >= 0.5
+            target_mask = _agent_circle_mask(target_position)
+            intersection = np.logical_and(predicted_mask, target_mask).sum()
+            union = np.logical_or(predicted_mask, target_mask).sum()
+            mask_ious[str(horizon)].append(float(intersection / max(1, union)))
+            ys, xs = np.where(predicted_mask)
+            if len(xs):
+                coverage[str(horizon)] += 1
+                predicted_position = np.asarray((xs.mean(), ys.mean()), dtype=np.float32)
+                position_errors[str(horizon)].append(float(np.linalg.norm(predicted_position - target_position)))
+    return {
+        "mask_iou": {horizon: _mean(values) for horizon, values in mask_ious.items()},
+        "mask_position_error_px": {horizon: _mean(values) for horizon, values in position_errors.items()},
+        "mask_position_coverage": {horizon: coverage[horizon] / episodes for horizon in coverage},
     }
 
 
@@ -247,6 +310,7 @@ def main() -> None:
     if unexpected:
         print(f"warning: checkpoint has {len(unexpected)} legacy keys")
     collision_supervision = bool(payload.get("collision_supervision", False))
+    agent_rendering = bool(payload.get("agent_rendering", False))
     seeds = [int(value.strip()) for value in args.seeds.split(",") if value.strip()]
     runs = []
     for seed in seeds:
@@ -261,6 +325,10 @@ def main() -> None:
                 "in_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 5000),
                 "out_of_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 6000, ood=True),
             } if collision_supervision else None,
+            "agent_rendering": {
+                "in_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 7000),
+                "out_of_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 8000, ood=True),
+            } if agent_rendering else None,
             "action_effects": evaluate_action_effects(model),
         })
     numeric_runs = [{key: value for key, value in run.items() if key != "seed"} for run in runs]
