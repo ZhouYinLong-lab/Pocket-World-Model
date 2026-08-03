@@ -14,9 +14,56 @@
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-76%25-69A94E">
 </p>
 
-> A tiny and observable world model that learns 2D dynamics, imagines future trajectories, and plans through its learned environment.
+## Why PocketWorld?
 
-PocketWorld is a deliberately small world-model laboratory. A deterministic 64×64 simulator produces RGB transitions, a CNN encoder/dynamics/decoder learns one-step prediction, and a random-shooting planner searches in the model's imagined future.
+PocketWorld was inspired by the central idea behind [World Models](https://arxiv.org/abs/1803.10122): an agent can learn an internal model of its environment and use that model to reason about the future. It also follows the model-based reinforcement learning direction explored by [PlaNet](https://arxiv.org/abs/1811.04551) and [DreamerV3](https://arxiv.org/abs/2301.04104).
+
+The project asks a deliberately concrete question:
+
+> **How far can a tiny learned world model imagine before prediction error breaks planning?**
+
+The motivation is that a one-step prediction can look convincing while a long imagined trajectory is already unsafe. PocketWorld therefore keeps both sides visible: the real simulator and the model's imagined future run side by side, and every plan is executed again in the real environment so the imagination gap can be measured rather than hidden behind a single reward number.
+
+## What it does
+
+PocketWorld is a small, reproducible world-model laboratory. A deterministic 64×64 RGB simulator contains an agent, inertia, walls, collisions, and a goal. From automatically collected interaction data, the model learns to predict the next observation and structured kinematics. A planner then rolls out many candidate action sequences inside the learned model, scores goal distance and collision risk, and executes the selected plan in the real simulator.
+
+```text
+real simulator → RGB/history + action → learned dynamics → imagined rollouts
+       ↑                                                        ↓
+       └──────────── execute, re-plan, and compare with reality ┘
+```
+
+## What problem it solves
+
+This repository turns the vague claim “the model understands the environment” into testable failure modes:
+
+- **Prediction versus control:** does a model that predicts the next frame also support useful multi-step planning?
+- **Imagination bias:** when do imagined success and real success diverge?
+- **Partial observability:** can recent RGB history recover velocity that is not visible in one frame?
+- **Safety under model error:** can learned collision risk and a horizon-aware uncertainty boundary reduce fragile plans?
+- **Reproducibility:** do the conclusions survive held-out maps, changed speeds, negative ablations, and three evaluation seeds?
+
+The result is not a claim of general intelligence or state-of-the-art control. It is an observable testbed for understanding how world-model errors propagate from pixels to state estimates, collision decisions, action sequences, and real failures.
+
+## What is implemented
+
+- CNN encoder + GRU image dynamics + decoder, with supervised structured position and velocity prediction.
+- State-conditioned RGB agent rendering so the learned trajectory remains visually inspectable even when a small decoded agent becomes blurry.
+- Random-shooting and map-agnostic waypoint planning inside the learned model.
+- Learned wall-relative collision-event prediction, history-based velocity initialization, closed-loop replanning, and a horizon-aware uncertainty risk boundary.
+- Side-by-side real/imagination playback, ONNX export, browser inference, OOD evaluation, and machine-readable multi-seed reports.
+
+## How it differs from related projects
+
+| Project | Primary focus | PocketWorld's difference |
+|---|---|---|
+| [World Models](https://arxiv.org/abs/1803.10122) | Learn a compact world representation and train a controller in its hallucinated environment. | Keeps the same core intuition, but focuses on exposing prediction-to-planning failure in a tiny, inspectable setting. |
+| [PlaNet](https://arxiv.org/abs/1811.04551) | Stochastic latent dynamics, reward prediction, and online latent planning from pixels. | Uses a simpler deterministic model and discrete actions, prioritizing transparent RGB/state/collision diagnostics over general control capacity. |
+| [DreamerV3](https://arxiv.org/abs/2301.04104) | Train actor-critic agents from imagined trajectories across many tasks. | Does not aim to reproduce full RL training; it isolates the learned-model and planner interface in one controlled environment. |
+| [TD-MPC2](https://arxiv.org/abs/2310.16828) | Large-scale decoder-free latent control for continuous domains. | Deliberately retains RGB decoding because seeing what the model imagines is part of the experiment, not just an implementation detail. |
+
+In short, PocketWorld is best viewed as a **microscope for world-model reliability**: small enough to reproduce, visual enough to understand, and strict enough to compare imagined plans with real execution.
 
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
