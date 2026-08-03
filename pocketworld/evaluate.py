@@ -99,6 +99,8 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
     rng = np.random.default_rng(seed)
     walls = (Rect(29, 10, 5, 44),)
     reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": [], "collision_aware_route": []}
+    if learned_collision:
+        reports["collision_aware_learned"] = []
     for _ in range(episodes):
         start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
         goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
