@@ -14,7 +14,8 @@ class OneStepWrapper(torch.nn.Module):
         self.model = model
 
     def forward(self, observation: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
-        return self.model.predict_next(observation, action)
+        next_observation, next_position = self.model.predict_next_state(observation, action)
+        return next_observation, next_position
 
 
 def export(checkpoint: str, output: str) -> Path:
@@ -33,8 +34,13 @@ def export(checkpoint: str, output: str) -> Path:
         (torch.zeros(1, 3, 64, 64), torch.zeros(1, dtype=torch.long)),
         destination,
         input_names=["observation", "action"],
-        output_names=["next_observation"],
-        dynamic_axes={"observation": {0: "batch"}, "action": {0: "batch"}, "next_observation": {0: "batch"}},
+        output_names=["next_observation", "next_position"],
+        dynamic_axes={
+            "observation": {0: "batch"},
+            "action": {0: "batch"},
+            "next_observation": {0: "batch"},
+            "next_position": {0: "batch"},
+        },
         opset_version=17,
     )
     return destination

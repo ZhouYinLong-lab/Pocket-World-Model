@@ -16,6 +16,11 @@ export async function loadPocketWorldModel(modelUrl = "/pocketworld.onnx"): Prom
           observation: new ort.Tensor("float32", observation, [1, 3, 64, 64]),
           action: new ort.Tensor("int64", BigInt64Array.from([BigInt(action)]), [1]),
         });
+        const position = result.next_position as ort.Tensor | undefined;
+        if (position) {
+          const values = position.data as Float32Array;
+          return { x: values[0] * 64, y: values[1] * 64 };
+        }
         const output = result.next_observation as ort.Tensor;
         return findAgent(output.data as Float32Array);
       },
