@@ -45,6 +45,12 @@ python -m pocketworld.train --epochs 10 --episodes 1000 --validation-episodes 20
 python -m pocketworld.evaluate artifacts/pocketworld-structured-wide.pt --episodes 50 --candidates 1024 --seeds 11,23,41 --output artifacts/evaluation-structured-wide.json
 ```
 
+To train the collision-event ablation with single-barrier maps mixed into the data:
+
+```bash
+python -m pocketworld.train --epochs 10 --episodes 1000 --validation-episodes 200 --batch-size 32 --unroll-horizon 16 --sticky-probability 0.75 --full-state-range --barrier-probability 0.25 --output artifacts/pocketworld-collision-barrier.pt
+```
+
 The report contains both per-seed runs and recursive mean/std summaries so planning gaps are not based on one lucky rollout.
 
 The latest large-scale results and the remaining gap are recorded in [the evaluation report](docs/evaluation-2026-08.md). The main result is 98% imagined / 96% real success at 16 planning steps, with the real-vs-imagined gap reaching 7 percentage points at 24–32 steps.
