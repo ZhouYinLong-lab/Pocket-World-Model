@@ -18,6 +18,8 @@ class TransitionBatch:
 class RolloutBatch:
     observations: np.ndarray
     actions: np.ndarray
+    positions: np.ndarray
+    velocities: np.ndarray
 
 
 def collect_random_transitions(
@@ -57,6 +59,8 @@ def collect_random_rollouts(episodes: int = 100, horizon: int = 8, seed: int = 7
     rng = np.random.default_rng(seed)
     all_observations = []
     all_actions = []
+    all_positions = []
+    all_velocities = []
     for _ in range(episodes):
         walls = _variant_walls(rng) if map_variant else None
         env = PocketWorldEnv(
@@ -66,18 +70,29 @@ def collect_random_rollouts(episodes: int = 100, horizon: int = 8, seed: int = 7
         )
         observation, _ = env.reset()
         observations = [observation]
+        positions = [env.position.copy()]
+        velocities = [env.velocity.copy()]
         actions = []
         for _ in range(horizon):
             action = int(rng.integers(0, 4))
             next_observation, _, terminated, truncated, _ = env.step(action)
             actions.append(action)
             observations.append(next_observation)
+            positions.append(env.position.copy())
+            velocities.append(env.velocity.copy())
             observation = next_observation
             if terminated or truncated:
                 observation, _ = env.reset()
         all_observations.append(np.stack(observations))
         all_actions.append(np.asarray(actions, dtype=np.int64))
-    return RolloutBatch(observations=np.stack(all_observations), actions=np.stack(all_actions))
+        all_positions.append(np.stack(positions).astype(np.float32))
+        all_velocities.append(np.stack(velocities).astype(np.float32))
+    return RolloutBatch(
+        observations=np.stack(all_observations),
+        actions=np.stack(all_actions),
+        positions=np.stack(all_positions),
+        velocities=np.stack(all_velocities),
+    )
 
 
 def _variant_walls(rng: np.random.Generator) -> tuple[Rect, ...]:

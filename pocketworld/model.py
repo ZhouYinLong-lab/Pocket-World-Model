@@ -17,7 +17,8 @@ class PocketWorldModel(nn.Module):
         )
         self.action_embedding = nn.Embedding(4, action_dim)
         self.dynamics = nn.GRUCell(latent_dim + action_dim, latent_dim)
-        self.position_head = nn.Sequential(nn.Linear(latent_dim, 32), nn.ReLU(), nn.Linear(32, 2), nn.Sigmoid())
+        self.state_encoder = nn.Sequential(nn.Linear(latent_dim, 32), nn.ReLU(), nn.Linear(32, 4))
+        self.state_dynamics = nn.Sequential(nn.Linear(8, 64), nn.ReLU(), nn.Linear(64, 4))
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 64 * 8 * 8), nn.ReLU(),
             nn.Unflatten(1, (64, 8, 8)),
@@ -41,16 +42,29 @@ class PocketWorldModel(nn.Module):
 
     def predict_next_state(self, observation: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         latent = self.transition(self.encode(observation), action)
-        return self.decode(latent), self.position_head(latent)
+        position, _ = self.kinematics(self.state_from_latent(latent))
+        return self.decode(latent), position
+
+    def state_from_latent(self, latent: torch.Tensor) -> torch.Tensor:
+        raw = self.state_encoder(latent)
+        return torch.cat((torch.sigmoid(raw[..., :2]), torch.tanh(raw[..., 2:])), dim=-1)
+
+    def state_transition(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+        action_one_hot = torch.nn.functional.one_hot(action, num_classes=4).float()
+        raw = self.state_dynamics(torch.cat((state, action_one_hot), dim=-1))
+        return torch.cat((torch.sigmoid(raw[..., :2]), torch.tanh(raw[..., 2:])), dim=-1)
+
+    def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return state[..., :2], state[..., 2:]
 
     @torch.no_grad()
     def imagine_positions(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Return normalized [x, y] positions for every imagined future step."""
-        latent = self.encode(observation)
+        state = self.state_from_latent(self.encode(observation))
         positions = []
         for index in range(actions.shape[1]):
-            latent = self.transition(latent, actions[:, index])
-            positions.append(self.position_head(latent))
+            state = self.state_transition(state, actions[:, index])
+            positions.append(state[..., :2])
         return torch.stack(positions, dim=1)
 
     @torch.no_grad()

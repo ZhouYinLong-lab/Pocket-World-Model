@@ -30,3 +30,10 @@ def test_agent_position_extractor_supports_batches():
     assert positions.shape == (2, 2)
     assert np.allclose(positions[0], [21.5, 11.5])
     assert np.allclose(positions[1], [46.5, 41.5])
+
+
+def test_agent_position_extractor_does_not_confuse_yellow_goal():
+    frame = np.zeros((3, 64, 64), dtype=np.uint8)
+    frame[:, 50, 50] = [247, 190, 69]
+    frame[:, 10, 10] = [93, 224, 183]
+    assert np.allclose(extract_agent_position(frame), [10, 10])

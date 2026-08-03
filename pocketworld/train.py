@@ -10,17 +10,6 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from .data import collect_random_rollouts
 from .model import PocketWorldModel
-from .planner import extract_agent_position
-
-
-def _position_targets(frames: torch.Tensor) -> torch.Tensor:
-    positions = []
-    for frame in frames:
-        position = extract_agent_position((frame.detach().cpu().numpy() * 255).astype(np.uint8))
-        if not np.all(np.isfinite(position)):
-            position = np.array([0.0, 0.0], dtype=np.float32)
-        positions.append(position / 64.0)
-    return torch.from_numpy(np.asarray(positions, dtype=np.float32))
 
 
 def train(epochs: int = 5, episodes: int = 100, batch_size: int = 16, seed: int = 7, output: str = "artifacts/pocketworld.pt", unroll_horizon: int = 8) -> Path:
@@ -28,25 +17,36 @@ def train(epochs: int = 5, episodes: int = 100, batch_size: int = 16, seed: int 
     batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed)
     observations = torch.from_numpy(batch.observations).float() / 255.0
     actions = torch.from_numpy(batch.actions)
-    position_targets = _position_targets(observations.reshape(-1, 3, 64, 64)).reshape(episodes, unroll_horizon + 1, 2)
-    loader = DataLoader(TensorDataset(observations, actions, position_targets), batch_size=batch_size, shuffle=True)
+    position_targets = torch.from_numpy(batch.positions / 64.0)
+    velocity_targets = torch.from_numpy(batch.velocities / 3.0).clamp(-1.0, 1.0)
+    loader = DataLoader(TensorDataset(observations, actions, position_targets, velocity_targets), batch_size=batch_size, shuffle=True)
     model = PocketWorldModel()
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
     loss_fn = nn.SmoothL1Loss()
     model.train()
     for epoch in range(epochs):
         losses = []
-        for rollout_observations, rollout_actions, rollout_positions in loader:
-            latent = model.encode(rollout_observations[:, 0])
-            loss = torch.zeros((), dtype=rollout_observations.dtype)
+        for rollout_observations, rollout_actions, rollout_positions, rollout_velocities in loader:
+            open_state = model.state_from_latent(model.encode(rollout_observations[:, 0]))
+            initial_position, initial_velocity = model.kinematics(open_state)
+            loss = 0.5 * nn.functional.mse_loss(initial_position, rollout_positions[:, 0])
+            loss = loss + 0.2 * nn.functional.mse_loss(initial_velocity, rollout_velocities[:, 0])
             for step in range(rollout_actions.shape[1]):
-                latent = model.transition(latent, rollout_actions[:, step])
-                prediction = model.decode(latent)
-                predicted_positions = model.position_head(latent)
-                image_loss = loss_fn(prediction, rollout_observations[:, step + 1])
-                position_loss = nn.functional.mse_loss(predicted_positions, rollout_positions[:, step + 1])
-                loss = loss + image_loss + 1.0 * position_loss
-            loss = loss / rollout_actions.shape[1]
+                action = rollout_actions[:, step]
+                teacher_latent = model.transition(model.encode(rollout_observations[:, step]), action)
+                teacher_prediction = model.decode(teacher_latent)
+                teacher_state = model.state_transition(model.state_from_latent(model.encode(rollout_observations[:, step])), action)
+                teacher_positions, teacher_velocities = model.kinematics(teacher_state)
+                target_frame = rollout_observations[:, step + 1]
+                image_loss = loss_fn(teacher_prediction, target_frame)
+                position_loss = nn.functional.mse_loss(teacher_positions, rollout_positions[:, step + 1])
+                velocity_loss = nn.functional.mse_loss(teacher_velocities, rollout_velocities[:, step + 1])
+
+                open_state = model.state_transition(open_state, action)
+                open_positions, _ = model.kinematics(open_state)
+                open_loss = nn.functional.mse_loss(open_positions, rollout_positions[:, step + 1])
+                loss = loss + image_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss
+            loss = loss / (rollout_actions.shape[1] + 0.5)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
