@@ -108,3 +108,4 @@ def test_receding_horizon_reports_collision_and_replan_counts():
 
     assert result.collision_count >= 0
     assert result.replans >= 1
+    assert np.isfinite(result.final_info["distance_to_goal"])

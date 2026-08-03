@@ -407,7 +407,13 @@ def receding_horizon_plan(
     current_observation = observation
     executed_actions = []
     first_plan_distance = float("nan")
-    final_info: dict = {}
+    initial_position = extract_agent_position(observation)
+    final_info: dict = {
+        "position": initial_position.copy(),
+        "goal": np.asarray(goal, dtype=np.float32),
+        "distance_to_goal": float(np.linalg.norm(initial_position - np.asarray(goal))),
+        "collision": False,
+    }
     pending_plan: PlanResult | None = None
     pending_index = 0
     observation_history = [observation]
