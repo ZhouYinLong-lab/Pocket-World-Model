@@ -44,6 +44,30 @@ def _dilate(mask: np.ndarray, radius: int) -> np.ndarray:
     return result
 
 
+def extract_wall_boxes(mask: np.ndarray, min_area: int = 8) -> tuple[tuple[float, float, float, float], ...]:
+    """Find connected wall components and return (x0, y0, x1, y1) boxes."""
+    visited = np.zeros_like(mask, dtype=bool)
+    height, width = mask.shape
+    boxes = []
+    for y0, x0 in zip(*np.where(mask & ~visited)):
+        if visited[y0, x0]:
+            continue
+        stack = [(int(y0), int(x0))]
+        visited[y0, x0] = True
+        points = []
+        while stack:
+            y, x = stack.pop()
+            points.append((y, x))
+            for next_y, next_x in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                if 0 <= next_y < height and 0 <= next_x < width and mask[next_y, next_x] and not visited[next_y, next_x]:
+                    visited[next_y, next_x] = True
+                    stack.append((next_y, next_x))
+        if len(points) >= min_area:
+            points_array = np.asarray(points)
+            boxes.append((float(points_array[:, 1].min()), float(points_array[:, 0].min()), float(points_array[:, 1].max()), float(points_array[:, 0].max())))
+    return tuple(boxes)
+
+
 def _collision_prefix(positions: np.ndarray, wall_mask: np.ndarray, agent_radius: int = 3) -> np.ndarray:
     """Return whether each imagined step or an earlier step intersects a wall."""
     occupied = _dilate(wall_mask, agent_radius)
@@ -55,6 +79,72 @@ def _collision_prefix(positions: np.ndarray, wall_mask: np.ndarray, agent_radius
     clipped_ys = np.clip(ys, 0, occupied.shape[0] - 1)
     collisions = (~finite) | (~inside) | occupied[clipped_ys, clipped_xs]
     return np.maximum.accumulate(collisions, axis=1)
+
+
+def _detour_sequence(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    goal: tuple[float, float],
+    waypoint: tuple[float, float],
+    horizon: int,
+) -> list[int]:
+    """Use the compact dynamics to steer through a waypoint and then to goal."""
+    state = model.state_from_latent(model.encode(start))
+    targets = (waypoint, goal)
+    target_index = 0
+    actions = []
+    for _ in range(horizon):
+        position = state[0, :2].cpu().numpy() * 64.0
+        target = np.asarray(targets[target_index], dtype=np.float32)
+        delta = target - position
+        if np.linalg.norm(delta) <= 5.0 and target_index < len(targets) - 1:
+            target_index += 1
+            target = np.asarray(targets[target_index], dtype=np.float32)
+            delta = target - position
+        if abs(delta[0]) >= abs(delta[1]):
+            action = 3 if delta[0] >= 0 else 2
+        else:
+            action = 1 if delta[1] >= 0 else 0
+        actions.append(action)
+        state = model.state_transition(state, torch.tensor([action], device=state.device))
+    return actions
+
+
+def _detour_templates(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    goal: tuple[float, float],
+    wall_mask: np.ndarray,
+    horizon: int,
+) -> list[list[int]]:
+    """Generate top/bottom or left/right waypoint proposals for crossing walls."""
+    boxes = extract_wall_boxes(wall_mask)
+    proposals = []
+    goal_array = np.asarray(goal, dtype=np.float32)
+    for x0, y0, x1, y1 in boxes:
+        if start_position[0] < x0 and goal_array[0] > x1 and y0 <= start_position[1] <= y1:
+            proposals.extend([
+                _detour_sequence(model, start, start_position, goal, (start_position[0], max(4.0, y0 - 5.0)), horizon),
+                _detour_sequence(model, start, start_position, goal, (start_position[0], min(60.0, y1 + 5.0)), horizon),
+            ])
+        elif start_position[0] > x1 and goal_array[0] < x0 and y0 <= start_position[1] <= y1:
+            proposals.extend([
+                _detour_sequence(model, start, start_position, goal, (start_position[0], max(4.0, y0 - 5.0)), horizon),
+                _detour_sequence(model, start, start_position, goal, (start_position[0], min(60.0, y1 + 5.0)), horizon),
+            ])
+        elif start_position[1] < y0 and goal_array[1] > y1 and x0 <= start_position[0] <= x1:
+            proposals.extend([
+                _detour_sequence(model, start, start_position, goal, (max(4.0, x0 - 5.0), start_position[1]), horizon),
+                _detour_sequence(model, start, start_position, goal, (min(60.0, x1 + 5.0), start_position[1]), horizon),
+            ])
+        elif start_position[1] > y1 and goal_array[1] < y0 and x0 <= start_position[0] <= x1:
+            proposals.extend([
+                _detour_sequence(model, start, start_position, goal, (max(4.0, x0 - 5.0), start_position[1]), horizon),
+                _detour_sequence(model, start, start_position, goal, (min(60.0, x1 + 5.0), start_position[1]), horizon),
+            ])
+    return proposals
 
 
 def extract_agent_position(frame: np.ndarray) -> np.ndarray:
@@ -98,7 +188,16 @@ def random_shooting(
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     if collision_aware:
-        collision_prefix = _collision_prefix(positions, extract_wall_mask(observation))
+        wall_mask = extract_wall_mask(observation)
+        templates = _detour_templates(model, start, start_position, goal, wall_mask, horizon)
+        if templates:
+            template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
+            count = min(len(templates), candidates)
+            actions[:count] = template_tensor[:count]
+            imagined_positions[:count] = model.imagine_positions(starts[:count], actions[:count]).cpu().numpy() * 64.0
+            positions[:count, 1:] = imagined_positions[:count]
+            distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
+        collision_prefix = _collision_prefix(positions, wall_mask)
         distances = distances + collision_prefix * 64.0
     safe_distances = np.where(np.isfinite(distances), distances, 1e6)
     best = int(np.argmin(np.min(safe_distances, axis=1)))
@@ -120,6 +219,7 @@ def receding_horizon_plan(
     rollout_horizon: int = 16,
     candidates: int = 512,
     collision_aware: bool = True,
+    commit_steps: int = 1,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -139,10 +239,13 @@ def receding_horizon_plan(
             first_plan_distance = plan.imagined_distance
         if len(plan.actions) == 0:
             break
-        action = int(plan.actions[0])
-        current_observation, _, terminated, truncated, final_info = step_fn(action)
-        executed_actions.append(action)
-        if terminated or truncated:
+        for action_value in plan.actions[:max(1, commit_steps)]:
+            action = int(action_value)
+            current_observation, _, terminated, truncated, final_info = step_fn(action)
+            executed_actions.append(action)
+            if terminated or truncated:
+                break
+        if final_info.get("distance_to_goal", float("inf")) <= 4.0 or terminated or truncated:
             break
     return RecedingHorizonResult(
         actions=np.asarray(executed_actions, dtype=np.int64),

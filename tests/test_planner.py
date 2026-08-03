@@ -1,7 +1,7 @@
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
-from pocketworld.planner import _collision_prefix, extract_wall_mask
+from pocketworld.planner import _collision_prefix, extract_wall_boxes, extract_wall_mask
 
 
 def test_wall_mask_detects_wall_but_not_grid_or_agent():
@@ -19,3 +19,9 @@ def test_collision_prefix_marks_wall_intersection_and_future_steps():
     positions = np.asarray([[[10, 30], [26, 30], [31, 30], [40, 30]]], dtype=np.float32)
     prefix = _collision_prefix(positions, wall)
     assert prefix.tolist() == [[False, False, True, True]]
+
+
+def test_wall_boxes_find_single_barrier():
+    mask = np.zeros((64, 64), dtype=bool)
+    mask[10:54, 29:34] = True
+    assert extract_wall_boxes(mask) == ((29.0, 10.0, 33.0, 53.0),)

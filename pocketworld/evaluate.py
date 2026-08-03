@@ -98,7 +98,7 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
     """Compare unconstrained and wall-aware planning on a single barrier task."""
     rng = np.random.default_rng(seed)
     walls = (Rect(29, 10, 5, 44),)
-    reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": []}
+    reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": []}
     for _ in range(episodes):
         start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
         goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
@@ -114,17 +114,21 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
             reports[label].append((imagined_success, info["distance_to_goal"] <= env.goal_radius, info["distance_to_goal"]))
         env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
         observation, info = env.reset()
-        result = receding_horizon_plan(
-            model,
-            observation,
-            tuple(info["goal"]),
-            env.step,
-            max_steps=horizon,
-            rollout_horizon=min(16, horizon),
-            candidates=candidates,
-            collision_aware=True,
-        )
-        reports["collision_aware_receding"].append((result.first_plan_distance <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf"))))
+        for label, commit_steps in (("collision_aware_receding", 1), ("collision_aware_chunked", 4)):
+            env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+            observation, info = env.reset()
+            result = receding_horizon_plan(
+                model,
+                observation,
+                tuple(info["goal"]),
+                env.step,
+                max_steps=horizon,
+                rollout_horizon=min(16, horizon),
+                candidates=candidates,
+                collision_aware=True,
+                commit_steps=commit_steps,
+            )
+            reports[label].append((result.first_plan_distance <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf"))))
     return {
         label: {
             "imagined_success_rate": float(np.mean([row[0] for row in rows])),
