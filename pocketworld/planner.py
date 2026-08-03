@@ -14,6 +14,8 @@ class PlanResult:
     actions: np.ndarray
     imagined_positions: np.ndarray
     imagined_distance: float
+    imagined_collision_risk: float = 0.0
+    planning_score: float = 0.0
 
 
 @dataclass
@@ -111,6 +113,67 @@ def _detour_sequence(
     return actions
 
 
+def _route_sequence(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    targets: tuple[tuple[float, float], ...],
+    horizon: int,
+    tolerance: float = 1.5,
+) -> list[int]:
+    """Track generic waypoints using the learned compact kinematics."""
+    state = model.state_from_latent(model.encode(start))
+    known_position = torch.as_tensor(start_position / 64.0, device=state.device, dtype=state.dtype)[None]
+    state = torch.cat((known_position, state[..., 2:]), dim=-1)
+    target_index = 0
+    actions: list[int] = []
+    for _ in range(horizon):
+        position = state[0, :2].detach().cpu().numpy() * 64.0
+        velocity = state[0, 2:].detach().cpu().numpy() * 3.0
+        target = np.asarray(targets[target_index], dtype=np.float32)
+        delta = target - position
+        if np.linalg.norm(delta) <= tolerance and target_index < len(targets) - 1:
+            target_index += 1
+            target = np.asarray(targets[target_index], dtype=np.float32)
+            delta = target - position
+        control = delta - 3.0 * velocity
+        if abs(control[0]) >= abs(control[1]):
+            action = 3 if control[0] >= 0 else 2
+        else:
+            action = 1 if control[1] >= 0 else 0
+        actions.append(action)
+        state = model.state_transition(state, torch.tensor([action], device=state.device))
+    return actions
+
+
+def _learned_waypoint_templates(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    goal: tuple[float, float],
+    horizon: int,
+) -> list[list[int]]:
+    """Generate map-agnostic two-bend routes for learned risk scoring.
+
+    The proposals never inspect wall pixels. They span lateral offsets around
+    the direct route; the learned collision model decides which routes are safe.
+    """
+    goal_array = np.asarray(goal, dtype=np.float32)
+    delta = goal_array - start_position
+    length = float(np.linalg.norm(delta))
+    if length < 1e-6:
+        return []
+    direction = delta / length
+    perpendicular = np.asarray((-direction[1], direction[0]), dtype=np.float32)
+    proposals = []
+    for offset in (-32.0, -26.0, -20.0, -12.0, 12.0, 20.0, 26.0, 32.0):
+        before = np.clip(start_position + 0.28 * delta + offset * perpendicular, 5.5, 58.5)
+        after = np.clip(start_position + 0.72 * delta + offset * perpendicular, 5.5, 58.5)
+        targets = (tuple(before.tolist()), tuple(after.tolist()), tuple(goal_array.tolist()))
+        proposals.append(_route_sequence(model, start, start_position, targets, horizon))
+    return proposals
+
+
 def _detour_templates(
     model: PocketWorldModel,
     start: torch.Tensor,
@@ -186,18 +249,24 @@ def random_shooting(
     actions = torch.where(guided, torch.full_like(actions, preferred_action), actions)
     starts = start.expand(candidates, -1, -1, -1)
     start_position = extract_agent_position(observation).astype(np.float32)
+    normalized_start_positions = torch.as_tensor(start_position / 64.0, device=device, dtype=start.dtype).expand(candidates, -1)
     collision_response = learned_collision or hybrid_collision
     imagined_positions = model.imagine_positions(
         starts,
         actions,
         collision_response=collision_response,
         visual_collision_guard=hybrid_collision,
+        initial_position=normalized_start_positions,
     ).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
-    distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
+    goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     if collision_aware:
         wall_mask = extract_wall_mask(observation)
-        templates = _detour_templates(model, start, start_position, goal, wall_mask, horizon)
+        templates = (
+            _learned_waypoint_templates(model, start, start_position, goal, horizon)
+            if learned_collision
+            else _detour_templates(model, start, start_position, goal, wall_mask, horizon)
+        )
         if templates:
             template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
             count = min(len(templates), candidates)
@@ -207,27 +276,33 @@ def random_shooting(
                 actions[:count],
                 collision_response=collision_response,
                 visual_collision_guard=hybrid_collision,
+                initial_position=normalized_start_positions[:count],
             ).cpu().numpy() * 64.0
             positions[:count, 1:] = imagined_positions[:count]
-            distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
+            goal_distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
         if learned_collision or hybrid_collision:
             collision_probabilities = model.imagine_collision_probabilities(
                 starts,
                 actions,
                 visual_collision_guard=hybrid_collision,
+                initial_position=normalized_start_positions,
             ).cpu().numpy()
-            predicted_collisions = np.maximum.accumulate(collision_probabilities >= 0.5, axis=1)
-            collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=bool), predicted_collisions), axis=1)
+            peak_risk = np.maximum.accumulate(collision_probabilities, axis=1)
+            collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), peak_risk), axis=1)
         else:
             collision_prefix = _collision_prefix(positions, wall_mask)
-        distances = distances + collision_prefix * 64.0
-    safe_distances = np.where(np.isfinite(distances), distances, 1e6)
-    best = int(np.argmin(np.min(safe_distances, axis=1)))
-    best_step = int(np.argmin(safe_distances[best]))
+    else:
+        collision_prefix = np.zeros_like(goal_distances, dtype=np.float32)
+    planning_scores = goal_distances + collision_prefix * 64.0
+    safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
+    best = int(np.argmin(np.min(safe_scores, axis=1)))
+    best_step = int(np.argmin(safe_scores[best]))
     return PlanResult(
         actions=actions[best, :best_step].cpu().numpy(),
         imagined_positions=positions[best, :best_step + 1],
-        imagined_distance=float(safe_distances[best, best_step]),
+        imagined_distance=float(goal_distances[best, best_step]),
+        imagined_collision_risk=float(collision_prefix[best, best_step]),
+        planning_score=float(safe_scores[best, best_step]),
     )
 
 
@@ -244,6 +319,8 @@ def receding_horizon_plan(
     commit_steps: int = 1,
     preserve_route: bool = False,
     route_tolerance: float = 6.0,
+    learned_collision: bool = False,
+    hybrid_collision: bool = False,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -261,6 +338,8 @@ def receding_horizon_plan(
                 horizon=min(rollout_horizon, max_steps - step),
                 candidates=candidates,
                 collision_aware=collision_aware,
+                learned_collision=learned_collision,
+                hybrid_collision=hybrid_collision,
             )
             pending_index = 0
         plan = pending_plan

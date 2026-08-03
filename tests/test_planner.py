@@ -1,7 +1,7 @@
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
-from pocketworld.planner import _collision_prefix, extract_wall_boxes, extract_wall_mask
+from pocketworld.planner import _collision_prefix, _learned_waypoint_templates, extract_wall_boxes, extract_wall_mask
 
 
 def test_wall_mask_detects_wall_but_not_grid_or_agent():
@@ -36,3 +36,41 @@ def test_receding_horizon_result_exposes_executed_trace():
     result = receding_horizon_plan(PocketWorldModel(), observation, (16, 16), env.step, max_steps=2, rollout_horizon=2, candidates=4)
     assert result.actions.ndim == 1
     assert result.final_observation.shape == observation.shape
+
+
+def test_learned_waypoint_templates_include_both_sides_of_direct_route():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+
+    model = PocketWorldModel()
+    observation = torch.zeros(1, 3, 64, 64)
+    templates = _learned_waypoint_templates(model, observation, np.asarray((10.0, 32.0)), (54.0, 32.0), horizon=20)
+
+    assert len(templates) == 8
+    assert all(len(template) == 20 for template in templates)
+    assert any(0 in template for template in templates)
+    assert any(1 in template for template in templates)
+
+
+def test_learned_plan_reports_goal_distance_separately_from_risk_score():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    torch.manual_seed(3)
+    result = random_shooting(
+        PocketWorldModel(),
+        observation,
+        (54, 32),
+        horizon=4,
+        candidates=8,
+        collision_aware=True,
+        learned_collision=True,
+    )
+
+    assert 0.0 <= result.imagined_collision_risk <= 1.0
+    assert result.planning_score >= result.imagined_distance

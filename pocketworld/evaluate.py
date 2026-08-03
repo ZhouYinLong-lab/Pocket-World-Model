@@ -172,6 +172,7 @@ def evaluate_obstacle_planning(
     reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": [], "collision_aware_route": []}
     if learned_collision:
         reports["collision_aware_learned"] = []
+        reports["collision_aware_learned_route"] = []
     if hybrid_collision:
         reports["collision_aware_hybrid"] = []
     for _ in range(episodes):
@@ -223,6 +224,23 @@ def evaluate_obstacle_planning(
                 preserve_route=preserve_route,
             )
             reports[label].append((result.first_plan_distance <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf"))))
+        if learned_collision:
+            env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+            observation, info = env.reset()
+            result = receding_horizon_plan(
+                model,
+                observation,
+                tuple(info["goal"]),
+                env.step,
+                max_steps=horizon,
+                rollout_horizon=horizon,
+                candidates=candidates,
+                collision_aware=True,
+                preserve_route=True,
+                route_tolerance=6.0,
+                learned_collision=True,
+            )
+            reports["collision_aware_learned_route"].append((result.first_plan_distance <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf"))))
     return {
         label: {
             "imagined_success_rate": float(np.mean([row[0] for row in rows])),
