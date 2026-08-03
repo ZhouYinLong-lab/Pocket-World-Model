@@ -50,3 +50,12 @@ The collision-supervised barrier-mix ablation reached 81.9% ID collision accurac
 A follow-up adds a 7x7 wall-relative patch around the predicted landing point to the collision head. It improves the quick OOD collision accuracy to 82.9% / 65.9% recall, but learned-collision planning remains 100% imagined / 0% real. The next model change therefore needs to alter the imagined post-collision state (freeze position and zero velocity), not only classify the event.
 
 The post-collision response is now implemented: predicted events freeze position and clear velocity in learned imagined rollouts. The barrier result remains 100% imagined / 0% real, so the missing issue is event localization on the detour candidates, not the response rule itself.
+
+## Engineering completion checks
+
+- Repository metadata: MIT license committed; GitHub topics set for world models, model-based RL, PyTorch, Gymnasium, and machine learning.
+- Python verification: `19 passed`.
+- ONNX export: verified against the older `pocketworld-structured-wide.pt` checkpoint after installing the optional export dependencies; the compatible image model is written successfully.
+- Web verification: `npm install --no-audit --no-fund` followed by `npm run build` succeeds. Vite reports only a bundle-size warning for the ONNX Runtime WASM asset.
+
+The remaining product gap is not build or packaging: the browser can load the one-step ONNX image model, but the decoded RGB agent is not yet a reliable learned visualization, and the learned collision planner still fails the single-barrier real-execution test.
