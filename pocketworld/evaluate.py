@@ -94,8 +94,22 @@ def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizon
     return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
 
 
-def _mean(values: list[float]) -> float:
-    return float(np.mean(values)) if values else float("nan")
+def _mean(values: list[float]) -> float | None:
+    return float(np.mean(values)) if values else None
+
+
+def _summarize(reports: list[dict]) -> dict:
+    """Recursively summarize numeric report leaves across random seeds."""
+    summary = {}
+    for key in reports[0]:
+        values = [report[key] for report in reports]
+        if isinstance(values[0], dict):
+            summary[key] = _summarize(values)
+        elif values[0] is None:
+            summary[key] = None
+        else:
+            summary[key] = {"mean": float(np.mean(values)), "std": float(np.std(values))}
+    return summary
 
 
 def main() -> None:
@@ -103,17 +117,24 @@ def main() -> None:
     parser.add_argument("checkpoint", nargs="?", default="artifacts/pocketworld.pt")
     parser.add_argument("--episodes", type=int, default=20)
     parser.add_argument("--candidates", type=int, default=256)
+    parser.add_argument("--seeds", default="11,23,41", help="comma-separated evaluation seeds")
     parser.add_argument("--output", default="artifacts/evaluation.json")
     args = parser.parse_args()
     model = PocketWorldModel()
     payload = torch.load(args.checkpoint, map_location="cpu")
     model.load_state_dict(payload["model"])
-    report = {
-        "in_distribution": evaluate_prediction(model, episodes=args.episodes),
-        "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, ood=True),
-        "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates),
-        "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates),
-    }
+    seeds = [int(value.strip()) for value in args.seeds.split(",") if value.strip()]
+    runs = []
+    for seed in seeds:
+        runs.append({
+            "seed": seed,
+            "in_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed),
+            "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed + 1000, ood=True),
+            "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 2000),
+            "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 3000),
+        })
+    numeric_runs = [{key: value for key, value in run.items() if key != "seed"} for run in runs]
+    report = {"config": {"episodes": args.episodes, "candidates": args.candidates, "seeds": seeds}, "runs": runs, "summary": _summarize(numeric_runs)}
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(report, indent=2), encoding="utf-8")
