@@ -49,6 +49,8 @@ The report contains both per-seed runs and recursive mean/std summaries so plann
 
 The latest large-scale results and the remaining gap are recorded in [the evaluation report](docs/evaluation-2026-08.md). The main result is 98% imagined / 96% real success at 16 planning steps, with the real-vs-imagined gap reaching 7 percentage points at 24–32 steps.
 
+The planner also includes an explicit `collision_aware=True` baseline for barrier experiments. It is kept separate from the learned model so obstacle results remain honest: wall detection alone does not yet produce reliable detours.
+
 The compact planning state uses a transparent kinematic prior: action directions are fixed by the four-action environment, while acceleration, friction, and speed limit are learned from rollout state supervision. This prevents the planner state from collapsing to an action-insensitive average and makes the action-effect diagnostic interpretable.
 
 To create a browser-loadable one-step model after training:

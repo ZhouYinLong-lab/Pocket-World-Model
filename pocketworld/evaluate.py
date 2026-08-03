@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from .data import _variant_walls
-from .env import PocketWorldEnv
+from .env import PocketWorldEnv, Rect
 from .model import PocketWorldModel
 from .planner import extract_agent_position, random_shooting
 
@@ -94,6 +94,34 @@ def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizon
     return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
 
 
+def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 40, candidates: int = 512, seed: int = 71) -> dict[str, dict[str, float]]:
+    """Compare unconstrained and wall-aware planning on a single barrier task."""
+    rng = np.random.default_rng(seed)
+    walls = (Rect(29, 10, 5, 44),)
+    reports = {"unconstrained": [], "collision_aware": []}
+    for _ in range(episodes):
+        start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
+        goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
+        for label, collision_aware in (("unconstrained", False), ("collision_aware", True)):
+            env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+            observation, info = env.reset()
+            result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates, collision_aware=collision_aware)
+            imagined_success = result.imagined_distance <= env.goal_radius
+            for action in result.actions:
+                _, _, terminated, truncated, info = env.step(int(action))
+                if terminated or truncated:
+                    break
+            reports[label].append((imagined_success, info["distance_to_goal"] <= env.goal_radius, info["distance_to_goal"]))
+    return {
+        label: {
+            "imagined_success_rate": float(np.mean([row[0] for row in rows])),
+            "real_success_rate": float(np.mean([row[1] for row in rows])),
+            "mean_real_final_distance_px": float(np.mean([row[2] for row in rows])),
+        }
+        for label, rows in reports.items()
+    }
+
+
 def evaluate_action_effects(model: PocketWorldModel, repeat: int = 8) -> dict[str, dict[str, list[float] | float]]:
     """Compare predicted versus real displacement for each repeated action."""
     env = PocketWorldEnv(walls=(), agent_start=(32.0, 16.0), goal=(55.0, 55.0))
@@ -161,6 +189,7 @@ def main() -> None:
             "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed + 1000, ood=True),
             "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 2000),
             "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 3000),
+            "obstacle_planning": evaluate_obstacle_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 4000),
             "action_effects": evaluate_action_effects(model),
         })
     numeric_runs = [{key: value for key, value in run.items() if key != "seed"} for run in runs]

@@ -34,3 +34,7 @@ The repeated-action diagnostic averages 4.04 px position error across up/down/le
 1. Add a separate agent-rendering head or decoder skip path so pixel supervision cannot corrupt the planning state.
 2. Add collision events and wall geometry to the compact state transition, then repeat the 24/32-step sweep.
 3. Export the best checkpoint and show the latent planned trajectory alongside the decoded RGB rollout in the browser demo.
+
+The next evaluation adds a single-barrier challenge. It compares the existing unconstrained planner with a collision-aware planner that extracts wall pixels from the current observation and penalizes trajectories after the first wall intersection. This is an explicit planning baseline; it is not counted as learned wall dynamics until the compact state model predicts collision events itself.
+
+The first barrier result is intentionally a negative result: the unconstrained planner reached 100% imagined success but 0% real success, while the pixel-penalized planner also reached 0% real success (mean final distance improved only from 28.21px to 27.24px). The model can detect that a route is invalid, but the current open-loop random shooting budget does not reliably discover the narrow route around a barrier. The next useful step is collision-event supervision plus receding-horizon replanning.
