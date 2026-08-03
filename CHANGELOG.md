@@ -6,18 +6,23 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 ### Added
 
+- Learnable RGB/latent temporal velocity representation with motion encoder, latent deltas, auxiliary position supervision, and `--temporal-only` fine-tuning.
+- Diagonal probabilistic transition uncertainty with held-out residual-quantile calibration and shortlist Monte Carlo collision risk.
+- Temporal velocity and empirical uncertainty-coverage metrics in the evaluation report.
 - RGB-history velocity estimation for compact-state rollout initialization.
 - Horizon-growing learned uncertainty boundaries with robust shortlist rescoring.
 - Reproducible three-seed collision planner evaluation and committed result data.
 
 ### Changed
 
+- The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 35 tests at approximately 76% line coverage.
+- Python verification now covers 39 tests at approximately 76% line coverage.
 
 ### Planned
 
+- Complete the 50-episode, three-seed barrier validation for the learned temporal/probabilistic planner and test calibration under OOD speed/map changes.
 - Online demo deployment and browser controls for history/uncertainty planning.
 
 ## [0.2.0] - 2026-08-03

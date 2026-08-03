@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-35%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-76%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-39%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-77%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -64,6 +64,18 @@ The result is not a claim of general intelligence or state-of-the-art control. I
 | [TD-MPC2](https://arxiv.org/abs/2310.16828) | Large-scale decoder-free latent control for continuous domains. | Deliberately retains RGB decoding because seeing what the model imagines is part of the experiment, not just an implementation detail. |
 
 In short, PocketWorld is best viewed as a **microscope for world-model reliability**: small enough to reproduce, visual enough to understand, and strict enough to compare imagined plans with real execution.
+
+## Current direction: learned temporal velocity and calibrated uncertainty
+
+The latest research direction replaces two hand-designed shortcuts with measurable learned components:
+
+- **Learned temporal velocity:** a lightweight RGB motion encoder, latent-frame differences, and a GRU learn velocity from the latest four observations. An auxiliary position head makes the motion features explicitly locate the small agent. The previous pixel-difference estimator remains available as a privileged baseline, and `--temporal-only` supports frozen-world-model fine-tuning.
+- **Calibrated probabilistic uncertainty:** a transition head predicts diagonal state standard deviations for position and velocity. A held-out rollout split calibrates one scale per coordinate with residual quantiles, then the planner samples landing states from that calibrated distribution when estimating collision probability.
+- **Cost-controlled planning:** ordinary candidates are ranked with the point model first; only a shortlist receives probabilistic Monte Carlo rescoring. This keeps the uncertainty experiment inspectable and computationally bounded.
+
+This is a marginal, split-calibrated Gaussian approximation—not a Bayesian posterior or an ensemble. The evaluation report now includes learned velocity error, finite-difference baseline error, 50/80/90/95% empirical coverage, interval width, and state Gaussian NLL.
+
+The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md) and [machine-readable result](docs/results/evaluation-temporal-probability-v8.json).
 
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
@@ -126,6 +138,16 @@ python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20 --seeds 11
 The checkpoint is written to `artifacts/pocketworld.pt`.
 The evaluation command writes `artifacts/evaluation.json` with image error, decoded-position error, latent-position error, OOD generalization, and imagined/real planning success across 8/16/24/32-step planning horizons.
 
+To train and evaluate the learned temporal/probabilistic direction:
+
+```bash
+python -m pocketworld.train --epochs 8 --episodes 500 --validation-episodes 100 --batch-size 32 --unroll-horizon 8 --sticky-probability 0.75 --full-state-range --output artifacts/pocketworld-temporal-probability.pt
+python -m pocketworld.train --resume artifacts/pocketworld-temporal-probability.pt --temporal-only --epochs 20 --episodes 500 --validation-episodes 100 --batch-size 32 --unroll-horizon 8 --sticky-probability 0.75 --full-state-range --output artifacts/pocketworld-temporal-probability-tuned.pt
+python -m pocketworld.evaluate artifacts/pocketworld-temporal-probability-tuned.pt --episodes 50 --candidates 1024 --seeds 11,23,41 --output artifacts/evaluation-temporal-probability.json
+```
+
+The collision evaluator adds `learned_velocity_probabilistic_closed` alongside the existing point, history, and robust-radius baselines. Its probabilistic sampler is applied only to the planner shortlist so a larger candidate count remains practical.
+
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
 ```bash
@@ -165,7 +187,7 @@ Learned imagined collisions now freeze the compact state and zero velocity after
 
 The learned planner proposes map-agnostic two-bend waypoint routes and lets the wall-relative collision head rank them. It does not inspect wall boxes when running in pure learned mode; the explicit pixel planner remains a separately reported baseline.
 
-Recent RGB frames can initialize velocity when temporal evidence exists, resolving information that is absent from a single frame. The uncertainty-aware planner re-scores a 64-candidate shortlist at the predicted position and four nearby states; its risk boundary grows with rollout depth.
+Recent RGB frames can initialize velocity either with the legacy finite-difference estimator or with the learned temporal encoder. The calibrated probabilistic planner re-scores a shortlist by sampling future landing states; the older 64-point neighborhood and horizon-growing radius remain available as explicit robust baselines.
 
 To reproduce the frozen three-seed barrier comparison:
 

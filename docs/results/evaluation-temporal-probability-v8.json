@@ -1,0 +1,36 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes": 50,
+  "horizon": 8,
+  "seeds": [11, 23, 41],
+  "protocol": "development checkpoint; velocity and uncertainty only",
+  "runs": {
+    "11": {
+      "learned_velocity_mae_px": 0.448453,
+      "finite_difference_velocity_mae_px": 0.283105,
+      "position_coverage_90": 0.863750,
+      "velocity_coverage_90": 0.895000,
+      "mean_interval_width_px_90": 12.475092
+    },
+    "23": {
+      "learned_velocity_mae_px": 0.450225,
+      "finite_difference_velocity_mae_px": 0.274295,
+      "position_coverage_90": 0.877500,
+      "velocity_coverage_90": 0.910000,
+      "mean_interval_width_px_90": 13.560236
+    },
+    "41": {
+      "learned_velocity_mae_px": 0.407195,
+      "finite_difference_velocity_mae_px": 0.214914,
+      "position_coverage_90": 0.883750,
+      "velocity_coverage_90": 0.896250,
+      "mean_interval_width_px_90": 13.342581
+    }
+  },
+  "calibration_scale": [0.898139, 0.805979, 1.196125, 0.969748],
+  "notes": [
+    "The finite-difference estimator is a privileged RGB-mask baseline, not a learned model input.",
+    "Fresh-seed marginal coverage is slightly below nominal for position and close to nominal for velocity.",
+    "The full three-seed barrier-planning comparison is intentionally not claimed by this report."
+  ]
+}
