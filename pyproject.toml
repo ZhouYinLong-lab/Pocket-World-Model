@@ -23,5 +23,9 @@ pocketworld-train = "pocketworld.train:main"
 pocketworld-export-onnx = "pocketworld.export_onnx:main"
 pocketworld-evaluate = "pocketworld.evaluate:main"
 
+[tool.setuptools.packages.find]
+include = ["pocketworld*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
