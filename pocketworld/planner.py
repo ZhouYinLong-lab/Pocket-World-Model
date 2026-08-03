@@ -220,31 +220,50 @@ def receding_horizon_plan(
     candidates: int = 512,
     collision_aware: bool = True,
     commit_steps: int = 1,
+    preserve_route: bool = False,
+    route_tolerance: float = 6.0,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
     executed_actions = []
     first_plan_distance = float("nan")
     final_info: dict = {}
+    pending_plan: PlanResult | None = None
+    pending_index = 0
     for step in range(max_steps):
-        plan = random_shooting(
-            model,
-            current_observation,
-            goal,
-            horizon=min(rollout_horizon, max_steps - step),
-            candidates=candidates,
-            collision_aware=collision_aware,
-        )
+        if pending_plan is None or pending_index >= len(pending_plan.actions):
+            pending_plan = random_shooting(
+                model,
+                current_observation,
+                goal,
+                horizon=min(rollout_horizon, max_steps - step),
+                candidates=candidates,
+                collision_aware=collision_aware,
+            )
+            pending_index = 0
+        plan = pending_plan
         if step == 0:
             first_plan_distance = plan.imagined_distance
         if len(plan.actions) == 0:
             break
-        for action_value in plan.actions[:max(1, commit_steps)]:
+        actions_to_execute = plan.actions[pending_index:pending_index + max(1, commit_steps)]
+        for action_value in actions_to_execute:
             action = int(action_value)
             current_observation, _, terminated, truncated, final_info = step_fn(action)
             executed_actions.append(action)
+            pending_index += 1
             if terminated or truncated:
                 break
+            if preserve_route:
+                expected_index = min(pending_index, len(plan.imagined_positions) - 1)
+                actual_position = extract_agent_position(current_observation)
+                expected_position = plan.imagined_positions[expected_index]
+                deviated = not np.all(np.isfinite(actual_position)) or np.linalg.norm(actual_position - expected_position) > route_tolerance
+                if final_info.get("collision", False) or deviated:
+                    pending_plan = None
+                    break
+        if not preserve_route:
+            pending_plan = None
         if final_info.get("distance_to_goal", float("inf")) <= 4.0 or terminated or truncated:
             break
     return RecedingHorizonResult(

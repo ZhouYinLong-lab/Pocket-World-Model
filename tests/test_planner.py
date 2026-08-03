@@ -25,3 +25,14 @@ def test_wall_boxes_find_single_barrier():
     mask = np.zeros((64, 64), dtype=bool)
     mask[10:54, 29:34] = True
     assert extract_wall_boxes(mask) == ((29.0, 10.0, 33.0, 53.0),)
+
+
+def test_receding_horizon_result_exposes_executed_trace():
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import receding_horizon_plan
+
+    env = PocketWorldEnv(walls=(), agent_start=(8, 8), goal=(16, 16))
+    observation, _ = env.reset()
+    result = receding_horizon_plan(PocketWorldModel(), observation, (16, 16), env.step, max_steps=2, rollout_horizon=2, candidates=4)
+    assert result.actions.ndim == 1
+    assert result.final_observation.shape == observation.shape

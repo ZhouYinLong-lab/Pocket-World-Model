@@ -98,7 +98,7 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
     """Compare unconstrained and wall-aware planning on a single barrier task."""
     rng = np.random.default_rng(seed)
     walls = (Rect(29, 10, 5, 44),)
-    reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": []}
+    reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": [], "collision_aware_route": []}
     for _ in range(episodes):
         start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
         goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
@@ -114,7 +114,11 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
             reports[label].append((imagined_success, info["distance_to_goal"] <= env.goal_radius, info["distance_to_goal"]))
         env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
         observation, info = env.reset()
-        for label, commit_steps in (("collision_aware_receding", 1), ("collision_aware_chunked", 4)):
+        for label, commit_steps, preserve_route in (
+            ("collision_aware_receding", 1, False),
+            ("collision_aware_chunked", 4, False),
+            ("collision_aware_route", 1, True),
+        ):
             env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
             observation, info = env.reset()
             result = receding_horizon_plan(
@@ -127,6 +131,7 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
                 candidates=candidates,
                 collision_aware=True,
                 commit_steps=commit_steps,
+                preserve_route=preserve_route,
             )
             reports[label].append((result.first_plan_distance <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius, result.final_info.get("distance_to_goal", float("inf"))))
     return {
