@@ -62,6 +62,7 @@ def collect_random_rollouts(
     map_variant: bool = False,
     sticky_probability: float = 0.55,
     full_state_range: bool = False,
+    barrier_probability: float = 0.0,
 ) -> RolloutBatch:
     """Collect contiguous trajectories for multi-step world-model training."""
     rng = np.random.default_rng(seed)
@@ -71,7 +72,10 @@ def collect_random_rollouts(
     all_velocities = []
     all_collisions = []
     for _ in range(episodes):
-        walls = _variant_walls(rng) if map_variant else None
+        if barrier_probability > 0 and rng.random() < barrier_probability:
+            walls = (Rect(29, 10, 5, 44),)
+        else:
+            walls = _variant_walls(rng) if map_variant else None
         start_low, start_high = (6, 58) if full_state_range else (6, 15)
         goal_low, goal_high = (6, 58) if full_state_range else (49, 58)
         sampling_walls = DEFAULT_WALLS if walls is None else walls

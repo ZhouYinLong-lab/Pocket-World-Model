@@ -162,6 +162,7 @@ def evaluate_collision_prediction(model: PocketWorldModel, episodes: int = 20, h
             goal=(float(rng.integers(6, 58)), float(rng.integers(6, 58))),
         )
         observation, _ = env.reset()
+        start_observation = observation.copy()
         actions = rng.integers(0, 4, size=horizon, dtype=np.int64)
         actual_collisions = []
         for action in actions:
@@ -170,7 +171,7 @@ def evaluate_collision_prediction(model: PocketWorldModel, episodes: int = 20, h
             observation = next_observation
             if terminated or truncated:
                 break
-        start = torch.from_numpy(env.render()[None]).float() / 255.0
+        start = torch.from_numpy(start_observation[None]).float() / 255.0
         action_tensor = torch.from_numpy(actions[None])
         predicted = model.imagine_collision_probabilities(start, action_tensor)[0].cpu().numpy()
         probabilities.extend(predicted[:len(actual_collisions)].tolist())
