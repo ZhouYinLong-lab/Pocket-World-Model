@@ -18,7 +18,7 @@ export const DEFAULT_WALLS: Wall[] = [
 export type World = { position: Point; velocity: Point; goal: Point; walls: Wall[]; collided: boolean; step: number };
 
 export function makeWorld(): World {
-  return { position: { x: 8, y: 8 }, velocity: { x: 0, y: 0 }, goal: { x: 55, y: 55 }, walls: DEFAULT_WALLS.map((wall) => ({ ...wall })), collided: false, step: 0 };
+  return { position: { x: 8, y: 8 }, velocity: { x: 0, y: 0 }, goal: { x: 18, y: 30 }, walls: DEFAULT_WALLS.map((wall) => ({ ...wall })), collided: false, step: 0 };
 }
 
 function collides(point: Point, walls: Wall[]): boolean {
@@ -81,4 +81,3 @@ export function drawWorld(canvas: HTMLCanvasElement, world: World, accent: strin
   ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(world.position.x * scale, world.position.y * scale, 3 * scale, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = "rgba(255,255,255,.42)"; ctx.lineWidth = 1; ctx.stroke();
 }
-
