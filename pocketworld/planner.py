@@ -174,6 +174,7 @@ def random_shooting(
     device: str = "cpu",
     guided_fraction: float = 0.35,
     collision_aware: bool = False,
+    learned_collision: bool = False,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -197,7 +198,12 @@ def random_shooting(
             imagined_positions[:count] = model.imagine_positions(starts[:count], actions[:count]).cpu().numpy() * 64.0
             positions[:count, 1:] = imagined_positions[:count]
             distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
-        collision_prefix = _collision_prefix(positions, wall_mask)
+        if learned_collision:
+            collision_probabilities = model.imagine_collision_probabilities(starts, actions).cpu().numpy()
+            predicted_collisions = np.maximum.accumulate(collision_probabilities >= 0.5, axis=1)
+            collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=bool), predicted_collisions), axis=1)
+        else:
+            collision_prefix = _collision_prefix(positions, wall_mask)
         distances = distances + collision_prefix * 64.0
     safe_distances = np.where(np.isfinite(distances), distances, 1e6)
     best = int(np.argmin(np.min(safe_distances, axis=1)))

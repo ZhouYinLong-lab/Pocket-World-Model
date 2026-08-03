@@ -94,7 +94,7 @@ def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizon
     return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
 
 
-def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 40, candidates: int = 512, seed: int = 71) -> dict[str, dict[str, float]]:
+def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 40, candidates: int = 512, seed: int = 71, learned_collision: bool = False) -> dict[str, dict[str, float]]:
     """Compare unconstrained and wall-aware planning on a single barrier task."""
     rng = np.random.default_rng(seed)
     walls = (Rect(29, 10, 5, 44),)
@@ -102,10 +102,13 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
     for _ in range(episodes):
         start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
         goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
-        for label, collision_aware in (("unconstrained", False), ("collision_aware", True)):
+        planners = (("unconstrained", False, False), ("collision_aware", True, False))
+        if learned_collision:
+            planners += (("collision_aware_learned", True, True),)
+        for label, collision_aware, learned_collision_mode in planners:
             env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
             observation, info = env.reset()
-            result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates, collision_aware=collision_aware)
+            result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates, collision_aware=collision_aware, learned_collision=learned_collision_mode)
             imagined_success = result.imagined_distance <= env.goal_radius
             for action in result.actions:
                 _, _, terminated, truncated, info = env.step(int(action))
@@ -141,6 +144,44 @@ def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, hori
             "mean_real_final_distance_px": float(np.mean([row[2] for row in rows])),
         }
         for label, rows in reports.items()
+    }
+
+
+def evaluate_collision_prediction(model: PocketWorldModel, episodes: int = 20, horizon: int = 16, seed: int = 83, ood: bool = False) -> dict[str, float]:
+    """Measure learned collision-event probabilities against simulator events."""
+    rng = np.random.default_rng(seed)
+    probabilities = []
+    targets = []
+    for _ in range(episodes):
+        walls = _variant_walls(rng) if ood else None
+        env = PocketWorldEnv(
+            walls=walls,
+            agent_start=(float(rng.integers(6, 58)), float(rng.integers(6, 58))),
+            goal=(float(rng.integers(6, 58)), float(rng.integers(6, 58))),
+        )
+        observation, _ = env.reset()
+        actions = rng.integers(0, 4, size=horizon, dtype=np.int64)
+        actual_collisions = []
+        for action in actions:
+            next_observation, _, terminated, truncated, info = env.step(int(action))
+            actual_collisions.append(float(info["collision"]))
+            observation = next_observation
+            if terminated or truncated:
+                break
+        start = torch.from_numpy(env.render()[None]).float() / 255.0
+        action_tensor = torch.from_numpy(actions[None])
+        predicted = model.imagine_collision_probabilities(start, action_tensor)[0].cpu().numpy()
+        probabilities.extend(predicted[:len(actual_collisions)].tolist())
+        targets.extend(actual_collisions)
+    predicted_labels = np.asarray(probabilities) >= 0.5
+    target_array = np.asarray(targets, dtype=bool)
+    true_positive = np.logical_and(predicted_labels, target_array).sum()
+    return {
+        "accuracy": float(np.mean(predicted_labels == target_array)),
+        "positive_rate": float(np.mean(target_array)),
+        "predicted_positive_rate": float(np.mean(predicted_labels)),
+        "precision": float(true_positive / max(1, predicted_labels.sum())),
+        "recall": float(true_positive / max(1, target_array.sum())),
     }
 
 
@@ -202,6 +243,7 @@ def main() -> None:
         print(f"warning: checkpoint is missing {len(missing)} structured-dynamics keys; use a freshly trained checkpoint for planning")
     if unexpected:
         print(f"warning: checkpoint has {len(unexpected)} legacy keys")
+    collision_supervision = bool(payload.get("collision_supervision", False))
     seeds = [int(value.strip()) for value in args.seeds.split(",") if value.strip()]
     runs = []
     for seed in seeds:
@@ -211,7 +253,11 @@ def main() -> None:
             "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed + 1000, ood=True),
             "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 2000),
             "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 3000),
-            "obstacle_planning": evaluate_obstacle_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 4000),
+            "obstacle_planning": evaluate_obstacle_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 4000, learned_collision=collision_supervision),
+            "collision_prediction": {
+                "in_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 5000),
+                "out_of_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 6000, ood=True),
+            } if collision_supervision else None,
             "action_effects": evaluate_action_effects(model),
         })
     numeric_runs = [{key: value for key, value in run.items() if key != "seed"} for run in runs]

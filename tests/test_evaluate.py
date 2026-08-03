@@ -1,4 +1,4 @@
-from pocketworld.evaluate import evaluate_action_effects, evaluate_planning, evaluate_prediction
+from pocketworld.evaluate import evaluate_action_effects, evaluate_collision_prediction, evaluate_planning, evaluate_prediction
 from pocketworld.model import PocketWorldModel
 
 
@@ -23,3 +23,8 @@ def test_action_effect_diagnostic_covers_all_actions():
     report = evaluate_action_effects(PocketWorldModel(), repeat=2)
     assert set(report) == {"up", "down", "left", "right"}
     assert all("position_error_px" in value for value in report.values())
+
+
+def test_collision_prediction_report_has_classification_metrics():
+    report = evaluate_collision_prediction(PocketWorldModel(), episodes=1, horizon=2, seed=5)
+    assert set(report) == {"accuracy", "positive_rate", "predicted_positive_rate", "precision", "recall"}
