@@ -25,11 +25,20 @@ python -m venv .venv
 pip install -e ".[dev,export]"
 pytest
 python -m pocketworld.train --epochs 5 --episodes 100 --unroll-horizon 8
-python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20
+python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20 --seeds 11,23,41
 ```
 
 The checkpoint is written to `artifacts/pocketworld.pt`.
 The evaluation command writes `artifacts/evaluation.json` with image error, decoded-position error, latent-position error, OOD generalization, and imagined/real planning success across 8/16/24/32-step planning horizons.
+
+For a larger run, use 1,000 training trajectories and three evaluation seeds:
+
+```bash
+python -m pocketworld.train --epochs 12 --episodes 1000 --validation-episodes 200 --batch-size 32 --unroll-horizon 16 --output artifacts/pocketworld-large.pt
+python -m pocketworld.evaluate artifacts/pocketworld-large.pt --episodes 50 --candidates 1024 --seeds 11,23,41 --output artifacts/evaluation-large.json
+```
+
+The report contains both per-seed runs and recursive mean/std summaries so planning gaps are not based on one lucky rollout.
 
 To create a browser-loadable one-step model after training:
 
