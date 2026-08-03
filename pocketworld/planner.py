@@ -19,6 +19,7 @@ def extract_agent_position(frame: np.ndarray) -> np.ndarray:
     """Locate the mint-green agent in a CHW uint8 or BCHW float frame."""
     if frame.dtype != np.uint8:
         frame = (frame * 255).clip(0, 255).astype(np.uint8)
+    frame = frame.astype(np.int16)
     batched = frame.ndim == 4
     if not batched:
         frame = frame[None]
@@ -52,7 +53,12 @@ def random_shooting(
     start_position = extract_agent_position(observation).astype(np.float32)
     imagined_positions = model.imagine_positions(starts, actions).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
-    distances = np.linalg.norm(positions[:, -1] - np.asarray(goal), axis=-1)
+    distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     safe_distances = np.where(np.isfinite(distances), distances, 1e6)
-    best = int(np.argmin(safe_distances))
-    return PlanResult(actions=actions[best].cpu().numpy(), imagined_positions=positions[best], imagined_distance=float(safe_distances[best]))
+    best = int(np.argmin(np.min(safe_distances, axis=1)))
+    best_step = int(np.argmin(safe_distances[best]))
+    return PlanResult(
+        actions=actions[best, :best_step].cpu().numpy(),
+        imagined_positions=positions[best, :best_step + 1],
+        imagined_distance=float(safe_distances[best, best_step]),
+    )

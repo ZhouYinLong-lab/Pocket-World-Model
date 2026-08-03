@@ -11,7 +11,7 @@ The central question is: **how far can a tiny model imagine before error breaks 
 The repository keeps the research loop inspectable:
 
 - `pocketworld/env.py` — Gymnasium environment with inertia, collision, walls, and goal.
-- `pocketworld/model.py` — CNN encoder + action embedding + GRU dynamics + CNN decoder.
+- `pocketworld/model.py` — CNN encoder + GRU image dynamics + CNN decoder, plus a supervised position/velocity state path for planning.
 - `pocketworld/data.py` — reproducible random-policy transition collection.
 - `pocketworld/planner.py` — model rollout and random-shooting planning utilities.
 - `pocketworld/train.py` — minimal one-step image-prediction training loop.
@@ -29,7 +29,7 @@ python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20
 ```
 
 The checkpoint is written to `artifacts/pocketworld.pt`.
-The evaluation command writes `artifacts/evaluation.json` with image error, decoded-position error, latent-position error, OOD generalization, and imagined/real planning success across planning horizons.
+The evaluation command writes `artifacts/evaluation.json` with image error, decoded-position error, latent-position error, OOD generalization, and imagined/real planning success across 8/16/24/32-step planning horizons.
 
 To create a browser-loadable one-step model after training:
 
