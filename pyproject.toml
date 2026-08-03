@@ -22,6 +22,7 @@ export = ["onnx>=1.16", "onnxscript>=0.1"]
 pocketworld-train = "pocketworld.train:main"
 pocketworld-export-onnx = "pocketworld.export_onnx:main"
 pocketworld-evaluate = "pocketworld.evaluate:main"
+pocketworld-evaluate-collision = "pocketworld.evaluate_collision:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]
