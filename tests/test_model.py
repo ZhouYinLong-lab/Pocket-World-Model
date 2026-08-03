@@ -10,9 +10,14 @@ def test_model_preserves_image_shape_and_can_imagine():
     observation = torch.rand(2, 3, 64, 64)
     actions = torch.randint(0, 4, (2, 5))
     next_frame = model.predict_next(observation, actions[:, 0])
+    next_frame_with_state, next_position = model.predict_next_state(observation, actions[:, 0])
     imagined = model.imagine(observation, actions)
+    imagined_positions = model.imagine_positions(observation, actions)
     assert next_frame.shape == observation.shape
+    assert next_frame_with_state.shape == observation.shape
+    assert next_position.shape == (2, 2)
     assert imagined.shape == (2, 6, 3, 64, 64)
+    assert imagined_positions.shape == (2, 5, 2)
 
 
 def test_agent_position_extractor_supports_batches():

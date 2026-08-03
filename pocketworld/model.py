@@ -17,6 +17,7 @@ class PocketWorldModel(nn.Module):
         )
         self.action_embedding = nn.Embedding(4, action_dim)
         self.dynamics = nn.GRUCell(latent_dim + action_dim, latent_dim)
+        self.position_head = nn.Sequential(nn.Linear(latent_dim, 32), nn.ReLU(), nn.Linear(32, 2), nn.Sigmoid())
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 64 * 8 * 8), nn.ReLU(),
             nn.Unflatten(1, (64, 8, 8)),
@@ -38,6 +39,20 @@ class PocketWorldModel(nn.Module):
         latent = self.transition(self.encode(observation), action)
         return self.decode(latent)
 
+    def predict_next_state(self, observation: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        latent = self.transition(self.encode(observation), action)
+        return self.decode(latent), self.position_head(latent)
+
+    @torch.no_grad()
+    def imagine_positions(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """Return normalized [x, y] positions for every imagined future step."""
+        latent = self.encode(observation)
+        positions = []
+        for index in range(actions.shape[1]):
+            latent = self.transition(latent, actions[:, index])
+            positions.append(self.position_head(latent))
+        return torch.stack(positions, dim=1)
+
     @torch.no_grad()
     def imagine(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Return the starting frame plus imagined frames for [batch, horizon] actions."""
@@ -47,4 +62,3 @@ class PocketWorldModel(nn.Module):
             latent = self.transition(latent, actions[:, index])
             frames.append(self.decode(latent))
         return torch.stack(frames, dim=1)
-

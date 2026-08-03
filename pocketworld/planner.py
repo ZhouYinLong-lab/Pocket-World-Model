@@ -39,17 +39,20 @@ def random_shooting(
     horizon: int = 12,
     candidates: int = 256,
     device: str = "cpu",
+    guided_fraction: float = 0.35,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
     actions = torch.randint(0, 4, (candidates, horizon), device=device)
+    delta = np.asarray(goal, dtype=np.float32) - extract_agent_position(observation)
+    preferred_action = 3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0 else 2 if abs(delta[0]) >= abs(delta[1]) else 1 if delta[1] >= 0 else 0
+    guided = torch.rand((candidates, horizon), device=device) < guided_fraction
+    actions = torch.where(guided, torch.full_like(actions, preferred_action), actions)
     starts = start.expand(candidates, -1, -1, -1)
-    imagined = model.imagine(starts, actions)
-    positions = np.stack([extract_agent_position(imagined[:, step].cpu().numpy()) for step in range(horizon + 1)])
-    distances = np.linalg.norm(positions[-1] - np.asarray(goal), axis=-1) if positions.ndim == 3 else None
-    if distances is None:
-        # Image decoding is not guaranteed to produce a detectable color early in training.
-        distances = np.full(candidates, 1e6)
+    start_position = extract_agent_position(observation).astype(np.float32)
+    imagined_positions = model.imagine_positions(starts, actions).cpu().numpy() * 64.0
+    positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
+    distances = np.linalg.norm(positions[:, -1] - np.asarray(goal), axis=-1)
     safe_distances = np.where(np.isfinite(distances), distances, 1e6)
     best = int(np.argmin(safe_distances))
-    return PlanResult(actions=actions[best].cpu().numpy(), imagined_positions=positions[:, best], imagined_distance=float(safe_distances[best]))
+    return PlanResult(actions=actions[best].cpu().numpy(), imagined_positions=positions[best], imagined_distance=float(safe_distances[best]))

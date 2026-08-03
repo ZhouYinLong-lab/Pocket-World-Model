@@ -14,6 +14,12 @@ class TransitionBatch:
     next_observations: np.ndarray
 
 
+@dataclass
+class RolloutBatch:
+    observations: np.ndarray
+    actions: np.ndarray
+
+
 def collect_random_transitions(
     episodes: int = 100,
     horizon: int = 80,
@@ -46,6 +52,34 @@ def collect_random_transitions(
     )
 
 
+def collect_random_rollouts(episodes: int = 100, horizon: int = 8, seed: int = 7, map_variant: bool = False) -> RolloutBatch:
+    """Collect contiguous trajectories for multi-step world-model training."""
+    rng = np.random.default_rng(seed)
+    all_observations = []
+    all_actions = []
+    for _ in range(episodes):
+        walls = _variant_walls(rng) if map_variant else None
+        env = PocketWorldEnv(
+            walls=walls,
+            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
+            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
+        )
+        observation, _ = env.reset()
+        observations = [observation]
+        actions = []
+        for _ in range(horizon):
+            action = int(rng.integers(0, 4))
+            next_observation, _, terminated, truncated, _ = env.step(action)
+            actions.append(action)
+            observations.append(next_observation)
+            observation = next_observation
+            if terminated or truncated:
+                observation, _ = env.reset()
+        all_observations.append(np.stack(observations))
+        all_actions.append(np.asarray(actions, dtype=np.int64))
+    return RolloutBatch(observations=np.stack(all_observations), actions=np.stack(all_actions))
+
+
 def _variant_walls(rng: np.random.Generator) -> tuple[Rect, ...]:
     offset = int(rng.integers(-5, 6))
     return (
@@ -53,4 +87,3 @@ def _variant_walls(rng: np.random.Generator) -> tuple[Rect, ...]:
         Rect(40 - offset // 2, 31, 5, 25),
         Rect(10, 40 + offset // 2, 20, 5),
     )
-
