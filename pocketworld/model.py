@@ -133,13 +133,59 @@ class PocketWorldModel(nn.Module):
         patch = F.grid_sample(wall[:, None], grid, mode="bilinear", padding_mode="zeros", align_corners=True)
         return patch.flatten(1)
 
-    def collision_logits(self, latent: torch.Tensor, state: torch.Tensor, action: torch.Tensor, observation: torch.Tensor | None = None) -> torch.Tensor:
+    def collision_logits(
+        self,
+        latent: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        observation: torch.Tensor | None = None,
+        next_state: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         action_one_hot = F.one_hot(action, num_classes=4).float()
         base_features = torch.cat((latent, state, action_one_hot), dim=-1)
         if observation is None:
             return self.collision_head(base_features).squeeze(-1)
-        spatial_features = torch.cat((base_features, self.wall_patch(observation, self.state_transition(state, action))), dim=-1)
+        landing_state = self.state_transition(state, action) if next_state is None else next_state
+        spatial_features = torch.cat((base_features, self.wall_patch(observation, landing_state)), dim=-1)
         return self.spatial_collision_head(spatial_features).squeeze(-1)
+
+    def robust_collision_probability(
+        self,
+        latent: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        observation: torch.Tensor,
+        next_state: torch.Tensor | None = None,
+        uncertainty_radius_px: float = 0.0,
+    ) -> torch.Tensor:
+        """Return worst-case learned collision risk around the predicted landing state."""
+        next_state = self.state_transition(state, action) if next_state is None else next_state
+        if uncertainty_radius_px <= 0:
+            return torch.sigmoid(self.collision_logits(latent, state, action, observation, next_state=next_state))
+        radius = uncertainty_radius_px / 64.0
+        offsets = next_state.new_tensor(((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1))) * radius
+        scenario_count = offsets.shape[0]
+        uncertain_positions = next_state[:, None, :2] + offsets[None]
+        uncertain_positions = uncertain_positions.clamp(3.0 / 64.0, 61.0 / 64.0)
+        uncertain_states = torch.cat(
+            (
+                uncertain_positions,
+                next_state[:, None, 2:].expand(-1, scenario_count, -1),
+            ),
+            dim=-1,
+        ).flatten(0, 1)
+        repeated_latent = latent.repeat_interleave(scenario_count, dim=0)
+        repeated_state = state.repeat_interleave(scenario_count, dim=0)
+        repeated_action = action.repeat_interleave(scenario_count, dim=0)
+        repeated_observation = observation.repeat_interleave(scenario_count, dim=0)
+        logits = self.collision_logits(
+            repeated_latent,
+            repeated_state,
+            repeated_action,
+            repeated_observation,
+            next_state=uncertain_states,
+        )
+        return torch.sigmoid(logits).view(-1, scenario_count).amax(dim=1)
 
     def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return state[..., :2], state[..., 2:]
@@ -152,6 +198,9 @@ class PocketWorldModel(nn.Module):
         collision_response: bool = False,
         visual_collision_guard: bool = False,
         initial_position: torch.Tensor | None = None,
+        initial_velocity: torch.Tensor | None = None,
+        uncertainty_radius_px: float = 0.0,
+        uncertainty_growth_px: float = 0.0,
     ) -> torch.Tensor:
         """Return normalized [x, y] positions for every imagined future step.
 
@@ -161,13 +210,23 @@ class PocketWorldModel(nn.Module):
         state = self.state_from_latent(self.encode(observation))
         if initial_position is not None:
             state = torch.cat((initial_position.to(state), state[..., 2:]), dim=-1)
+        if initial_velocity is not None:
+            state = torch.cat((state[..., :2], initial_velocity.to(state)), dim=-1)
         static_latent = self.encode(observation)
         positions = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
             next_state = self.state_transition(state, action)
             if collision_response:
-                collision_probability = torch.sigmoid(self.collision_logits(static_latent, state, action, observation=observation))
+                radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
+                collision_probability = self.robust_collision_probability(
+                    static_latent,
+                    state,
+                    action,
+                    observation,
+                    next_state=next_state,
+                    uncertainty_radius_px=radius,
+                )
                 if visual_collision_guard:
                     visual_probability = self.wall_patch(observation, next_state).amax(dim=1)
                     collision_probability = torch.maximum(collision_probability, visual_probability)
@@ -187,17 +246,30 @@ class PocketWorldModel(nn.Module):
         visual_collision_guard: bool = False,
         collision_response: bool = True,
         initial_position: torch.Tensor | None = None,
+        initial_velocity: torch.Tensor | None = None,
+        uncertainty_radius_px: float = 0.0,
+        uncertainty_growth_px: float = 0.0,
     ) -> torch.Tensor:
         """Predict collision probability for each imagined action step."""
         latent = self.encode(observation)
         state = self.state_from_latent(latent)
         if initial_position is not None:
             state = torch.cat((initial_position.to(state), state[..., 2:]), dim=-1)
+        if initial_velocity is not None:
+            state = torch.cat((state[..., :2], initial_velocity.to(state)), dim=-1)
         probabilities = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
             next_state = self.state_transition(state, action)
-            probability = torch.sigmoid(self.collision_logits(latent, state, action, observation=observation))
+            radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
+            probability = self.robust_collision_probability(
+                latent,
+                state,
+                action,
+                observation,
+                next_state=next_state,
+                uncertainty_radius_px=radius,
+            )
             if visual_collision_guard:
                 probability = torch.maximum(probability, self.wall_patch(observation, next_state).amax(dim=1))
             probabilities.append(probability)

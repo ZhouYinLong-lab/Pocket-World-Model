@@ -114,3 +114,18 @@ def test_collision_probability_rollout_stops_after_predicted_impact():
     passthrough = model.imagine_collision_probabilities(observation, actions, collision_response=False)
 
     assert stopped.shape == passthrough.shape == (1, 3)
+
+
+def test_robust_collision_probability_dominates_point_estimate():
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(24, 30))
+    observation, _ = env.reset()
+    frame = torch.from_numpy(observation[None]).float() / 255.0
+    model = PocketWorldModel()
+    latent = model.encode(frame)
+    state = torch.tensor([[24 / 64, 30 / 64, 0.0, 0.0]])
+    action = torch.tensor([3])
+    point = model.robust_collision_probability(latent, state, action, frame)
+    robust = model.robust_collision_probability(latent, state, action, frame, uncertainty_radius_px=1.5)
+
+    assert robust.shape == point.shape == (1,)
+    assert torch.all(robust >= point)

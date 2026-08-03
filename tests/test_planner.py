@@ -1,7 +1,7 @@
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
-from pocketworld.planner import _collision_prefix, _learned_waypoint_templates, extract_wall_boxes, extract_wall_mask
+from pocketworld.planner import _collision_prefix, _learned_waypoint_templates, estimate_agent_velocity, extract_wall_boxes, extract_wall_mask
 
 
 def test_wall_mask_detects_wall_but_not_grid_or_agent():
@@ -74,3 +74,37 @@ def test_learned_plan_reports_goal_distance_separately_from_risk_score():
 
     assert 0.0 <= result.imagined_collision_risk <= 1.0
     assert result.planning_score >= result.imagined_distance
+
+
+def test_history_velocity_estimator_tracks_recent_motion_and_reset():
+    env = PocketWorldEnv(walls=(), agent_start=(20, 20), goal=(55, 55))
+    first, _ = env.reset()
+    second, _, _, _, _ = env.step(3)
+    third, _, _, _, _ = env.step(3)
+
+    assert np.allclose(estimate_agent_velocity([first]), 0.0)
+    velocity = estimate_agent_velocity([first, second, third])
+    assert velocity[0] > 0.0
+    assert abs(velocity[1]) < 0.1
+    assert np.linalg.norm(velocity) <= 2.3
+
+
+def test_receding_horizon_reports_collision_and_replan_counts():
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import receding_horizon_plan
+
+    env = PocketWorldEnv(walls=(), agent_start=(8, 8), goal=(16, 16))
+    observation, _ = env.reset()
+    result = receding_horizon_plan(
+        PocketWorldModel(),
+        observation,
+        (16, 16),
+        env.step,
+        max_steps=2,
+        rollout_horizon=2,
+        candidates=4,
+        use_history_velocity=True,
+    )
+
+    assert result.collision_count >= 0
+    assert result.replans >= 1

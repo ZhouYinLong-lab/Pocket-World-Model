@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Callable
 
 import numpy as np
@@ -24,6 +25,8 @@ class RecedingHorizonResult:
     first_plan_distance: float
     final_observation: np.ndarray
     final_info: dict
+    collision_count: int = 0
+    replans: int = 0
 
 
 def extract_wall_mask(frame: np.ndarray) -> np.ndarray:
@@ -120,11 +123,15 @@ def _route_sequence(
     targets: tuple[tuple[float, float], ...],
     horizon: int,
     tolerance: float = 1.5,
+    start_velocity: np.ndarray | None = None,
 ) -> list[int]:
     """Track generic waypoints using the learned compact kinematics."""
     state = model.state_from_latent(model.encode(start))
     known_position = torch.as_tensor(start_position / 64.0, device=state.device, dtype=state.dtype)[None]
     state = torch.cat((known_position, state[..., 2:]), dim=-1)
+    if start_velocity is not None:
+        known_velocity = torch.as_tensor(start_velocity / 3.0, device=state.device, dtype=state.dtype)[None]
+        state = torch.cat((state[..., :2], known_velocity), dim=-1)
     target_index = 0
     actions: list[int] = []
     for _ in range(horizon):
@@ -152,6 +159,7 @@ def _learned_waypoint_templates(
     start_position: np.ndarray,
     goal: tuple[float, float],
     horizon: int,
+    start_velocity: np.ndarray | None = None,
 ) -> list[list[int]]:
     """Generate map-agnostic two-bend routes for learned risk scoring.
 
@@ -170,7 +178,7 @@ def _learned_waypoint_templates(
         before = np.clip(start_position + 0.28 * delta + offset * perpendicular, 5.5, 58.5)
         after = np.clip(start_position + 0.72 * delta + offset * perpendicular, 5.5, 58.5)
         targets = (tuple(before.tolist()), tuple(after.tolist()), tuple(goal_array.tolist()))
-        proposals.append(_route_sequence(model, start, start_position, targets, horizon))
+        proposals.append(_route_sequence(model, start, start_position, targets, horizon, start_velocity=start_velocity))
     return proposals
 
 
@@ -227,6 +235,29 @@ def extract_agent_position(frame: np.ndarray) -> np.ndarray:
     return result if batched else result[0]
 
 
+def estimate_agent_velocity(
+    observation_history: Sequence[np.ndarray],
+    max_speed: float = 2.3,
+) -> np.ndarray:
+    """Estimate current pixel velocity from recent observable agent positions."""
+    if len(observation_history) < 2:
+        return np.zeros(2, dtype=np.float32)
+    positions = np.asarray([extract_agent_position(frame) for frame in observation_history[-4:]], dtype=np.float32)
+    valid = np.isfinite(positions).all(axis=1)
+    positions = positions[valid]
+    if len(positions) < 2:
+        return np.zeros(2, dtype=np.float32)
+    differences = np.diff(positions, axis=0)
+    if np.linalg.norm(differences[-1]) <= 0.15:
+        return np.zeros(2, dtype=np.float32)
+    weights = np.arange(1, len(differences) + 1, dtype=np.float32)
+    velocity = np.average(differences, axis=0, weights=weights)
+    speed = float(np.linalg.norm(velocity))
+    if speed > max_speed:
+        velocity *= max_speed / speed
+    return velocity.astype(np.float32)
+
+
 @torch.no_grad()
 def random_shooting(
     model: PocketWorldModel,
@@ -239,6 +270,10 @@ def random_shooting(
     collision_aware: bool = False,
     learned_collision: bool = False,
     hybrid_collision: bool = False,
+    observation_history: Sequence[np.ndarray] | None = None,
+    uncertainty_radius_px: float = 0.0,
+    uncertainty_growth_px: float = 0.0,
+    robust_candidates: int = 64,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -250,6 +285,11 @@ def random_shooting(
     starts = start.expand(candidates, -1, -1, -1)
     start_position = extract_agent_position(observation).astype(np.float32)
     normalized_start_positions = torch.as_tensor(start_position / 64.0, device=device, dtype=start.dtype).expand(candidates, -1)
+    normalized_start_velocities = None
+    start_velocity = None
+    if observation_history is not None and len(observation_history) >= 2:
+        start_velocity = estimate_agent_velocity(observation_history)
+        normalized_start_velocities = torch.as_tensor(start_velocity / 3.0, device=device, dtype=start.dtype).expand(candidates, -1)
     collision_response = learned_collision or hybrid_collision
     imagined_positions = model.imagine_positions(
         starts,
@@ -257,16 +297,18 @@ def random_shooting(
         collision_response=collision_response,
         visual_collision_guard=hybrid_collision,
         initial_position=normalized_start_positions,
+        initial_velocity=normalized_start_velocities,
     ).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     if collision_aware:
         wall_mask = extract_wall_mask(observation)
         templates = (
-            _learned_waypoint_templates(model, start, start_position, goal, horizon)
+            _learned_waypoint_templates(model, start, start_position, goal, horizon, start_velocity=start_velocity)
             if learned_collision
             else _detour_templates(model, start, start_position, goal, wall_mask, horizon)
         )
+        count = 0
         if templates:
             template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
             count = min(len(templates), candidates)
@@ -277,6 +319,7 @@ def random_shooting(
                 collision_response=collision_response,
                 visual_collision_guard=hybrid_collision,
                 initial_position=normalized_start_positions[:count],
+                initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[:count],
             ).cpu().numpy() * 64.0
             positions[:count, 1:] = imagined_positions[:count]
             goal_distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
@@ -286,7 +329,40 @@ def random_shooting(
                 actions,
                 visual_collision_guard=hybrid_collision,
                 initial_position=normalized_start_positions,
+                initial_velocity=normalized_start_velocities,
             ).cpu().numpy()
+            eligible = np.ones(candidates, dtype=bool)
+            if learned_collision and (uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+                point_risk = np.maximum.accumulate(collision_probabilities, axis=1)
+                point_risk = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), point_risk), axis=1)
+                preliminary_scores = goal_distances + point_risk * 64.0
+                shortlist_size = min(candidates, max(count, robust_candidates))
+                ranked = np.argsort(np.min(preliminary_scores, axis=1))[:shortlist_size]
+                shortlist = np.unique(np.concatenate((np.arange(count), ranked)))
+                shortlist_tensor = torch.as_tensor(shortlist, device=device, dtype=torch.long)
+                robust_positions = model.imagine_positions(
+                    starts[shortlist_tensor],
+                    actions[shortlist_tensor],
+                    collision_response=True,
+                    initial_position=normalized_start_positions[shortlist_tensor],
+                    initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[shortlist_tensor],
+                    uncertainty_radius_px=uncertainty_radius_px,
+                    uncertainty_growth_px=uncertainty_growth_px,
+                ).cpu().numpy() * 64.0
+                imagined_positions[shortlist] = robust_positions
+                positions[shortlist, 1:] = robust_positions
+                goal_distances[shortlist] = np.linalg.norm(positions[shortlist] - np.asarray(goal), axis=-1)
+                robust_probabilities = model.imagine_collision_probabilities(
+                    starts[shortlist_tensor],
+                    actions[shortlist_tensor],
+                    initial_position=normalized_start_positions[shortlist_tensor],
+                    initial_velocity=None if normalized_start_velocities is None else normalized_start_velocities[shortlist_tensor],
+                    uncertainty_radius_px=uncertainty_radius_px,
+                    uncertainty_growth_px=uncertainty_growth_px,
+                ).cpu().numpy()
+                collision_probabilities[shortlist] = robust_probabilities
+                eligible.fill(False)
+                eligible[shortlist] = True
             peak_risk = np.maximum.accumulate(collision_probabilities, axis=1)
             collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), peak_risk), axis=1)
         else:
@@ -295,6 +371,8 @@ def random_shooting(
         collision_prefix = np.zeros_like(goal_distances, dtype=np.float32)
     planning_scores = goal_distances + collision_prefix * 64.0
     safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
+    if collision_aware and learned_collision and (uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+        safe_scores[~eligible] = 1e6
     best = int(np.argmin(np.min(safe_scores, axis=1)))
     best_step = int(np.argmin(safe_scores[best]))
     return PlanResult(
@@ -321,6 +399,9 @@ def receding_horizon_plan(
     route_tolerance: float = 6.0,
     learned_collision: bool = False,
     hybrid_collision: bool = False,
+    use_history_velocity: bool = False,
+    uncertainty_radius_px: float = 0.0,
+    uncertainty_growth_px: float = 0.0,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -329,8 +410,12 @@ def receding_horizon_plan(
     final_info: dict = {}
     pending_plan: PlanResult | None = None
     pending_index = 0
+    observation_history = [observation]
+    collision_count = 0
+    replans = 0
     for step in range(max_steps):
         if pending_plan is None or pending_index >= len(pending_plan.actions):
+            replans += 1
             pending_plan = random_shooting(
                 model,
                 current_observation,
@@ -340,6 +425,9 @@ def receding_horizon_plan(
                 collision_aware=collision_aware,
                 learned_collision=learned_collision,
                 hybrid_collision=hybrid_collision,
+                observation_history=observation_history if use_history_velocity else None,
+                uncertainty_radius_px=uncertainty_radius_px,
+                uncertainty_growth_px=uncertainty_growth_px,
             )
             pending_index = 0
         plan = pending_plan
@@ -351,7 +439,10 @@ def receding_horizon_plan(
         for action_value in actions_to_execute:
             action = int(action_value)
             current_observation, _, terminated, truncated, final_info = step_fn(action)
+            observation_history.append(current_observation)
+            observation_history = observation_history[-4:]
             executed_actions.append(action)
+            collision_count += int(final_info.get("collision", False))
             pending_index += 1
             if terminated or truncated:
                 break
@@ -372,4 +463,6 @@ def receding_horizon_plan(
         first_plan_distance=first_plan_distance,
         final_observation=current_observation,
         final_info=final_info,
+        collision_count=collision_count,
+        replans=replans,
     )
