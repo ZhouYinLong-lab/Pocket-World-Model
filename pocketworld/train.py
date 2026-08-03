@@ -48,11 +48,39 @@ def _run_epoch(
     unroll_horizon: int,
     collision_only: bool = False,
     kinematics_only: bool = False,
+    temporal_only: bool = False,
 ) -> float:
     training = optimizer is not None
     model.train(training)
     losses = []
     for rollout_observations, rollout_actions, rollout_positions, rollout_velocities, rollout_collisions in loader:
+        if temporal_only:
+            encoded_rollout = model.encode(
+                rollout_observations.reshape(-1, *rollout_observations.shape[2:])
+            ).reshape(rollout_observations.shape[0], rollout_observations.shape[1], -1)
+            temporal_frame_features = model.encode_temporal_frames(rollout_observations)
+            loss = torch.zeros((), dtype=rollout_observations.dtype)
+            for step in range(unroll_horizon + 1):
+                history_start = max(0, step + 1 - 4)
+                history_latents = encoded_rollout[:, history_start:step + 1]
+                predicted_velocity, predicted_std = model.temporal_velocity_stats_from_latents(
+                    history_latents, temporal_frame_features[:, history_start:step + 1]
+                )
+                target_velocity = rollout_velocities[:, step]
+                nll = 0.5 * (
+                    ((target_velocity - predicted_velocity) / predicted_std).square()
+                    + 2.0 * predicted_std.log()
+                ).mean()
+                position_prediction = model.temporal_position(temporal_frame_features[:, step])
+                temporal_position_step_loss = nn.functional.mse_loss(position_prediction, rollout_positions[:, step])
+                loss = loss + nn.functional.mse_loss(predicted_velocity, target_velocity) + 0.1 * nll + 0.5 * temporal_position_step_loss
+            loss = loss / (unroll_horizon + 1)
+            if training:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            losses.append(float(loss.detach()))
+            continue
         if kinematics_only:
             loss = torch.zeros((), dtype=rollout_observations.dtype)
             valid_steps = torch.zeros((), dtype=rollout_observations.dtype)
@@ -89,19 +117,26 @@ def _run_epoch(
                 optimizer.step()
             losses.append(float(loss.detach()))
             continue
-        open_state = model.state_from_latent(model.encode(rollout_observations[:, 0]))
-        open_latent = model.encode(rollout_observations[:, 0])
+        encoded_rollout = model.encode(
+            rollout_observations.reshape(-1, *rollout_observations.shape[2:])
+        ).reshape(rollout_observations.shape[0], rollout_observations.shape[1], -1)
+        temporal_frame_features = model.encode_temporal_frames(rollout_observations)
+        temporal_position_loss = nn.functional.mse_loss(
+            model.temporal_position(temporal_frame_features), rollout_positions
+        )
+        open_latent = encoded_rollout[:, 0]
+        open_state = model.state_from_latent(open_latent)
         initial_position, initial_velocity = model.kinematics(open_state)
-        loss = 0.5 * nn.functional.mse_loss(initial_position, rollout_positions[:, 0])
+        loss = 0.5 * nn.functional.mse_loss(initial_position, rollout_positions[:, 0]) + 0.25 * temporal_position_loss
         loss = loss + 0.2 * nn.functional.mse_loss(initial_velocity, rollout_velocities[:, 0])
         for step in range(unroll_horizon):
             action = rollout_actions[:, step]
-            teacher_latent = model.transition(model.encode(rollout_observations[:, step]), action)
-            teacher_state = model.state_transition(model.state_from_latent(model.encode(rollout_observations[:, step])), action)
+            teacher_current_latent = encoded_rollout[:, step]
+            teacher_current_state = model.state_from_latent(teacher_current_latent)
+            teacher_latent = model.transition(teacher_current_latent, action)
+            teacher_state = model.state_transition(teacher_current_state, action)
             teacher_prediction = model.compose_agent_rgb(model.decode(teacher_latent), teacher_latent, state=teacher_state)
             teacher_positions, teacher_velocities = model.kinematics(teacher_state)
-            teacher_current_latent = model.encode(rollout_observations[:, step])
-            teacher_current_state = model.state_from_latent(teacher_current_latent)
             collision_logits = model.collision_logits(teacher_current_latent, teacher_current_state, action, observation=rollout_observations[:, step])
             collision_loss = nn.functional.binary_cross_entropy_with_logits(
                 collision_logits,
@@ -125,7 +160,26 @@ def _run_epoch(
             velocity_loss = nn.functional.mse_loss(teacher_velocities, rollout_velocities[:, step + 1])
             open_positions, _ = model.kinematics(open_state)
             open_loss = nn.functional.mse_loss(open_positions, rollout_positions[:, step + 1])
-            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss + 0.1 * agent_mask_loss
+            history_start = max(0, step + 1 - 4)
+            history_latents = encoded_rollout[:, history_start:step + 1]
+            temporal_velocity, temporal_velocity_std = model.temporal_velocity_stats_from_latents(
+                history_latents, temporal_frame_features[:, history_start:step + 1]
+            )
+            temporal_velocity_target = rollout_velocities[:, step]
+            temporal_velocity_nll = 0.5 * (
+                ((temporal_velocity_target - temporal_velocity) / temporal_velocity_std).square()
+                + 2.0 * temporal_velocity_std.log()
+            ).mean()
+            temporal_velocity_loss = nn.functional.mse_loss(temporal_velocity, temporal_velocity_target) + 0.1 * temporal_velocity_nll
+            _, state_uncertainty_std = model.transition_state_stats(
+                teacher_current_latent, teacher_current_state, action, next_state=teacher_state
+            )
+            target_state = torch.cat((rollout_positions[:, step + 1], rollout_velocities[:, step + 1]), dim=-1)
+            state_uncertainty_nll = 0.5 * (
+                ((target_state - teacher_state) / state_uncertainty_std).square()
+                + 2.0 * state_uncertainty_std.log()
+            ).mean()
+            loss = loss + image_loss + 2.0 * agent_color_loss + position_loss + 0.2 * velocity_loss + 0.25 * open_loss + 0.5 * collision_loss + 0.1 * agent_mask_loss + 0.5 * temporal_velocity_loss + 0.05 * state_uncertainty_nll
         loss = loss / (unroll_horizon + 0.5)
         if training:
             optimizer.zero_grad()
@@ -151,6 +205,7 @@ def train(
     collision_only: bool = False,
     collision_seek_probability: float = 0.0,
     kinematics_only: bool = False,
+    temporal_only: bool = False,
 ) -> Path:
     torch.manual_seed(seed)
     train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability)
@@ -165,8 +220,8 @@ def train(
             print(f"warning: checkpoint is missing {len(missing)} keys; newly initialized heads will be trained")
         if unexpected:
             print(f"warning: checkpoint has {len(unexpected)} legacy keys")
-    if sum((agent_only, collision_only, kinematics_only)) > 1:
-        raise ValueError("agent_only, collision_only, and kinematics_only are mutually exclusive")
+    if sum((agent_only, collision_only, kinematics_only, temporal_only)) > 1:
+        raise ValueError("agent_only, collision_only, kinematics_only, and temporal_only are mutually exclusive")
     if agent_only:
         for name, parameter in model.named_parameters():
             parameter.requires_grad = name.startswith("state_agent_renderer")
@@ -177,16 +232,33 @@ def train(
         kinematic_parameters = {"action_acceleration_logit", "friction_logit", "max_speed_logit"}
         for name, parameter in model.named_parameters():
             parameter.requires_grad = name in kinematic_parameters
+    elif temporal_only:
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = (
+                name.startswith("temporal_frame_encoder")
+                or name.startswith("temporal_position_head")
+                or name.startswith("temporal_velocity_encoder")
+                or name.startswith("temporal_velocity_head")
+            )
     trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
     optimizer = torch.optim.Adam(trainable_parameters, lr=1e-2 if kinematics_only else 2e-3)
     for epoch in range(epochs):
-        train_loss = _run_epoch(model, train_loader, optimizer, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only)
+        train_loss = _run_epoch(model, train_loader, optimizer, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only, temporal_only=temporal_only)
         with torch.no_grad():
-            validation_loss = _run_epoch(model, validation_loader, None, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only)
+            validation_loss = _run_epoch(model, validation_loader, None, unroll_horizon, collision_only=collision_only, kinematics_only=kinematics_only, temporal_only=temporal_only)
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
+    uncertainty_calibration = {}
+    if not (agent_only or collision_only or kinematics_only or temporal_only):
+        uncertainty_calibration = model.fit_uncertainty_calibration(
+            torch.from_numpy(validation_batch.observations).float() / 255.0,
+            torch.from_numpy(validation_batch.actions),
+            torch.from_numpy(validation_batch.positions / 64.0),
+            torch.from_numpy(validation_batch.velocities / 3.0).clamp(-1.0, 1.0),
+        )
+        print(f"uncertainty calibration: {uncertainty_calibration}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_seek_probability": collision_seek_probability, "resume": resume, "agent_only": agent_only, "collision_only": collision_only, "kinematics_only": kinematics_only, "collision_supervision": True, "agent_rendering": True, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_seek_probability": collision_seek_probability, "resume": resume, "agent_only": agent_only, "collision_only": collision_only, "kinematics_only": kinematics_only, "temporal_only": temporal_only, "collision_supervision": True, "agent_rendering": True, "temporal_velocity": True, "probabilistic_uncertainty": True, "uncertainty_calibration": uncertainty_calibration, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
@@ -207,6 +279,7 @@ def main() -> None:
     parser.add_argument("--collision-only", action="store_true", help="freeze the world model and fine-tune only the wall-relative collision head")
     parser.add_argument("--collision-seek-probability", type=float, default=0.0, help="probability of collision-seeking actions in barrier curriculum episodes")
     parser.add_argument("--kinematics-only", action="store_true", help="identify acceleration, friction, and speed limit from collision-free transitions")
+    parser.add_argument("--temporal-only", action="store_true", help="freeze the world model and fine-tune only the learned temporal velocity encoder")
     args = parser.parse_args()
     train(**vars(args))
 

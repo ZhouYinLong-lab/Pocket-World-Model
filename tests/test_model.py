@@ -65,6 +65,35 @@ def test_structured_state_dynamics_preserves_action_effect():
     assert left[0, 0] < state[0, 0]
 
 
+def test_temporal_velocity_representation_returns_mean_and_scale():
+    model = PocketWorldModel()
+    observations = torch.rand(2, 4, 3, 64, 64)
+    velocity, scale = model.temporal_velocity_stats(observations)
+    history_state = model.state_from_history(observations)
+
+    assert velocity.shape == scale.shape == (2, 2)
+    assert history_state.shape == (2, 4)
+    assert torch.all(torch.isfinite(velocity))
+    assert torch.all(scale > 0)
+
+
+def test_calibrated_transition_uncertainty_is_positive_and_probabilistic():
+    model = PocketWorldModel()
+    observation = torch.rand(2, 3, 64, 64)
+    action = torch.tensor([0, 3])
+    latent = model.encode(observation)
+    state = model.state_from_latent(latent)
+    mean, scale = model.transition_state_stats(latent, state, action)
+    probabilities = model.probabilistic_collision_probability(
+        latent, state, action, observation, mean, scale, samples=8
+    )
+
+    assert mean.shape == scale.shape == (2, 4)
+    assert probabilities.shape == (2,)
+    assert torch.all(scale > 0)
+    assert torch.all((probabilities >= 0) & (probabilities <= 1))
+
+
 def test_wall_patch_is_high_on_a_wall_and_low_in_free_space():
     env = PocketWorldEnv(walls=(Rect(24, 8, 5, 29),), agent_start=(8, 8))
     observation, _ = env.reset()

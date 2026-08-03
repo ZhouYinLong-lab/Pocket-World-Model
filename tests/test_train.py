@@ -37,6 +37,9 @@ def test_tiny_training_run_writes_a_loadable_checkpoint(tmp_path):
     assert payload["unroll_horizon"] == 2
     assert payload["collision_supervision"] is True
     assert payload["agent_rendering"] is True
+    assert payload["temporal_velocity"] is True
+    assert payload["probabilistic_uncertainty"] is True
+    assert len(payload["uncertainty_calibration"]["scale"]) == 4
 
 
 def test_kinematics_identification_loss_is_finite():

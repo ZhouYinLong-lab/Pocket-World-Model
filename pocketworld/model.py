@@ -19,6 +19,17 @@ class PocketWorldModel(nn.Module):
         self.action_embedding = nn.Embedding(4, action_dim)
         self.dynamics = nn.GRUCell(latent_dim + action_dim, latent_dim)
         self.state_encoder = nn.Sequential(nn.Linear(latent_dim, 32), nn.ReLU(), nn.Linear(32, 4))
+        self.temporal_frame_encoder = nn.Sequential(
+            nn.Conv2d(3, 8, 4, stride=2, padding=1), nn.ReLU(),
+            nn.Conv2d(8, 16, 4, stride=2, padding=1), nn.ReLU(),
+            nn.Conv2d(16, 16, 4, stride=2, padding=1), nn.ReLU(),
+            nn.Flatten(), nn.Linear(16 * 8 * 8, 16), nn.ReLU(),
+        )
+        self.temporal_position_head = nn.Sequential(nn.Linear(16, 16), nn.ReLU(), nn.Linear(16, 2))
+        self.temporal_velocity_encoder = nn.GRU(latent_dim * 2 + 16, 32, batch_first=True)
+        self.temporal_velocity_head = nn.Sequential(
+            nn.Linear(32, 32), nn.ReLU(), nn.Linear(32, 4)
+        )
         self.register_buffer(
             "action_directions",
             torch.tensor(((0.0, -1.0), (0.0, 1.0), (-1.0, 0.0), (1.0, 0.0))),
@@ -33,6 +44,10 @@ class PocketWorldModel(nn.Module):
         self.spatial_collision_head = nn.Sequential(
             nn.Linear(latent_dim + 4 + 4 + 49, 64), nn.ReLU(), nn.Linear(64, 1)
         )
+        self.state_uncertainty_head = nn.Sequential(
+            nn.Linear(latent_dim + 4 + 4, 64), nn.ReLU(), nn.Linear(64, 4)
+        )
+        self.register_buffer("uncertainty_scale", torch.ones(4))
         self.agent_renderer = nn.Sequential(
             nn.Linear(latent_dim, 128), nn.ReLU(), nn.Linear(128, 64 * 64)
         )
@@ -101,6 +116,70 @@ class PocketWorldModel(nn.Module):
         raw = self.state_encoder(latent)
         return torch.cat((torch.sigmoid(raw[..., :2]), torch.tanh(raw[..., 2:])), dim=-1)
 
+    def temporal_velocity_stats_from_latents(
+        self,
+        latent_history: torch.Tensor,
+        frame_features: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Predict normalized velocity from a sequence of encoded observations.
+
+        The representation is intentionally small: a GRU summarizes up to a few
+        recent latent frames, while the head predicts both velocity mean and a
+        bounded auxiliary scale. The mean is used by the planner; the scale is
+        useful for diagnosing when the visual history is insufficient.
+        """
+        if latent_history.ndim != 3:
+            raise ValueError("expected latent history with shape [batch, time, latent]")
+        deltas = torch.cat((torch.zeros_like(latent_history[:, :1]), latent_history[:, 1:] - latent_history[:, :-1]), dim=1)
+        if frame_features is None:
+            frame_features = torch.zeros(
+                (*latent_history.shape[:2], 16), device=latent_history.device, dtype=latent_history.dtype
+            )
+        if frame_features.shape[:2] != latent_history.shape[:2]:
+            raise ValueError("frame feature history must align with latent history")
+        temporal_features = torch.cat((latent_history, deltas, frame_features), dim=-1)
+        _, hidden = self.temporal_velocity_encoder(temporal_features)
+        raw = self.temporal_velocity_head(hidden[-1])
+        mean = torch.tanh(raw[..., :2])
+        std = (0.005 + 0.25 * F.softplus(raw[..., 2:])).clamp(0.005, 1.0)
+        return mean, std
+
+    def temporal_velocity_stats(self, observations: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Predict velocity statistics from normalized BCHW or BTCHW RGB observations."""
+        if observations.ndim == 4:
+            observations = observations.unsqueeze(1)
+        if observations.ndim != 5:
+            raise ValueError("expected observations with shape [batch, time, channels, height, width]")
+        batch, time = observations.shape[:2]
+        latents = self.encode(observations.reshape(batch * time, *observations.shape[2:]))
+        latents = latents.reshape(batch, time, -1)
+        frame_features = self.temporal_frame_encoder(
+            observations.reshape(batch * time, *observations.shape[2:])
+        ).reshape(batch, time, -1)
+        return self.temporal_velocity_stats_from_latents(latents, frame_features)
+
+    def encode_temporal_frames(self, observations: torch.Tensor) -> torch.Tensor:
+        """Encode RGB frames for the learnable temporal motion pathway."""
+        if observations.ndim == 4:
+            observations = observations.unsqueeze(1)
+        batch, time = observations.shape[:2]
+        return self.temporal_frame_encoder(
+            observations.reshape(batch * time, *observations.shape[2:])
+        ).reshape(batch, time, -1)
+
+    def temporal_position(self, frame_features: torch.Tensor) -> torch.Tensor:
+        """Decode normalized agent position from the learned motion features."""
+        return torch.sigmoid(self.temporal_position_head(frame_features))
+
+    def state_from_history(self, observations: torch.Tensor) -> torch.Tensor:
+        """Use the latest frame for position and learned temporal evidence for velocity."""
+        if observations.ndim == 4:
+            observations = observations.unsqueeze(1)
+        latest_latent = self.encode(observations[:, -1])
+        state = self.state_from_latent(latest_latent)
+        velocity, _ = self.temporal_velocity_stats(observations)
+        return torch.cat((state[..., :2], velocity), dim=-1)
+
     def state_transition(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         """Advance the compact state with a learned, interpretable kinematic prior.
 
@@ -118,6 +197,94 @@ class PocketWorldModel(nn.Module):
         position = state[..., :2] + velocity * (3.0 / 64.0)
         position = position.clamp(3.0 / 64.0, 61.0 / 64.0)
         return torch.cat((position, velocity.clamp(-1.0, 1.0)), dim=-1)
+
+    def transition_state_stats(
+        self,
+        latent: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        next_state: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return the learned transition mean and calibrated diagonal stddev."""
+        mean = self.state_transition(state, action) if next_state is None else next_state
+        action_one_hot = F.one_hot(action, num_classes=4).float()
+        features = torch.cat((latent, state, action_one_hot), dim=-1)
+        raw_std = self.state_uncertainty_head(features)
+        std = (0.002 + 0.25 * F.softplus(raw_std)).clamp(0.002, 1.0)
+        std = std * self.uncertainty_scale.to(device=std.device, dtype=std.dtype)
+        return mean, std
+
+    @torch.no_grad()
+    def fit_uncertainty_calibration(
+        self,
+        observations: torch.Tensor,
+        actions: torch.Tensor,
+        positions: torch.Tensor,
+        velocities: torch.Tensor,
+        coverage: float = 0.90,
+    ) -> dict[str, object]:
+        """Calibrate marginal Gaussian scales on a held-out rollout set.
+
+        This is a lightweight split-calibration procedure: the model predicts
+        transition means and raw scales, then a held-out residual quantile sets
+        one scale per position/velocity coordinate. It is not a Bayesian
+        posterior, but its empirical interval coverage is directly measurable.
+        """
+        if not 0.5 < coverage < 0.999:
+            raise ValueError("coverage must be between 0.5 and 0.999")
+        was_training = self.training
+        self.eval()
+        self.uncertainty_scale.fill_(1.0)
+        normalized_states = torch.cat((positions, velocities), dim=-1)
+        ratios = []
+        for step in range(actions.shape[1]):
+            latent = self.encode(observations[:, step])
+            state = self.state_from_latent(latent)
+            target = normalized_states[:, step + 1]
+            mean, std = self.transition_state_stats(latent, state, actions[:, step])
+            ratios.append(((target - mean).abs() / std.clamp_min(1e-6)).detach())
+        ratio = torch.cat(ratios, dim=0)
+        quantile = torch.quantile(ratio, coverage, dim=0)
+        normal_quantile = {0.80: 1.2816, 0.90: 1.6449, 0.95: 1.9600}.get(round(coverage, 2), 1.6449)
+        scale = (quantile / normal_quantile).clamp(0.25, 12.0)
+        self.uncertainty_scale.copy_(scale)
+        if was_training:
+            self.train()
+        return {
+            "coverage": coverage,
+            "normal_quantile": normal_quantile,
+            "scale": [float(value) for value in scale],
+            "samples": int(ratio.shape[0]),
+        }
+
+    @torch.no_grad()
+    def probabilistic_collision_probability(
+        self,
+        latent: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        observation: torch.Tensor,
+        next_state: torch.Tensor,
+        accumulated_std: torch.Tensor,
+        samples: int = 32,
+    ) -> torch.Tensor:
+        """Estimate collision probability under calibrated state uncertainty."""
+        samples = max(4, int(samples))
+        batch = next_state.shape[0]
+        noise = torch.randn(batch, samples, 2, device=next_state.device, dtype=next_state.dtype)
+        sampled_position = next_state[:, None, :2] + noise * accumulated_std[:, None, :2]
+        sampled_position = sampled_position.clamp(3.0 / 64.0, 61.0 / 64.0)
+        sampled_state = torch.cat(
+            (sampled_position, next_state[:, None, 2:].expand(-1, samples, -1)), dim=-1
+        ).reshape(batch * samples, 4)
+        logits = self.collision_logits(
+            latent.repeat_interleave(samples, dim=0),
+            state.repeat_interleave(samples, dim=0),
+            action.repeat_interleave(samples, dim=0),
+            observation.repeat_interleave(samples, dim=0),
+            next_state=sampled_state,
+        )
+        return torch.sigmoid(logits).reshape(batch, samples).mean(dim=1)
 
     def wall_patch(self, observation: torch.Tensor, state: torch.Tensor, radius: int = 3) -> torch.Tensor:
         """Sample a 7x7 wall occupancy patch around the predicted next position."""
@@ -201,6 +368,8 @@ class PocketWorldModel(nn.Module):
         initial_velocity: torch.Tensor | None = None,
         uncertainty_radius_px: float = 0.0,
         uncertainty_growth_px: float = 0.0,
+        probabilistic_uncertainty: bool = False,
+        uncertainty_samples: int = 32,
     ) -> torch.Tensor:
         """Return normalized [x, y] positions for every imagined future step.
 
@@ -213,26 +382,41 @@ class PocketWorldModel(nn.Module):
         if initial_velocity is not None:
             state = torch.cat((state[..., :2], initial_velocity.to(state)), dim=-1)
         static_latent = self.encode(observation)
+        accumulated_std = torch.zeros_like(state)
         positions = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
             next_state = self.state_transition(state, action)
             if collision_response:
-                radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
-                collision_probability = self.robust_collision_probability(
-                    static_latent,
-                    state,
-                    action,
-                    observation,
-                    next_state=next_state,
-                    uncertainty_radius_px=radius,
-                )
+                if probabilistic_uncertainty:
+                    _, step_std = self.transition_state_stats(static_latent, state, action, next_state=next_state)
+                    accumulated_std = torch.sqrt(accumulated_std.square() + step_std.square())
+                    collision_probability = self.probabilistic_collision_probability(
+                        static_latent,
+                        state,
+                        action,
+                        observation,
+                        next_state,
+                        accumulated_std,
+                        samples=uncertainty_samples,
+                    )
+                else:
+                    radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
+                    collision_probability = self.robust_collision_probability(
+                        static_latent,
+                        state,
+                        action,
+                        observation,
+                        next_state=next_state,
+                        uncertainty_radius_px=radius,
+                    )
                 if visual_collision_guard:
                     visual_probability = self.wall_patch(observation, next_state).amax(dim=1)
                     collision_probability = torch.maximum(collision_probability, visual_probability)
                 collision = (collision_probability >= 0.5).unsqueeze(-1)
                 stopped_state = torch.cat((state[..., :2], torch.zeros_like(state[..., 2:])), dim=-1)
                 state = torch.where(collision, stopped_state, next_state)
+                accumulated_std = torch.where(collision, torch.zeros_like(accumulated_std), accumulated_std)
             else:
                 state = next_state
             positions.append(state[..., :2])
@@ -249,6 +433,8 @@ class PocketWorldModel(nn.Module):
         initial_velocity: torch.Tensor | None = None,
         uncertainty_radius_px: float = 0.0,
         uncertainty_growth_px: float = 0.0,
+        probabilistic_uncertainty: bool = False,
+        uncertainty_samples: int = 32,
     ) -> torch.Tensor:
         """Predict collision probability for each imagined action step."""
         latent = self.encode(observation)
@@ -257,19 +443,33 @@ class PocketWorldModel(nn.Module):
             state = torch.cat((initial_position.to(state), state[..., 2:]), dim=-1)
         if initial_velocity is not None:
             state = torch.cat((state[..., :2], initial_velocity.to(state)), dim=-1)
+        accumulated_std = torch.zeros_like(state)
         probabilities = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
             next_state = self.state_transition(state, action)
-            radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
-            probability = self.robust_collision_probability(
-                latent,
-                state,
-                action,
-                observation,
-                next_state=next_state,
-                uncertainty_radius_px=radius,
-            )
+            if probabilistic_uncertainty:
+                _, step_std = self.transition_state_stats(latent, state, action, next_state=next_state)
+                accumulated_std = torch.sqrt(accumulated_std.square() + step_std.square())
+                probability = self.probabilistic_collision_probability(
+                    latent,
+                    state,
+                    action,
+                    observation,
+                    next_state,
+                    accumulated_std,
+                    samples=uncertainty_samples,
+                )
+            else:
+                radius = uncertainty_radius_px + uncertainty_growth_px * (index + 1) ** 0.5
+                probability = self.robust_collision_probability(
+                    latent,
+                    state,
+                    action,
+                    observation,
+                    next_state=next_state,
+                    uncertainty_radius_px=radius,
+                )
             if visual_collision_guard:
                 probability = torch.maximum(probability, self.wall_patch(observation, next_state).amax(dim=1))
             probabilities.append(probability)
@@ -277,6 +477,7 @@ class PocketWorldModel(nn.Module):
                 collision = (probability >= 0.5).unsqueeze(-1)
                 stopped_state = torch.cat((state[..., :2], torch.zeros_like(state[..., 2:])), dim=-1)
                 state = torch.where(collision, stopped_state, next_state)
+                accumulated_std = torch.where(collision, torch.zeros_like(accumulated_std), accumulated_std)
             else:
                 state = next_state
         return torch.stack(probabilities, dim=1)
