@@ -59,6 +59,8 @@ The planner also includes an explicit `collision_aware=True` baseline, structure
 
 Collision-event and wall-relative-head variants are tracked as ablations in the evaluation report; the main checkpoint remains the structured-kinematics model without barrier-mix training.
 
+Learned imagined collisions now freeze the compact state and zero velocity after an event. This response is evaluated separately because the current barrier OOD head still under-detects the exact detour collision locations.
+
 The compact planning state uses a transparent kinematic prior: action directions are fixed by the four-action environment, while acceleration, friction, and speed limit are learned from rollout state supervision. This prevents the planner state from collapsing to an action-insensitive average and makes the action-effect diagnostic interpretable.
 
 To create a browser-loadable one-step model after training:

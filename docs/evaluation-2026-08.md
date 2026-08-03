@@ -48,3 +48,5 @@ The quick closed-loop check still reached 0% real success: 1-step replanning ave
 The collision-supervised barrier-mix ablation reached 81.9% ID collision accuracy / 69.4% recall and 76.9% OOD accuracy / 56.1% recall. Its learned-collision planner still achieved 100% imagined but 0% real success on the barrier challenge, while the pixel wall baseline reached about 5% real success. This is a useful negative result: event labels alone do not make the compact state wall-relative.
 
 A follow-up adds a 7x7 wall-relative patch around the predicted landing point to the collision head. It improves the quick OOD collision accuracy to 82.9% / 65.9% recall, but learned-collision planning remains 100% imagined / 0% real. The next model change therefore needs to alter the imagined post-collision state (freeze position and zero velocity), not only classify the event.
+
+The post-collision response is now implemented: predicted events freeze position and clear velocity in learned imagined rollouts. The barrier result remains 100% imagined / 0% real, so the missing issue is event localization on the detour candidates, not the response rule itself.
