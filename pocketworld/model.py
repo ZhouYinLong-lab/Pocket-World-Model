@@ -131,7 +131,13 @@ class PocketWorldModel(nn.Module):
         return state[..., :2], state[..., 2:]
 
     @torch.no_grad()
-    def imagine_positions(self, observation: torch.Tensor, actions: torch.Tensor, collision_response: bool = False) -> torch.Tensor:
+    def imagine_positions(
+        self,
+        observation: torch.Tensor,
+        actions: torch.Tensor,
+        collision_response: bool = False,
+        visual_collision_guard: bool = False,
+    ) -> torch.Tensor:
         """Return normalized [x, y] positions for every imagined future step.
 
         With ``collision_response=True``, a predicted collision freezes position
@@ -145,6 +151,9 @@ class PocketWorldModel(nn.Module):
             next_state = self.state_transition(state, action)
             if collision_response:
                 collision_probability = torch.sigmoid(self.collision_logits(static_latent, state, action, observation=observation))
+                if visual_collision_guard:
+                    visual_probability = self.wall_patch(observation, next_state).amax(dim=1)
+                    collision_probability = torch.maximum(collision_probability, visual_probability)
                 collision = (collision_probability >= 0.5).unsqueeze(-1)
                 stopped_state = torch.cat((state[..., :2], torch.zeros_like(state[..., 2:])), dim=-1)
                 state = torch.where(collision, stopped_state, next_state)
@@ -154,15 +163,24 @@ class PocketWorldModel(nn.Module):
         return torch.stack(positions, dim=1)
 
     @torch.no_grad()
-    def imagine_collision_probabilities(self, observation: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+    def imagine_collision_probabilities(
+        self,
+        observation: torch.Tensor,
+        actions: torch.Tensor,
+        visual_collision_guard: bool = False,
+    ) -> torch.Tensor:
         """Predict collision probability for each imagined action step."""
         latent = self.encode(observation)
         state = self.state_from_latent(latent)
         probabilities = []
         for index in range(actions.shape[1]):
             action = actions[:, index]
-            probabilities.append(torch.sigmoid(self.collision_logits(latent, state, action, observation=observation)))
-            state = self.state_transition(state, action)
+            next_state = self.state_transition(state, action)
+            probability = torch.sigmoid(self.collision_logits(latent, state, action, observation=observation))
+            if visual_collision_guard:
+                probability = torch.maximum(probability, self.wall_patch(observation, next_state).amax(dim=1))
+            probabilities.append(probability)
+            state = next_state
         return torch.stack(probabilities, dim=1)
 
     @torch.no_grad()

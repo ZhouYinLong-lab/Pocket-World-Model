@@ -157,23 +157,44 @@ def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizon
     return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
 
 
-def evaluate_obstacle_planning(model: PocketWorldModel, episodes: int = 20, horizon: int = 40, candidates: int = 512, seed: int = 71, learned_collision: bool = False) -> dict[str, dict[str, float]]:
+def evaluate_obstacle_planning(
+    model: PocketWorldModel,
+    episodes: int = 20,
+    horizon: int = 40,
+    candidates: int = 512,
+    seed: int = 71,
+    learned_collision: bool = False,
+    hybrid_collision: bool = False,
+) -> dict[str, dict[str, float]]:
     """Compare unconstrained and wall-aware planning on a single barrier task."""
     rng = np.random.default_rng(seed)
     walls = (Rect(29, 10, 5, 44),)
     reports = {"unconstrained": [], "collision_aware": [], "collision_aware_receding": [], "collision_aware_chunked": [], "collision_aware_route": []}
     if learned_collision:
         reports["collision_aware_learned"] = []
+    if hybrid_collision:
+        reports["collision_aware_hybrid"] = []
     for _ in range(episodes):
         start = (float(rng.integers(7, 13)), float(rng.integers(25, 39)))
         goal = (float(rng.integers(51, 57)), float(rng.integers(25, 39)))
         planners = (("unconstrained", False, False), ("collision_aware", True, False))
         if learned_collision:
             planners += (("collision_aware_learned", True, True),)
+        if hybrid_collision:
+            planners += (("collision_aware_hybrid", True, False),)
         for label, collision_aware, learned_collision_mode in planners:
             env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
             observation, info = env.reset()
-            result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates, collision_aware=collision_aware, learned_collision=learned_collision_mode)
+            result = random_shooting(
+                model,
+                observation,
+                tuple(info["goal"]),
+                horizon=horizon,
+                candidates=candidates,
+                collision_aware=collision_aware,
+                learned_collision=learned_collision_mode,
+                hybrid_collision=label == "collision_aware_hybrid",
+            )
             imagined_success = result.imagined_distance <= env.goal_radius
             for action in result.actions:
                 _, _, terminated, truncated, info = env.step(int(action))
@@ -320,7 +341,14 @@ def main() -> None:
             "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, seed=seed + 1000, ood=True),
             "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 2000),
             "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 3000),
-            "obstacle_planning": evaluate_obstacle_planning(model, episodes=args.episodes, candidates=args.candidates, seed=seed + 4000, learned_collision=collision_supervision),
+            "obstacle_planning": evaluate_obstacle_planning(
+                model,
+                episodes=args.episodes,
+                candidates=args.candidates,
+                seed=seed + 4000,
+                learned_collision=collision_supervision,
+                hybrid_collision=collision_supervision,
+            ),
             "collision_prediction": {
                 "in_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 5000),
                 "out_of_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 6000, ood=True),
