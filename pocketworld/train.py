@@ -63,10 +63,12 @@ def train(
     seed: int = 7,
     output: str = "artifacts/pocketworld.pt",
     unroll_horizon: int = 8,
+    sticky_probability: float = 0.55,
+    full_state_range: bool = False,
 ) -> Path:
     torch.manual_seed(seed)
-    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed)
-    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000)
+    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range)
+    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000, sticky_probability=sticky_probability, full_state_range=full_state_range)
     train_loader = _make_loader(train_batch, batch_size=batch_size, shuffle=True)
     validation_loader = _make_loader(validation_batch, batch_size=batch_size, shuffle=False)
     model = PocketWorldModel()
@@ -78,7 +80,7 @@ def train(
         print(f"epoch {epoch + 1:02d}/{epochs:02d} train={train_loss:.5f} val={validation_loss:.5f}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
@@ -91,6 +93,8 @@ def main() -> None:
     parser.add_argument("--unroll-horizon", type=int, default=8)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output", default="artifacts/pocketworld.pt")
+    parser.add_argument("--sticky-probability", type=float, default=0.55)
+    parser.add_argument("--full-state-range", action="store_true", help="sample starts and goals across the whole free map")
     args = parser.parse_args()
     train(**vars(args))
 

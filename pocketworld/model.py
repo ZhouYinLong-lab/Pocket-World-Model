@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
@@ -18,6 +19,13 @@ class PocketWorldModel(nn.Module):
         self.action_embedding = nn.Embedding(4, action_dim)
         self.dynamics = nn.GRUCell(latent_dim + action_dim, latent_dim)
         self.state_encoder = nn.Sequential(nn.Linear(latent_dim, 32), nn.ReLU(), nn.Linear(32, 4))
+        self.register_buffer(
+            "action_directions",
+            torch.tensor(((0.0, -1.0), (0.0, 1.0), (-1.0, 0.0), (1.0, 0.0))),
+        )
+        self.action_acceleration_logit = nn.Parameter(torch.tensor(-1.2))
+        self.friction_logit = nn.Parameter(torch.tensor(0.8))
+        self.max_speed_logit = nn.Parameter(torch.tensor(-0.2))
         self.state_dynamics = nn.Sequential(nn.Linear(8, 64), nn.ReLU(), nn.Linear(64, 4))
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 64 * 8 * 8), nn.ReLU(),
@@ -50,9 +58,22 @@ class PocketWorldModel(nn.Module):
         return torch.cat((torch.sigmoid(raw[..., :2]), torch.tanh(raw[..., 2:])), dim=-1)
 
     def state_transition(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
-        action_one_hot = torch.nn.functional.one_hot(action, num_classes=4).float()
-        raw = self.state_dynamics(torch.cat((state, action_one_hot), dim=-1))
-        return torch.cat((torch.sigmoid(raw[..., :2]), torch.tanh(raw[..., 2:])), dim=-1)
+        """Advance the compact state with a learned, interpretable kinematic prior.
+
+        Position is normalized to [0, 1] and velocity to roughly [-1, 1].
+        The action directions are known from the environment; acceleration,
+        friction, and speed limit are learned from rollout supervision.
+        """
+        action_direction = F.embedding(action, self.action_directions)
+        acceleration = 0.02 + 0.50 * torch.sigmoid(self.action_acceleration_logit)
+        friction = 0.50 + 0.49 * torch.sigmoid(self.friction_logit)
+        max_speed = 0.40 + 0.80 * torch.sigmoid(self.max_speed_logit)
+        velocity = state[..., 2:] * friction + action_direction * acceleration
+        speed = torch.linalg.vector_norm(velocity, dim=-1, keepdim=True).clamp_min(1e-6)
+        velocity = velocity * torch.minimum(torch.ones_like(speed), max_speed / speed)
+        position = state[..., :2] + velocity * (3.0 / 64.0)
+        position = position.clamp(3.0 / 64.0, 61.0 / 64.0)
+        return torch.cat((position, velocity.clamp(-1.0, 1.0)), dim=-1)
 
     def kinematics(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return state[..., :2], state[..., 2:]

@@ -37,3 +37,14 @@ def test_agent_position_extractor_does_not_confuse_yellow_goal():
     frame[:, 50, 50] = [247, 190, 69]
     frame[:, 10, 10] = [93, 224, 183]
     assert np.allclose(extract_agent_position(frame), [10, 10])
+
+
+def test_structured_state_dynamics_preserves_action_effect():
+    model = PocketWorldModel()
+    observation = torch.zeros(1, 3, 64, 64)
+    state = torch.tensor([[0.5, 0.5, 0.0, 0.0]])
+    left = model.state_transition(state, torch.tensor([2]))
+    right = model.state_transition(state, torch.tensor([3]))
+    assert right[0, 0] > state[0, 0]
+    assert left[0, 0] < state[0, 0]
+
