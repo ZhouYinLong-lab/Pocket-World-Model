@@ -80,7 +80,7 @@ npm run dev
 
 The frontend uses a pinned, stable Vite 5 toolchain so the demo does not depend on Vite 8's platform-specific Rolldown bindings.
 
-The browser demo is intentionally self-contained so it can be deployed as a static site. It mirrors the simulator dynamics in the browser and makes model drift visible immediately; the Python checkpoint and ONNX export can be wired into the runtime for a fully learned browser rollout.
+The browser demo is intentionally self-contained so it can be deployed as a static site. It mirrors the simulator dynamics in the browser and makes model drift visible immediately. The ONNX export now includes both the predicted RGB frame and the supervised latent position, so the browser uses the stable position channel for the model marker while keeping decoded RGB available for future visualization ablations.
 
 ## Planned evaluation matrix
 
