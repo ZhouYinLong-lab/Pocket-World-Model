@@ -5,11 +5,13 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/workflows/ci.yml"><img alt="PocketWorld CI" src="https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-20%20passed-5DE0B7">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-25%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-74%25-69A94E">
 </p>
 
 > A tiny and observable world model that learns 2D dynamics, imagines future trajectories, and plans through its learned environment.
@@ -48,6 +50,15 @@ The repository keeps the research loop inspectable:
 The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. The single-barrier test is kept as an honest negative result: the pure learned collision planner still reaches 0% real success.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
+
+## Download a trained model
+
+The `v0.1.0` release publishes the final renderer checkpoint and browser-ready ONNX graph outside Git history:
+
+- [`pocketworld-renderer-v5.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.1.0/pocketworld-renderer-v5.pt) — PyTorch training/evaluation checkpoint.
+- [`pocketworld-renderer-v5.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.1.0/pocketworld-renderer-v5.onnx) — one-step RGB and structured-position inference.
+
+Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
 ## Run the research core
 
@@ -137,3 +148,10 @@ python scripts/generate_readme_assets.py
 3. Compare imagined versus real planning success across planning horizons.
 
 The first version intentionally avoids VAE, Transformer, diffusion, multi-agent worlds, and complex physics so the relationship between prediction error and planning failure stays visible.
+
+## Project governance
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+- [Citation metadata](CITATION.cff)

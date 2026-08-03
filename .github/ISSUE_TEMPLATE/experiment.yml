@@ -1,0 +1,31 @@
+name: Experiment proposal
+description: Propose a scoped world-model, planning, or evaluation experiment.
+title: "[Experiment]: "
+labels: [experiment]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: State the falsifiable question or hypothesis.
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Proposed method
+      description: Describe the smallest model, planner, or dataset change needed.
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Evaluation and baselines
+      description: Include seeds, metrics, imagined/real execution, and comparison baselines.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and expected cost
+      description: Estimate training time and identify files likely to change.

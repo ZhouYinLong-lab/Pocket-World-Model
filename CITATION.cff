@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use PocketWorld in research or teaching, please cite this software."
+title: "PocketWorld: An Observable 2D World Model Laboratory"
+type: software
+authors:
+  - family-names: Zhou
+    given-names: Yinlong
+repository-code: "https://github.com/ZhouYinLong-lab/Pocket-World-Model"
+url: "https://github.com/ZhouYinLong-lab/Pocket-World-Model"
+license: MIT
+version: 0.1.0
+date-released: 2026-08-03
+keywords:
+  - world models
+  - model-based reinforcement learning
+  - planning
+  - PyTorch
+  - Gymnasium
