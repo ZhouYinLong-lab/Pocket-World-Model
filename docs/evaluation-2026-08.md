@@ -25,19 +25,17 @@ Planning now uses a 16-step default horizon, with a sweep to expose imagination 
 
 The repeated-action diagnostic averages 4.04 px position error across up/down/left/right. This is the clearest evidence that the compact model is now action-sensitive; the previous sticky-only model had errors of roughly 9–35 px and could not produce meaningful imagined planning.
 
-## What remains
+## Renderer and collision follow-up
 
-- RGB decoding does not reliably preserve the small green agent: decoded-position coverage is 0% after five or more steps, even when latent position error is low.
-- The structured planning state does not yet model wall collision explicitly, which explains the growing 10–12 percentage-point real-vs-imagined gap at 24–32 steps.
-- A local-pixel decoder ablation reached 100% decoded-position coverage, but damaged the shared latent state and reduced real planning success to 0%; it is intentionally not the mainline result.
+The renderer checkpoint adds a separate agent-mask head and a state-conditioned RGB composition path. Raw RGB decoding still loses the small agent, but the composited output has 100% position coverage and 1.69/2.32/3.15/3.94px position error at 1/5/10/20 steps in a 20-episode check. The raw decoder remains available as the honest pixel baseline; the composited output is the deployable visualization path.
 
-## Next experiments
+The learned mask head is useful as a diagnostic but is not yet a good shape decoder: its 20-episode mask IoU is about 0.03–0.04 ID/OOD, despite 100% thresholded coverage after focused fine-tuning. This is why the final RGB path uses the structured position plus the known circular agent geometry rather than claiming that the mask head has solved pixel rendering.
 
-1. Add a separate agent-rendering head or decoder skip path so pixel supervision cannot corrupt the planning state.
-2. Add collision events and wall geometry to the compact state transition, then repeat the 24/32-step sweep.
-3. Export the best checkpoint and show the latent planned trajectory alongside the decoded RGB rollout in the browser demo.
+The pure learned collision planner still reaches roughly 93% imagined / 0% real success on the 20-episode barrier check. A new `hybrid` planner adds a local wall-patch guard and post-collision freeze; it reaches about 5% real success and reduces mean final distance to about 25px, while the explicit pixel-wall baseline remains the stronger obstacle reference. The gap is now localized to event localization and detour selection, not missing API plumbing.
 
-The next evaluation adds a single-barrier challenge. It compares the existing unconstrained planner with a collision-aware planner that extracts wall pixels from the current observation and penalizes trajectories after the first wall intersection. This is an explicit planning baseline; it is not counted as learned wall dynamics until the compact state model predicts collision events itself.
+Next work should focus on wall-relative state transitions or a closed-loop planner that learns from collision-free waypoint progress. The current RGB deployment path, ONNX position contract, and negative collision result are already reproducible.
+
+The barrier evaluation compares the unconstrained planner with a collision-aware planner that extracts wall pixels from the current observation and penalizes trajectories after the first wall intersection. This is an explicit planning baseline; it is not counted as learned wall dynamics until the compact state model predicts collision events itself.
 
 The first barrier result was intentionally a negative result: the unconstrained planner reached 100% imagined success but 0% real success. Structured top/bottom detour proposals now raise collision-aware open-loop success to 10% on the same 10-episode, 40-step check and reduce mean final distance from 28.18px to 21.34px. At horizon 64, the mean distance falls further to 17.54px, but success remains only 10%.
 
@@ -47,16 +45,16 @@ The quick closed-loop check still reached 0% real success: 1-step replanning ave
 
 The collision-supervised barrier-mix ablation reached 81.9% ID collision accuracy / 69.4% recall and 76.9% OOD accuracy / 56.1% recall. Its learned-collision planner still achieved 100% imagined but 0% real success on the barrier challenge, while the pixel wall baseline reached about 5% real success. This is a useful negative result: event labels alone do not make the compact state wall-relative.
 
-A follow-up adds a 7x7 wall-relative patch around the predicted landing point to the collision head. It improves the quick OOD collision accuracy to 82.9% / 65.9% recall, but learned-collision planning remains 100% imagined / 0% real. The next model change therefore needs to alter the imagined post-collision state (freeze position and zero velocity), not only classify the event.
+A follow-up added a 7x7 wall-relative patch around the predicted landing point to the collision head. It improved the quick OOD collision accuracy to 82.9% / 65.9% recall, but learned-collision planning remained 100% imagined / 0% real. The subsequent post-collision response therefore changed the imagined state, rather than only classifying the event.
 
-The post-collision response is now implemented: predicted events freeze position and clear velocity in learned imagined rollouts. The barrier result remains 100% imagined / 0% real, so the missing issue is event localization on the detour candidates, not the response rule itself.
+The post-collision response is now implemented: predicted events freeze position and clear velocity in learned imagined rollouts. The pure learned barrier result remains approximately 93–95% imagined / 0% real, so the missing issue is event localization on detour candidates, not the response rule itself. The hybrid visual guard is reported as a separate engineering baseline.
 
 ## Engineering completion checks
 
 - Repository metadata: MIT license committed; GitHub topics set for world models, model-based RL, PyTorch, Gymnasium, and machine learning.
-- Python verification: `19 passed`.
-- ONNX export: verified against the older `pocketworld-structured-wide.pt` checkpoint after installing the optional export dependencies; the compatible image model is written successfully.
+- Python verification: `20 passed`.
+- ONNX export: verified against `pocketworld-renderer-v5.pt`; the compatible composited RGB model is written successfully.
 - ONNX contract: the exported graph exposes `next_observation[batch,3,64,64]` and `next_position[batch,2]`; the browser prefers the supervised position channel for its model marker.
 - Web verification: `npm install --no-audit --no-fund` followed by `npm run build` succeeds. Vite reports only a bundle-size warning for the ONNX Runtime WASM asset.
 
-The remaining product gap is not build or packaging: the browser can load the one-step ONNX image model, but the decoded RGB agent is not yet a reliable learned visualization, and the learned collision planner still fails the single-barrier real-execution test.
+The remaining research gap is not build or packaging: the browser can load the one-step ONNX composited RGB model, while pure learned collision planning still fails the single-barrier real-execution test. The remaining product-level visualization path is usable; the remaining scientific question is whether collision-aware planning can learn wall-relative dynamics rather than rely on a visual guard.

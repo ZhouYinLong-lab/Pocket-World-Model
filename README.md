@@ -13,7 +13,7 @@ The central question is: **how far can a tiny model imagine before error breaks 
 The repository keeps the research loop inspectable:
 
 - `pocketworld/env.py` — Gymnasium environment with inertia, collision, walls, and goal.
-- `pocketworld/model.py` — CNN encoder + GRU image dynamics + CNN decoder, plus a supervised position/velocity state path with learned structured kinematics for planning.
+- `pocketworld/model.py` — CNN encoder + GRU image dynamics + CNN decoder, plus supervised structured kinematics, collision heads, and state-conditioned RGB agent composition.
 - `pocketworld/data.py` — reproducible random-policy transition collection.
 - `pocketworld/planner.py` — model rollout and random-shooting planning utilities.
 - `pocketworld/train.py` — minimal one-step image-prediction training loop.
@@ -63,12 +63,22 @@ Collision-event and wall-relative-head variants are tracked as ablations in the 
 
 Learned imagined collisions now freeze the compact state and zero velocity after an event. This response is evaluated separately because the current barrier OOD head still under-detects the exact detour collision locations.
 
+The planner also exposes `hybrid_collision=True`: it combines the learned collision event with a local wall-patch guard and is reported separately from the pure learned planner. This makes the engineering improvement useful without overstating what the learned collision head has solved.
+
+The RGB path now reports raw decoder output separately from a state-conditioned composited frame. The composited frame restores a visible agent with 100% position coverage and about 1.7/2.3/3.1/3.9px position error at 1/5/10/20 steps on the renderer checkpoint; the learned mask head remains a diagnostic ablation because its shape IoU is still low.
+
 The compact planning state uses a transparent kinematic prior: action directions are fixed by the four-action environment, while acceleration, friction, and speed limit are learned from rollout state supervision. This prevents the planner state from collapsing to an action-insensitive average and makes the action-effect diagnostic interpretable.
 
 To create a browser-loadable one-step model after training:
 
 ```bash
 python -m pocketworld.export_onnx --output public/pocketworld.onnx
+```
+
+For focused agent-renderer fine-tuning from an existing checkpoint:
+
+```bash
+python -m pocketworld.train --resume artifacts/pocketworld-renderer-v2.pt --agent-only --epochs 5 --episodes 1000 --validation-episodes 200 --unroll-horizon 16 --sticky-probability 0.75 --full-state-range --output artifacts/pocketworld-renderer-v5.pt
 ```
 
 ## Run the interactive demo
@@ -80,7 +90,7 @@ npm run dev
 
 The frontend uses a pinned, stable Vite 5 toolchain so the demo does not depend on Vite 8's platform-specific Rolldown bindings.
 
-The browser demo is intentionally self-contained so it can be deployed as a static site. It mirrors the simulator dynamics in the browser and makes model drift visible immediately. The ONNX export now includes both the predicted RGB frame and the supervised latent position, so the browser uses the stable position channel for the model marker while keeping decoded RGB available for future visualization ablations.
+The browser demo is intentionally self-contained so it can be deployed as a static site. It mirrors the simulator dynamics in the browser and makes model drift visible immediately. The ONNX export includes both the composited RGB frame and the supervised structured position, so the browser uses the stable position channel for the model marker while keeping RGB available for future visualization ablations.
 
 ## Planned evaluation matrix
 
