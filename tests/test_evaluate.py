@@ -4,7 +4,7 @@ from pocketworld.model import PocketWorldModel
 
 def test_evaluation_reports_prediction_horizons():
     report = evaluate_prediction(PocketWorldModel(), episodes=1, seed=5)
-    assert set(report) == {"image_mae", "position_error_px"}
+    assert set(report) == {"image_mae", "position_error_px", "latent_position_error_px", "position_coverage"}
     assert set(report["image_mae"]) == {"1", "5", "10", "20"}
 
 
@@ -17,4 +17,3 @@ def test_evaluation_reports_imagined_and_real_planning():
         "mean_imagined_final_distance_px",
         "mean_real_final_distance_px",
     }
-

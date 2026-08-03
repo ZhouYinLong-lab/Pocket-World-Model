@@ -22,14 +22,14 @@ The repository keeps the research loop inspectable:
 ```bash
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
+pip install -e ".[dev,export]"
 pytest
-python -m pocketworld.train --epochs 5 --episodes 100
+python -m pocketworld.train --epochs 5 --episodes 100 --unroll-horizon 8
 python -m pocketworld.evaluate artifacts/pocketworld.pt --episodes 20
 ```
 
 The checkpoint is written to `artifacts/pocketworld.pt`.
-The evaluation command writes `artifacts/evaluation.json` with in-distribution and out-of-distribution multi-step error plus imagined/real planning success.
+The evaluation command writes `artifacts/evaluation.json` with image error, decoded-position error, latent-position error, OOD generalization, and imagined/real planning success across planning horizons.
 
 To create a browser-loadable one-step model after training:
 

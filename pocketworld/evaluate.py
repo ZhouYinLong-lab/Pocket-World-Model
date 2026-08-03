@@ -18,6 +18,7 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
     horizons = (1, 5, 10, 20)
     image_errors = {str(horizon): [] for horizon in horizons}
     position_errors = {str(horizon): [] for horizon in horizons}
+    latent_position_errors = {str(horizon): [] for horizon in horizons}
     model.eval()
     for _ in range(episodes):
         walls = _variant_walls(rng) if ood else None
@@ -39,6 +40,7 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
         start = torch.from_numpy(observation[None]).float() / 255.0
         action_tensor = torch.from_numpy(actions[None])
         imagined = model.imagine(start, action_tensor)[0].cpu()
+        imagined_positions = model.imagine_positions(start, action_tensor)[0].cpu().numpy() * 64.0
         for horizon in horizons:
             target = torch.from_numpy(actual[horizon]).float() / 255.0
             prediction = imagined[horizon]
@@ -47,9 +49,13 @@ def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int =
             actual_position = extract_agent_position(actual[horizon])
             if np.all(np.isfinite(predicted_position)) and np.all(np.isfinite(actual_position)):
                 position_errors[str(horizon)].append(float(np.linalg.norm(predicted_position - actual_position)))
+            if np.all(np.isfinite(imagined_positions[horizon - 1])) and np.all(np.isfinite(actual_position)):
+                latent_position_errors[str(horizon)].append(float(np.linalg.norm(imagined_positions[horizon - 1] - actual_position)))
     return {
         "image_mae": {horizon: _mean(values) for horizon, values in image_errors.items()},
         "position_error_px": {horizon: _mean(values) for horizon, values in position_errors.items()},
+        "latent_position_error_px": {horizon: _mean(values) for horizon, values in latent_position_errors.items()},
+        "position_coverage": {horizon: len(position_errors[horizon]) / episodes for horizon in position_errors},
     }
 
 
@@ -61,8 +67,8 @@ def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int 
     real_distances = []
     for _ in range(episodes):
         env = PocketWorldEnv(
-            agent_start=(float(rng.integers(6, 15)), float(rng.integers(6, 15))),
-            goal=(float(rng.integers(49, 58)), float(rng.integers(49, 58))),
+            agent_start=(float(rng.integers(7, 11)), float(rng.integers(7, 11))),
+            goal=(float(rng.integers(16, 21)), float(rng.integers(28, 33))),
         )
         observation, info = env.reset()
         result = random_shooting(model, observation, tuple(info["goal"]), horizon=horizon, candidates=candidates)
@@ -83,6 +89,11 @@ def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int 
     }
 
 
+def evaluate_planning_sweep(model: PocketWorldModel, episodes: int = 20, horizons: tuple[int, ...] = (8, 16, 24, 32), candidates: int = 256, seed: int = 17) -> dict[str, dict[str, float]]:
+    """Measure the imagined/real planning gap as the planning horizon grows."""
+    return {str(horizon): evaluate_planning(model, episodes=episodes, horizon=horizon, candidates=candidates, seed=seed + index) for index, horizon in enumerate(horizons)}
+
+
 def _mean(values: list[float]) -> float:
     return float(np.mean(values)) if values else float("nan")
 
@@ -101,6 +112,7 @@ def main() -> None:
         "in_distribution": evaluate_prediction(model, episodes=args.episodes),
         "out_of_distribution": evaluate_prediction(model, episodes=args.episodes, ood=True),
         "planning": evaluate_planning(model, episodes=args.episodes, candidates=args.candidates),
+        "planning_sweep": evaluate_planning_sweep(model, episodes=args.episodes, candidates=args.candidates),
     }
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -110,4 +122,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

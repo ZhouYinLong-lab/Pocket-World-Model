@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+export = ["onnx>=1.16", "onnxscript>=0.1"]
 
 [project.scripts]
 pocketworld-train = "pocketworld.train:main"
