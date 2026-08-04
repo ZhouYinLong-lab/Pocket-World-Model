@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from collections.abc import Sequence
+import heapq
 from typing import Callable
 
 import numpy as np
@@ -73,6 +74,136 @@ def _dilate(mask: np.ndarray, radius: int) -> np.ndarray:
         for dx in range(2 * radius + 1):
             result |= padded[dy:dy + height, dx:dx + width]
     return result
+
+
+def _nearest_free_cell(occupied: np.ndarray, point: tuple[int, int], bounds: tuple[int, int, int, int]) -> tuple[int, int] | None:
+    """Return the closest free grid cell when a noisy observation blocks a pose."""
+    x_min, x_max, y_min, y_max = bounds
+    x0 = int(np.clip(point[0], x_min, x_max))
+    y0 = int(np.clip(point[1], y_min, y_max))
+    if not occupied[y0, x0]:
+        return x0, y0
+    candidates = []
+    for y in range(y_min, y_max + 1):
+        for x in range(x_min, x_max + 1):
+            if not occupied[y, x]:
+                candidates.append((abs(x - x0) + abs(y - y0), x, y))
+    if not candidates:
+        return None
+    _, x, y = min(candidates)
+    return x, y
+
+
+def _astar_path(
+    occupied: np.ndarray,
+    start: tuple[float, float],
+    goal: tuple[float, float],
+    vertical_preference: str | None = None,
+    bounds: tuple[int, int, int, int] = (3, 60, 3, 60),
+) -> list[tuple[int, int]]:
+    """Find a collision-free 8-connected route on a binary occupancy grid.
+
+    This is intentionally a small global planner rather than an oracle: the
+    occupancy grid is built from the current RGB observation.  Diagonal moves
+    cannot cut through a blocked corner, which keeps the route valid for the
+    circular agent footprint after wall inflation.
+    """
+    if occupied.ndim != 2 or occupied.shape[0] < 2 or occupied.shape[1] < 2:
+        raise ValueError("occupied must be a 2D grid")
+    x_min, x_max, y_min, y_max = bounds
+    start_cell = _nearest_free_cell(
+        occupied,
+        (int(round(start[0])), int(round(start[1]))),
+        (x_min, x_max, y_min, y_max),
+    )
+    goal_cell = _nearest_free_cell(
+        occupied,
+        (int(round(goal[0])), int(round(goal[1]))),
+        (x_min, x_max, y_min, y_max),
+    )
+    if start_cell is None or goal_cell is None:
+        return []
+    if start_cell == goal_cell:
+        return [start_cell]
+
+    directions = (
+        (-1, 0, 1.0),
+        (1, 0, 1.0),
+        (0, -1, 1.0),
+        (0, 1, 1.0),
+        (-1, -1, 2**0.5),
+        (1, -1, 2**0.5),
+        (-1, 1, 2**0.5),
+        (1, 1, 2**0.5),
+    )
+    preference = vertical_preference.lower() if vertical_preference else None
+
+    def heuristic(cell: tuple[int, int]) -> float:
+        return float(np.hypot(cell[0] - goal_cell[0], cell[1] - goal_cell[1]))
+
+    def edge_cost(next_cell: tuple[int, int], step_cost: float) -> float:
+        if preference == "top":
+            return step_cost + 0.015 * next_cell[1]
+        if preference == "bottom":
+            return step_cost + 0.015 * (occupied.shape[0] - 1 - next_cell[1])
+        return step_cost
+
+    frontier: list[tuple[float, float, tuple[int, int]]] = [(heuristic(start_cell), 0.0, start_cell)]
+    came_from: dict[tuple[int, int], tuple[int, int] | None] = {start_cell: None}
+    cost_so_far = {start_cell: 0.0}
+    while frontier:
+        _, current_cost, current = heapq.heappop(frontier)
+        if current_cost > cost_so_far.get(current, float("inf")) + 1e-9:
+            continue
+        if current == goal_cell:
+            path = []
+            cursor: tuple[int, int] | None = current
+            while cursor is not None:
+                path.append(cursor)
+                cursor = came_from[cursor]
+            return path[::-1]
+        for dx, dy, step_cost in directions:
+            next_x, next_y = current[0] + dx, current[1] + dy
+            if not (x_min <= next_x <= x_max and y_min <= next_y <= y_max):
+                continue
+            if occupied[next_y, next_x]:
+                continue
+            if dx and dy and (occupied[current[1], next_x] or occupied[next_y, current[0]]):
+                continue
+            next_cell = (next_x, next_y)
+            new_cost = current_cost + edge_cost(next_cell, step_cost)
+            if new_cost >= cost_so_far.get(next_cell, float("inf")):
+                continue
+            cost_so_far[next_cell] = new_cost
+            came_from[next_cell] = current
+            heapq.heappush(frontier, (new_cost + heuristic(next_cell), new_cost, next_cell))
+    return []
+
+
+def _path_waypoints(path: list[tuple[int, int]], spacing: int = 2) -> tuple[tuple[float, float], ...]:
+    """Downsample a dense grid route while retaining every bend."""
+    if not path:
+        return ()
+    waypoints: list[tuple[float, float]] = [(float(path[0][0]), float(path[0][1]))]
+    last_direction: tuple[int, int] | None = None
+    last_added = 0
+    for index in range(1, len(path)):
+        previous = path[index - 1]
+        current = path[index]
+        direction = (int(np.sign(current[0] - previous[0])), int(np.sign(current[1] - previous[1])))
+        if last_direction is not None and direction != last_direction:
+            bend = path[index - 1]
+            if waypoints[-1] != (float(bend[0]), float(bend[1])):
+                waypoints.append((float(bend[0]), float(bend[1])))
+                last_added = index - 1
+        if index - last_added >= spacing and waypoints[-1] != (float(current[0]), float(current[1])):
+            waypoints.append((float(current[0]), float(current[1])))
+            last_added = index
+        last_direction = direction
+    endpoint = (float(path[-1][0]), float(path[-1][1]))
+    if waypoints[-1] != endpoint:
+        waypoints.append(endpoint)
+    return tuple(waypoints)
 
 
 def extract_wall_boxes(mask: np.ndarray, min_area: int = 8) -> tuple[tuple[float, float, float, float], ...]:
@@ -244,6 +375,49 @@ def _detour_templates(
     return proposals
 
 
+def _wall_aware_route_templates(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    goal: tuple[float, float],
+    wall_mask: np.ndarray,
+    horizon: int,
+    start_velocity: np.ndarray | None = None,
+) -> list[list[int]]:
+    """Build route-following proposals from the observed wall geometry.
+
+    The wall mask is inflated by the agent radius plus one pixel of clearance,
+    matching the environment's footprint collision rule.  Two biased A* runs
+    provide top/bottom alternatives for a barrier; if both runs collapse to
+    the same route, the duplicate is removed.
+    """
+    occupied = _dilate(wall_mask, radius=4)
+    routes: list[list[int]] = []
+    seen: set[tuple[int, ...]] = set()
+    for preference in ("top", "bottom"):
+        path = _astar_path(occupied, tuple(start_position), goal, vertical_preference=preference)
+        if not path:
+            continue
+        # Keep only bends and endpoints.  Dense grid waypoints make the
+        # inertial controller brake at every cell and waste the short horizon;
+        # straight grid segments are safe to traverse as a single target.
+        targets = _path_waypoints(path, spacing=len(path) + 1)
+        actions = _route_sequence(
+            model,
+            start,
+            start_position,
+            targets,
+            horizon,
+            tolerance=3.5,
+            start_velocity=start_velocity,
+        )
+        key = tuple(actions)
+        if key not in seen:
+            seen.add(key)
+            routes.append(actions)
+    return routes
+
+
 def extract_agent_position(frame: np.ndarray) -> np.ndarray:
     """Locate the mint-green agent in a CHW uint8 or BCHW float frame."""
     if frame.dtype != np.uint8:
@@ -373,6 +547,7 @@ def random_shooting(
     robust_candidates: int = 64,
     route_objective: bool = False,
     route_execution_horizon: int | None = None,
+    wall_aware_route: bool = False,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -409,11 +584,22 @@ def random_shooting(
     goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
     if collision_aware:
         wall_mask = extract_wall_mask(observation)
-        templates = (
-            _learned_waypoint_templates(model, start, start_position, goal, horizon, start_velocity=start_velocity)
-            if learned_collision
-            else _detour_templates(model, start, start_position, goal, wall_mask, horizon)
-        )
+        if wall_aware_route:
+            templates = _wall_aware_route_templates(
+                model,
+                start,
+                start_position,
+                goal,
+                wall_mask,
+                horizon,
+                start_velocity=start_velocity,
+            )
+        else:
+            templates = (
+                _learned_waypoint_templates(model, start, start_position, goal, horizon, start_velocity=start_velocity)
+                if learned_collision
+                else _detour_templates(model, start, start_position, goal, wall_mask, horizon)
+            )
         count = 0
         if templates:
             template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
@@ -482,6 +668,11 @@ def random_shooting(
             collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), peak_risk), axis=1)
         else:
             collision_prefix = _collision_prefix(positions, wall_mask)
+        if hybrid_collision or wall_aware_route:
+            collision_prefix = np.maximum(
+                collision_prefix,
+                _collision_prefix(positions, wall_mask).astype(np.float32),
+            )
     else:
         collision_prefix = np.zeros_like(goal_distances, dtype=np.float32)
     planning_scores = goal_distances + collision_prefix * 64.0
@@ -595,8 +786,11 @@ def receding_horizon_plan(
                 uncertainty_growth_px=uncertainty_growth_px,
                 probabilistic_uncertainty=probabilistic_uncertainty,
                 uncertainty_samples=uncertainty_samples,
-                route_objective=route_objective and not fallback_active,
+                # Once alignment breaks, score complete wall-aware routes
+                # instead of selecting a locally short collision-stop.
+                route_objective=route_objective or fallback_active,
                 route_execution_horizon=route_execution_horizon if not fallback_active else None,
+                wall_aware_route=fallback_active,
             )
             pending_index = 0
         plan = pending_plan

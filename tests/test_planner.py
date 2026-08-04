@@ -3,7 +3,10 @@ import numpy as np
 from pocketworld.env import PocketWorldEnv, Rect
 from pocketworld.planner import (
     _collision_prefix,
+    _astar_path,
+    _dilate,
     _learned_waypoint_templates,
+    _wall_aware_route_templates,
     estimate_agent_velocity,
     extract_wall_boxes,
     extract_wall_mask,
@@ -33,6 +36,39 @@ def test_wall_boxes_find_single_barrier():
     mask = np.zeros((64, 64), dtype=bool)
     mask[10:54, 29:34] = True
     assert extract_wall_boxes(mask) == ((29.0, 10.0, 33.0, 53.0),)
+
+
+def test_astar_route_crosses_barrier_without_entering_inflated_wall():
+    wall = np.zeros((64, 64), dtype=bool)
+    wall[10:54, 29:34] = True
+    occupied = _dilate(wall, radius=4)
+    path = _astar_path(occupied, (10, 32), (54, 32), vertical_preference="top")
+
+    assert path
+    assert all(not occupied[y, x] for x, y in path)
+    assert min(y for _, y in path) <= 6
+
+
+def test_wall_aware_templates_are_generated_from_observed_geometry():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+
+    wall = np.zeros((64, 64), dtype=bool)
+    wall[10:54, 29:34] = True
+    observation = torch.zeros(1, 3, 64, 64)
+    templates = _wall_aware_route_templates(
+        PocketWorldModel(),
+        observation,
+        np.asarray((10.0, 32.0)),
+        (54.0, 32.0),
+        wall,
+        horizon=20,
+    )
+
+    assert templates
+    assert all(len(template) == 20 for template in templates)
+    assert all(set(template).issubset({0, 1, 2, 3}) for template in templates)
 
 
 def test_wall_context_shift_score_is_zero_on_training_map_and_high_on_shifted_map():
