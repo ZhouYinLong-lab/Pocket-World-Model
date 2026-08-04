@@ -76,7 +76,7 @@ def _closed_loop_episode(
     use_learned_velocity: bool = False,
     probabilistic_uncertainty: bool = False,
     shift_threshold: float | None = None,
-    alignment_fallback_threshold: float | None = None,
+    alignment_fallback_threshold: float | None = 4.0,
 ) -> dict[str, float]:
     env = PocketWorldEnv(walls=WALLS, agent_start=start, goal=goal)
     observation, _ = env.reset()
@@ -214,7 +214,7 @@ def main() -> None:
     parser.add_argument("--seeds", default="71,83,97")
     parser.add_argument("--only", choices=("learned_velocity_probabilistic_closed",), default=None, help="run one planner variant without the other comparison baselines")
     parser.add_argument("--shift-threshold", type=float, default=None, help="enable online predictive-shift alarms at this standardized-innovation threshold")
-    parser.add_argument("--alignment-fallback-threshold", type=float, default=None, help="switch to wall-aware hybrid planning when imagined-vs-real route error exceeds this pixel threshold")
+    parser.add_argument("--alignment-fallback-threshold", type=float, default=4.0, help="switch to wall-aware hybrid planning when imagined-vs-real route error exceeds this pixel threshold (default: 4px)")
     parser.add_argument("--output", default="artifacts/evaluation-collision-v3.json")
     args = parser.parse_args()
 
