@@ -76,6 +76,7 @@ def _closed_loop_episode(
     use_learned_velocity: bool = False,
     probabilistic_uncertainty: bool = False,
     shift_threshold: float | None = None,
+    alignment_fallback_threshold: float | None = None,
 ) -> dict[str, float]:
     env = PocketWorldEnv(walls=WALLS, agent_start=start, goal=goal)
     observation, _ = env.reset()
@@ -100,6 +101,7 @@ def _closed_loop_episode(
         route_objective=use_learned_velocity,
         route_execution_horizon=12 if use_learned_velocity else None,
         shift_threshold=shift_threshold,
+        alignment_fallback_threshold=alignment_fallback_threshold,
     )
     distance = float(result.final_info.get("distance_to_goal", float("inf")))
     return {
@@ -117,6 +119,9 @@ def _closed_loop_episode(
         "mean_shift_score": float(result.mean_shift_score),
         "max_shift_score": float(result.max_shift_score),
         "shift_detected_count": float(result.shift_detected_count),
+        "predicted_route_completion_probability": float(result.first_plan_route_completion_probability),
+        "alignment_fallback_trigger_count": float(result.alignment_fallback_trigger_count),
+        "fallback_steps": float(result.fallback_steps),
     }
 
 
@@ -129,6 +134,7 @@ def evaluate_seed(
     only: str | None = None,
     include_new: bool = True,
     shift_threshold: float | None = None,
+    alignment_fallback_threshold: float | None = None,
 ) -> dict[str, dict[str, float]]:
     if only not in (None, "learned_velocity_probabilistic_closed"):
         raise ValueError(f"unsupported planner variant: {only}")
@@ -155,6 +161,7 @@ def evaluate_seed(
                     use_learned_velocity=True,
                     probabilistic_uncertainty=True,
                     shift_threshold=shift_threshold,
+                    alignment_fallback_threshold=alignment_fallback_threshold,
                 )
             )
             continue
@@ -182,6 +189,7 @@ def evaluate_seed(
                     use_learned_velocity=True,
                     probabilistic_uncertainty=True,
                     shift_threshold=shift_threshold,
+                    alignment_fallback_threshold=alignment_fallback_threshold,
                 )
             )
     return {
@@ -202,6 +210,7 @@ def main() -> None:
     parser.add_argument("--seeds", default="71,83,97")
     parser.add_argument("--only", choices=("learned_velocity_probabilistic_closed",), default=None, help="run one planner variant without the other comparison baselines")
     parser.add_argument("--shift-threshold", type=float, default=None, help="enable online predictive-shift alarms at this standardized-innovation threshold")
+    parser.add_argument("--alignment-fallback-threshold", type=float, default=None, help="switch to wall-aware hybrid planning when imagined-vs-real route error exceeds this pixel threshold")
     parser.add_argument("--output", default="artifacts/evaluation-collision-v3.json")
     args = parser.parse_args()
 
@@ -229,6 +238,7 @@ def main() -> None:
             only=args.only,
             include_new=has_temporal_probability,
             shift_threshold=args.shift_threshold,
+            alignment_fallback_threshold=args.alignment_fallback_threshold,
         )
         runs.append({"seed": seed, **report})
         print(json.dumps(runs[-1], indent=2))
@@ -242,6 +252,7 @@ def main() -> None:
             "seeds": seeds,
             "only": args.only,
             "shift_threshold": args.shift_threshold,
+            "alignment_fallback_threshold": args.alignment_fallback_threshold,
         },
         "runs": runs,
         "summary": summary,

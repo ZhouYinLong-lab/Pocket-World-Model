@@ -21,6 +21,7 @@ class PlanResult:
     route_score: float = 0.0
     route_progress: float = 0.0
     route_endpoint_distance: float = 0.0
+    predicted_route_completion_probability: float = 0.0
 
 
 @dataclass
@@ -37,6 +38,9 @@ class RecedingHorizonResult:
     mean_shift_score: float = 0.0
     max_shift_score: float = 0.0
     shift_detected_count: int = 0
+    first_plan_route_completion_probability: float = 0.0
+    alignment_fallback_trigger_count: int = 0
+    fallback_steps: int = 0
 
 
 def _rect_wall_mask() -> np.ndarray:
@@ -288,6 +292,20 @@ def wall_context_shift_score(observation: np.ndarray, mismatch_scale: float = 0.
     return mismatch / mismatch_scale
 
 
+def _route_completion_probabilities(
+    goal_distances: np.ndarray,
+    collision_prefix: np.ndarray,
+    goal_radius: float = 4.0,
+    distance_temperature: float = 1.5,
+) -> np.ndarray:
+    """Estimate route completion from endpoint reachability and predicted risk."""
+    endpoint_probability = 1.0 / (
+        1.0 + np.exp((goal_distances[:, -1] - goal_radius) / distance_temperature)
+    )
+    terminal_risk = np.clip(collision_prefix[:, -1], 0.0, 1.0)
+    return endpoint_probability * (1.0 - terminal_risk)
+
+
 @torch.no_grad()
 def predictive_shift_score(
     model: PocketWorldModel,
@@ -470,6 +488,7 @@ def random_shooting(
     safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
     if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
         safe_scores[~eligible] = 1e6
+    route_completion_probabilities = _route_completion_probabilities(goal_distances, collision_prefix)
     if route_objective:
         route_regressions = np.maximum(0.0, np.diff(goal_distances, axis=1)).sum(axis=1)
         route_scores = (
@@ -477,6 +496,7 @@ def random_shooting(
             + 0.35 * goal_distances[:, 1:].mean(axis=1)
             + 0.50 * route_regressions
             + 64.0 * collision_prefix[:, -1]
+            - 10.0 * route_completion_probabilities
         )
         route_scores = np.where(np.isfinite(route_scores), route_scores, 1e6)
         if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
@@ -492,6 +512,8 @@ def random_shooting(
     initial_distance = float(goal_distances[best, 0])
     if route_objective and route_execution_horizon is not None:
         best_step = min(best_step, max(1, int(route_execution_horizon)))
+    if best_step == 0 and initial_distance > 4.0:
+        best_step = 1
     return PlanResult(
         actions=actions[best, :best_step].cpu().numpy(),
         imagined_positions=positions[best, :best_step + 1],
@@ -501,6 +523,7 @@ def random_shooting(
         route_score=selected_route_score,
         route_progress=initial_distance - float(goal_distances[best, -1]),
         route_endpoint_distance=float(goal_distances[best, -1]),
+        predicted_route_completion_probability=float(route_completion_probabilities[best]),
     )
 
 
@@ -528,6 +551,7 @@ def receding_horizon_plan(
     route_objective: bool = False,
     shift_threshold: float | None = None,
     route_execution_horizon: int | None = None,
+    alignment_fallback_threshold: float | None = None,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -549,6 +573,10 @@ def receding_horizon_plan(
     alignment_errors: list[float] = []
     shift_scores: list[float] = []
     shift_detected_count = 0
+    first_plan_route_completion_probability = float("nan")
+    alignment_fallback_trigger_count = 0
+    fallback_active = False
+    fallback_steps = 0
     for step in range(max_steps):
         if pending_plan is None or pending_index >= len(pending_plan.actions):
             replans += 1
@@ -559,22 +587,23 @@ def receding_horizon_plan(
                 horizon=min(rollout_horizon, max_steps - step),
                 candidates=candidates,
                 collision_aware=collision_aware,
-                learned_collision=learned_collision,
-                hybrid_collision=hybrid_collision,
+                learned_collision=learned_collision and not fallback_active,
+                hybrid_collision=hybrid_collision or fallback_active,
                 observation_history=observation_history if use_history_velocity else None,
-                use_learned_velocity=use_learned_velocity,
+                use_learned_velocity=use_learned_velocity and not fallback_active,
                 uncertainty_radius_px=uncertainty_radius_px,
                 uncertainty_growth_px=uncertainty_growth_px,
                 probabilistic_uncertainty=probabilistic_uncertainty,
                 uncertainty_samples=uncertainty_samples,
-                route_objective=route_objective,
-                route_execution_horizon=route_execution_horizon,
+                route_objective=route_objective and not fallback_active,
+                route_execution_horizon=route_execution_horizon if not fallback_active else None,
             )
             pending_index = 0
         plan = pending_plan
         if step == 0:
             first_plan_distance = plan.imagined_distance
             first_plan_route_distance = plan.route_endpoint_distance
+            first_plan_route_completion_probability = plan.predicted_route_completion_probability
         if len(plan.actions) == 0:
             break
         actions_to_execute = plan.actions[pending_index:pending_index + max(1, commit_steps)]
@@ -592,7 +621,18 @@ def receding_horizon_plan(
             actual_position = extract_agent_position(current_observation)
             expected_position = plan.imagined_positions[expected_index]
             if np.isfinite(actual_position).all() and np.isfinite(expected_position).all():
-                alignment_errors.append(float(np.linalg.norm(actual_position - expected_position)))
+                alignment_error = float(np.linalg.norm(actual_position - expected_position))
+                alignment_errors.append(alignment_error)
+                if (
+                    alignment_fallback_threshold is not None
+                    and not fallback_active
+                    and alignment_error >= alignment_fallback_threshold
+                ):
+                    alignment_fallback_trigger_count += 1
+                    fallback_active = True
+                    pending_plan = None
+            if fallback_active:
+                fallback_steps += 1
             if shift_threshold is not None:
                 shift_score = predictive_shift_score(
                     model,
@@ -629,4 +669,11 @@ def receding_horizon_plan(
         mean_shift_score=float(np.mean(shift_scores)) if shift_scores else 0.0,
         max_shift_score=float(np.max(shift_scores)) if shift_scores else 0.0,
         shift_detected_count=shift_detected_count,
+        first_plan_route_completion_probability=(
+            first_plan_route_completion_probability
+            if np.isfinite(first_plan_route_completion_probability)
+            else 0.0
+        ),
+        alignment_fallback_trigger_count=alignment_fallback_trigger_count,
+        fallback_steps=fallback_steps,
     )

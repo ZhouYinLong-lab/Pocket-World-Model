@@ -159,6 +159,7 @@ def test_route_objective_reports_progress_and_alignment_monitor_is_finite():
 
     assert np.isfinite(result.route_score)
     assert np.isfinite(result.route_progress)
+    assert 0.0 <= result.predicted_route_completion_probability <= 1.0
     assert np.isfinite(predictive_shift_score(PocketWorldModel(), first, 3, second, [first]))
 
 
@@ -179,6 +180,7 @@ def test_receding_horizon_reports_collision_and_replan_counts():
         use_history_velocity=True,
         route_objective=True,
         shift_threshold=0.0,
+        alignment_fallback_threshold=0.0,
     )
 
     assert result.collision_count >= 0
@@ -186,3 +188,5 @@ def test_receding_horizon_reports_collision_and_replan_counts():
     assert np.isfinite(result.final_info["distance_to_goal"])
     assert result.route_alignment_error_px >= 0.0
     assert result.shift_detected_count >= 0
+    assert result.alignment_fallback_trigger_count >= 1
+    assert result.fallback_steps >= 1
