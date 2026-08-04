@@ -1,0 +1,55 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_seed": 50,
+  "horizon": 48,
+  "candidates": 1024,
+  "seeds": [71, 83, 97],
+  "planner": "learned_velocity_probabilistic_closed",
+  "route_objective": true,
+  "route_execution_horizon": 12,
+  "shift_threshold": null,
+  "protocol": "full three-seed single-barrier evaluation with route-aware scoring and short-prefix closed-loop replanning; shift alarms disabled to isolate route-aware planning",
+  "runs": {
+    "71": {
+      "imagined_success": 0.9,
+      "real_success": 0.0,
+      "real_final_distance_px": 28.630552616119385,
+      "collision_count": 5.34,
+      "executed_actions": 48.0,
+      "replans": 10.74,
+      "route_alignment_error_px": 2.5806470327079296,
+      "max_route_alignment_error_px": 7.139132852554321
+    },
+    "83": {
+      "imagined_success": 0.94,
+      "real_success": 0.02,
+      "real_final_distance_px": 29.03846067428589,
+      "collision_count": 6.28,
+      "executed_actions": 47.8,
+      "replans": 11.36,
+      "route_alignment_error_px": 2.480733548496245,
+      "max_route_alignment_error_px": 7.074927225112915
+    },
+    "97": {
+      "imagined_success": 0.94,
+      "real_success": 0.0,
+      "real_final_distance_px": 29.854850006103515,
+      "collision_count": 6.14,
+      "executed_actions": 48.0,
+      "replans": 11.44,
+      "route_alignment_error_px": 2.4531384507659824,
+      "max_route_alignment_error_px": 7.130340337753296
+    }
+  },
+  "summary": {
+    "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+    "real_success": {"mean": 0.006666666666666667, "std": 0.009428090415820633},
+    "real_final_distance_px": {"mean": 29.174621098836266, "std": 0.5090060711430934},
+    "collision_count": {"mean": 5.920000000000001, "std": 0.414085337420521},
+    "executed_actions": {"mean": 47.93333333333334, "std": 0.09428090415820768},
+    "replans": {"mean": 11.18, "std": 0.31283648551066806},
+    "route_alignment_error_px": {"mean": 2.5048396773233854, "std": 0.054774925543747306},
+    "max_route_alignment_error_px": {"mean": 7.11480013847351, "std": 0.028421986724221755}
+  },
+  "interpretation": "Route-aware scoring produces a small but nonzero real-success signal in the full protocol and lowers final distance versus the earlier planner, but the 0.667% real success rate remains far from a solved barrier-planning task."
+}

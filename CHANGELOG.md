@@ -30,6 +30,17 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Strengthen shift detection with representation-level and route-level features; the current innovation alarm is not sufficient for map OOD.
 - Online demo deployment and browser controls for history/uncertainty planning.
 
+## [0.3.0] - 2026-08-04
+
+### Added
+
+- Route-aware v8 probabilistic planner checkpoint and complete three-seed barrier evaluation.
+- Release asset metadata and per-seed route alignment results.
+
+### Changed
+
+- Route-aware planning reaches 0.667% ± 0.943pp real success in the strict 150-episode protocol, improving the prior 0% boundary while documenting that the core problem remains open.
+
 ## [0.2.0] - 2026-08-03
 
 ### Added
@@ -61,6 +72,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Pure learned collision planning still fails the real single-barrier benchmark.
 - The learned agent-mask head has low shape IoU and remains an ablation.
 
-[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0

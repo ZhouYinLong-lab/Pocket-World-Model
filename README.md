@@ -112,7 +112,7 @@ The repository keeps the research loop inspectable:
   <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
 </p>
 
-The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the earlier 150-episode, three-seed barrier validation, history-aware uncertainty planning reached **76.7% ± 2.5pp** real success. The new learned-temporal/probabilistic v8 barrier revalidation is intentionally stricter: it reaches **92.7% ± 1.9pp imagined success but 0% real success**, with 0.547 ± 0.025 collisions per episode. The planner is collision-stable, but its imagined detours still do not transfer to real goal arrival.
+The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the earlier 150-episode, three-seed barrier validation, history-aware uncertainty planning reached **76.7% ± 2.5pp** real success. The completed route-aware v8 barrier revalidation reaches **92.7% ± 1.9pp imagined success and 0.667% ± 0.943% real success**, with 5.92 ± 0.41 collisions per episode and 2.505 ± 0.055px route alignment error. This is a small improvement over the prior 0% boundary, not a solved navigation result.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
@@ -127,6 +127,11 @@ The `v0.2.0` learned-collision milestone adds the focused barrier checkpoint and
 
 - [`pocketworld-collision-v5.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.2.0/pocketworld-collision-v5.pt) — collision curriculum, learned risk head, and calibrated kinematics.
 - [`pocketworld-collision-v5.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.2.0/pocketworld-collision-v5.onnx) — browser-compatible RGB and position outputs from the same checkpoint.
+
+The `v0.3.0` route-aware probabilistic milestone publishes the v8 checkpoint and its complete three-seed result:
+
+- [`pocketworld-temporal-probability-v8.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.3.0/pocketworld-temporal-probability-v8.pt) — temporal velocity, calibrated uncertainty, and route-aware planning checkpoint.
+- [`evaluation-route-aware-temporal-probability-v8-full.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.3.0/evaluation-route-aware-temporal-probability-v8-full.json) — exact protocol and per-seed metrics.
 
 Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
@@ -209,7 +214,7 @@ The route-aware planner adds `route_objective=True` and reports `route_alignment
 python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probability-v8.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --only learned_velocity_probabilistic_closed --shift-threshold 0.9812744 --output artifacts/evaluation-route-shift-v8.json
 ```
 
-The route diagnostic is recorded in [evaluation-route-alignment-sanity-v8.json](docs/results/evaluation-route-alignment-sanity-v8.json). It improves imagined route distance but still has 0% real barrier success, so route alignment is now measurable rather than considered solved.
+The completed [route-aware three-seed result](docs/results/evaluation-route-aware-temporal-probability-v8-full.json) supersedes the lower-budget diagnostic. It improves final distance and produces one real success in 150 episodes, but route alignment is still not sufficient for reliable barrier crossing.
 
 To reproduce the frozen three-seed barrier comparison:
 
