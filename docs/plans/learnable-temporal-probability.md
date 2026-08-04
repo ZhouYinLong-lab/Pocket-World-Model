@@ -1,6 +1,6 @@
 # Learnable temporal velocity and calibrated probabilistic uncertainty
 
-Status: implementation complete; large-scale three-seed validation remains the next experiment.
+Status: implementation and validation complete for the current v8 checkpoint; the main remaining gap is real barrier success under the learned planner.
 
 ## Objective
 
@@ -41,10 +41,16 @@ The uncertainty is intentionally described as a marginal split-calibrated Gaussi
 - empirical position and velocity coverage at 50%, 80%, 90%, and 95%;
 - 90% interval width and state Gaussian NLL.
 
+It also supports an OOD calibration matrix covering nominal speed, 0.8x and 1.2x speed, a changed wall map, and the joint changed-map/1.2x-speed condition. Each condition uses fresh rollouts and reports per-seed 90% position/velocity coverage.
+
 `pocketworld.evaluate_collision` reports the new `learned_velocity_probabilistic_closed` planner beside the previous four variants. The intended final protocol is 50 episodes per seed, seeds `71,83,97`, horizon 48, and 1,024 candidates, followed by a separate OOD calibration check.
 
 ## Current evidence
 
-The v8 development checkpoint reaches 0.407–0.450px learned velocity MAE across three 50-episode seeds, compared with 0.215–0.283px for the privileged finite-difference baseline. Fresh-seed 90% marginal coverage is 86.4–88.4% for position and 89.5–91.0% for velocity; the held-out calibration split itself is calibrated by construction. The machine-readable slice is [evaluation-temporal-probability-v8.json](../results/evaluation-temporal-probability-v8.json). These numbers are diagnostic rather than headline results until the three-seed barrier-planning protocol is complete.
+The v8 development checkpoint reaches 0.407–0.450px learned velocity MAE across three 50-episode seeds, compared with 0.215–0.283px for the privileged finite-difference baseline. Fresh-seed 90% marginal coverage is 86.4–88.4% for position and 89.5–91.0% for velocity; the held-out calibration split itself is calibrated by construction. The machine-readable slice is [evaluation-temporal-probability-v8.json](../results/evaluation-temporal-probability-v8.json).
 
-The remaining questions are whether the learned velocity path improves real barrier success over the hand-designed history path, and whether calibration remains reliable under changed walls, speed, and planning horizon.
+The completed full barrier run uses 50 episodes per seed, seeds `71,83,97`, horizon 48, and 1,024 candidates. The learned temporal/probabilistic planner reaches 92.7% ± 1.9pp imagined success, 0% real success, 31.33 ± 0.06px final distance, and 0.547 ± 0.025 collisions per episode. Its low collision count is stable, but the imagined detours do not cross the real barrier reliably. See [evaluation-temporal-probability-probabilistic-v8-full.json](../results/evaluation-temporal-probability-probabilistic-v8-full.json).
+
+The OOD matrix shows nominal position/velocity coverage of 87.7%/90.8%, improving to 90.1%/96.2% under 0.8x speed, but falling to 83.8%/82.8% at 1.2x speed, 80.9%/87.2% on the changed map, and 79.0%/81.5% under the joint shift. This establishes a calibration stability boundary: the current diagonal Gaussian is useful near the training regime, but should not be treated as OOD-safe without a shift detector or recalibration. See [evaluation-temporal-probability-ood-v8.json](../results/evaluation-temporal-probability-ood-v8.json).
+
+The next research question is how to align route-level imagined progress with real barrier crossing while preserving the calibrated risk boundary. Candidate follow-ups are route-conditioned collision supervision, uncertainty-aware replanning triggers, and explicit shift detection before trusting probabilistic rollouts.

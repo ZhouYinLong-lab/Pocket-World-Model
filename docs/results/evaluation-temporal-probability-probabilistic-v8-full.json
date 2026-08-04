@@ -1,0 +1,44 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_seed": 50,
+  "horizon": 48,
+  "candidates": 1024,
+  "seeds": [71, 83, 97],
+  "planner": "learned_velocity_probabilistic_closed",
+  "protocol": "closed-loop single-barrier evaluation with learned temporal velocity and shortlist Monte Carlo collision risk",
+  "runs": {
+    "71": {
+      "imagined_success": 0.9,
+      "real_success": 0.0,
+      "real_final_distance_px": 31.29994885002627,
+      "collision_count": 0.54,
+      "executed_actions": 10.22,
+      "replans": 1.9
+    },
+    "83": {
+      "imagined_success": 0.94,
+      "real_success": 0.0,
+      "real_final_distance_px": 31.276021435055736,
+      "collision_count": 0.58,
+      "executed_actions": 11.86,
+      "replans": 2.0
+    },
+    "97": {
+      "imagined_success": 0.94,
+      "real_success": 0.0,
+      "real_final_distance_px": 31.404304637446838,
+      "collision_count": 0.52,
+      "executed_actions": 11.6,
+      "replans": 1.94
+    }
+  },
+  "summary": {
+    "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+    "real_success": {"mean": 0.0, "std": 0.0},
+    "real_final_distance_px": {"mean": 31.326758307509618, "std": 0.055696829723319304},
+    "collision_count": {"mean": 0.5466666666666667, "std": 0.024944382578492918},
+    "executed_actions": {"mean": 11.226666666666667, "std": 0.7196912918436312},
+    "replans": {"mean": 1.9466666666666665, "std": 0.04109609335312654}
+  },
+  "interpretation": "The probabilistic planner is stable across seeds and keeps collisions low, but its imagined routes do not transfer to real goal arrival in this barrier protocol. The remaining gap is planning/model alignment, not seed variance."
+}

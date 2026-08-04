@@ -1,0 +1,41 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_seed": 20,
+  "horizon": 48,
+  "candidates": 256,
+  "seeds": [71, 83, 97],
+  "protocol": "budget full-matrix comparison; the exact headline protocol is recorded separately at 50 episodes and 1,024 candidates",
+  "summary": {
+    "point_open": {
+      "imagined_success": {"mean": 0.9666666666666667, "std": 0.023570226039551584},
+      "real_success": {"mean": 0.0, "std": 0.0},
+      "real_final_distance_px": {"mean": 30.71476126772563, "std": 0.4300670212340696},
+      "collision_count": {"mean": 10.733333333333333, "std": 0.06236095644623236}
+    },
+    "uncertainty_open": {
+      "imagined_success": {"mean": 0.95, "std": 0.0},
+      "real_success": {"mean": 0.03333333333333333, "std": 0.023570226039551584},
+      "real_final_distance_px": {"mean": 29.66571004311244, "std": 0.956663765450587},
+      "collision_count": {"mean": 10.333333333333334, "std": 0.2718249900901344}
+    },
+    "history_closed": {
+      "imagined_success": {"mean": 0.9666666666666667, "std": 0.023570226039551584},
+      "real_success": {"mean": 0.0, "std": 0.0},
+      "real_final_distance_px": {"mean": 31.52754087931887, "std": 0.393820828928602},
+      "collision_count": {"mean": 0.5166666666666667, "std": 0.06236095644623236}
+    },
+    "history_uncertainty_closed": {
+      "imagined_success": {"mean": 0.95, "std": 0.0},
+      "real_success": {"mean": 0.0, "std": 0.0},
+      "real_final_distance_px": {"mean": 31.580130258264364, "std": 0.20549973815935188},
+      "collision_count": {"mean": 0.5333333333333333, "std": 0.08498365855987974}
+    },
+    "learned_velocity_probabilistic_closed": {
+      "imagined_success": {"mean": 0.9666666666666667, "std": 0.023570226039551584},
+      "real_success": {"mean": 0.0, "std": 0.0},
+      "real_final_distance_px": {"mean": 31.09570575158871, "std": 0.177570103862074},
+      "collision_count": {"mean": 0.55, "std": 0.0}
+    }
+  },
+  "interpretation": "At the cheaper comparison budget, the new planner is collision-stable and slightly closer to the goal than history_closed, but does not improve real success. The exact 50x1,024 new-planner run confirms the same 0% real-success boundary."
+}

@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-39%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-42%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-77%25-69A94E">
 </p>
 
@@ -51,7 +51,7 @@ The result is not a claim of general intelligence or state-of-the-art control. I
 - CNN encoder + GRU image dynamics + decoder, with supervised structured position and velocity prediction.
 - State-conditioned RGB agent rendering so the learned trajectory remains visually inspectable even when a small decoded agent becomes blurry.
 - Random-shooting and map-agnostic waypoint planning inside the learned model.
-- Learned wall-relative collision-event prediction, history-based velocity initialization, closed-loop replanning, and a horizon-aware uncertainty risk boundary.
+- Learned wall-relative collision-event prediction, learned temporal velocity initialization, closed-loop replanning, and a horizon-aware uncertainty risk boundary.
 - Side-by-side real/imagination playback, ONNX export, browser inference, OOD evaluation, and machine-readable multi-seed reports.
 
 ## How it differs from related projects
@@ -74,6 +74,8 @@ The latest research direction replaces two hand-designed shortcuts with measurab
 - **Cost-controlled planning:** ordinary candidates are ranked with the point model first; only a shortlist receives probabilistic Monte Carlo rescoring. This keeps the uncertainty experiment inspectable and computationally bounded.
 
 This is a marginal, split-calibrated Gaussian approximation—not a Bayesian posterior or an ensemble. The evaluation report now includes learned velocity error, finite-difference baseline error, 50/80/90/95% empirical coverage, interval width, and state Gaussian NLL.
+
+The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. The v8 checkpoint stays near nominal 90% marginal coverage in-distribution (position 87.7%, velocity 90.8%), but coverage falls under fast speed and map shifts, reaching 79.0% / 81.5% in the joint OOD condition. This is a measured risk boundary, not a claim of OOD calibration invariance.
 
 The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md) and [machine-readable result](docs/results/evaluation-temporal-probability-v8.json).
 
@@ -106,7 +108,7 @@ The repository keeps the research loop inspectable:
   <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
 </p>
 
-The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the 150-episode, three-seed barrier validation, the point-estimate learned planner reaches 64% real success; history-aware uncertainty planning raises this to **76.7% ± 2.5pp** and reduces mean collisions by about 70%.
+The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the earlier 150-episode, three-seed barrier validation, history-aware uncertainty planning reached **76.7% ± 2.5pp** real success. The new learned-temporal/probabilistic v8 barrier revalidation is intentionally stricter: it reaches **92.7% ± 1.9pp imagined success but 0% real success**, with 0.547 ± 0.025 collisions per episode. The planner is collision-stable, but its imagined detours still do not transfer to real goal arrival.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
@@ -147,6 +149,14 @@ python -m pocketworld.evaluate artifacts/pocketworld-temporal-probability-tuned.
 ```
 
 The collision evaluator adds `learned_velocity_probabilistic_closed` alongside the existing point, history, and robust-radius baselines. Its probabilistic sampler is applied only to the planner shortlist so a larger candidate count remains practical.
+
+To reproduce the completed v8 probabilistic barrier revalidation:
+
+```bash
+python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probability-v8.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --only learned_velocity_probabilistic_closed --output artifacts/evaluation-temporal-probability-probabilistic-v8-full.json
+```
+
+The committed [v8 probabilistic result](docs/results/evaluation-temporal-probability-probabilistic-v8-full.json) contains per-seed metrics and mean/std summaries. The committed [OOD calibration matrix](docs/results/evaluation-temporal-probability-ood-v8.json) records the speed/map stability boundary.
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
@@ -239,6 +249,7 @@ python scripts/generate_readme_assets.py
 1. Compare 1/5/10/20-step image and position error.
 2. Hold out wall, start, goal, and speed variants to measure distribution shift.
 3. Compare imagined versus real planning success across planning horizons.
+4. Improve route-level world-model alignment so low collision risk also produces real barrier crossings.
 
 The first version intentionally avoids VAE, Transformer, diffusion, multi-agent worlds, and complex physics so the relationship between prediction error and planning failure stays visible.
 

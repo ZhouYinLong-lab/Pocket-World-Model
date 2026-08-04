@@ -12,17 +12,20 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - RGB-history velocity estimation for compact-state rollout initialization.
 - Horizon-growing learned uncertainty boundaries with robust shortlist rescoring.
 - Reproducible three-seed collision planner evaluation and committed result data.
+- OOD calibration matrix for nominal, slow, fast, changed-map, and joint speed/map rollouts.
+- Full 50-episode × three-seed revalidation for the learned temporal/probabilistic barrier planner.
 
 ### Changed
 
 - The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 39 tests at approximately 76% line coverage.
+- Python verification now covers 42 tests at 77% line coverage.
 
 ### Planned
 
-- Complete the 50-episode, three-seed barrier validation for the learned temporal/probabilistic planner and test calibration under OOD speed/map changes.
+- Improve route-level model alignment so low learned collision risk transfers to real barrier success.
+- Add shift detection or recalibration before trusting probabilistic plans under fast-speed and changed-map OOD conditions.
 - Online demo deployment and browser controls for history/uncertainty planning.
 
 ## [0.2.0] - 2026-08-03

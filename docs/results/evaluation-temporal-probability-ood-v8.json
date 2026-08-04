@@ -1,0 +1,40 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_condition_seed": 50,
+  "horizon": 8,
+  "seeds": [11, 23, 41],
+  "calibration": "held-out residual-quantile scale fit from the checkpoint validation split; fresh rollouts used for all reported conditions",
+  "conditions": {
+    "in_distribution": {
+      "map_variant": false,
+      "speed_scale": 1.0,
+      "position_coverage_90": {"mean": 0.8766666666666667, "std": 0.012176024582368702, "min": 0.86625, "max": 0.89375},
+      "velocity_coverage_90": {"mean": 0.9083333333333333, "std": 0.008248737883189194, "min": 0.8975, "max": 0.9175}
+    },
+    "ood_speed_slow": {
+      "map_variant": false,
+      "speed_scale": 0.8,
+      "position_coverage_90": {"mean": 0.9008333333333333, "std": 0.003583721047553862, "min": 0.89625, "max": 0.905},
+      "velocity_coverage_90": {"mean": 0.9620833333333333, "std": 0.002357022603955159, "min": 0.95875, "max": 0.96375}
+    },
+    "ood_speed_fast": {
+      "map_variant": false,
+      "speed_scale": 1.2,
+      "position_coverage_90": {"mean": 0.8379166666666666, "std": 0.023281489443696377, "min": 0.805, "max": 0.855},
+      "velocity_coverage_90": {"mean": 0.8283333333333333, "std": 0.006943650813895955, "min": 0.81875, "max": 0.835}
+    },
+    "ood_map": {
+      "map_variant": true,
+      "speed_scale": 1.0,
+      "position_coverage_90": {"mean": 0.8091666666666667, "std": 0.0058031613260893, "min": 0.80125, "max": 0.815},
+      "velocity_coverage_90": {"mean": 0.8716666666666667, "std": 0.005621419320507427, "min": 0.86375, "max": 0.87625}
+    },
+    "ood_map_fast": {
+      "map_variant": true,
+      "speed_scale": 1.2,
+      "position_coverage_90": {"mean": 0.7904166666666667, "std": 0.0265026203441913, "min": 0.755, "max": 0.81875},
+      "velocity_coverage_90": {"mean": 0.8154166666666667, "std": 0.006236095644623233, "min": 0.80875, "max": 0.82375}
+    }
+  },
+  "interpretation": "The marginal 90% intervals are close to nominal in-distribution and under slow speed shift. Fast speed, changed maps, and especially their joint shift reduce coverage; the joint condition is the least stable."
+}
