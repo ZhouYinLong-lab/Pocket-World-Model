@@ -323,7 +323,14 @@ def evaluate_temporal_velocity(model: PocketWorldModel, episodes: int = 20, hori
     }
 
 
-def evaluate_uncertainty_calibration(model: PocketWorldModel, episodes: int = 20, horizon: int = 8, seed: int = 101) -> dict[str, object]:
+def evaluate_uncertainty_calibration(
+    model: PocketWorldModel,
+    episodes: int = 20,
+    horizon: int = 8,
+    seed: int = 101,
+    map_variant: bool = False,
+    speed_scale: float = 1.0,
+) -> dict[str, object]:
     """Measure empirical coverage of calibrated diagonal Gaussian transitions."""
     batch = collect_random_rollouts(
         episodes=episodes,
@@ -331,6 +338,8 @@ def evaluate_uncertainty_calibration(model: PocketWorldModel, episodes: int = 20
         seed=seed,
         sticky_probability=0.75,
         full_state_range=True,
+        map_variant=map_variant,
+        agent_speed_scale=speed_scale,
     )
     observations = torch.from_numpy(batch.observations).float() / 255.0
     actions = torch.from_numpy(batch.actions)
@@ -366,6 +375,33 @@ def evaluate_uncertainty_calibration(model: PocketWorldModel, episodes: int = 20
         "mean_interval_width_px_90": float((2.0 * z_values["0.90"] * scale[:, :2] * 64.0).mean()),
         "state_gaussian_nll": float(nll),
         "calibration_scale": model.uncertainty_scale.detach().cpu().tolist(),
+    }
+
+
+def evaluate_uncertainty_calibration_matrix(
+    model: PocketWorldModel,
+    episodes: int = 20,
+    horizon: int = 8,
+    seed: int = 101,
+) -> dict[str, dict[str, object]]:
+    """Evaluate calibration across speed, map, and joint distribution shifts."""
+    conditions = {
+        "in_distribution": (False, 1.0),
+        "ood_speed_slow": (False, 0.8),
+        "ood_speed_fast": (False, 1.2),
+        "ood_map": (True, 1.0),
+        "ood_map_fast": (True, 1.2),
+    }
+    return {
+        label: evaluate_uncertainty_calibration(
+            model,
+            episodes=episodes,
+            horizon=horizon,
+            seed=seed + index * 1000,
+            map_variant=map_variant,
+            speed_scale=speed_scale,
+        )
+        for index, (label, (map_variant, speed_scale)) in enumerate(conditions.items())
     }
 
 
@@ -451,7 +487,7 @@ def main() -> None:
                 "out_of_distribution": evaluate_collision_prediction(model, episodes=args.episodes, seed=seed + 6000, ood=True),
             } if collision_supervision else None,
             "temporal_velocity": evaluate_temporal_velocity(model, episodes=args.episodes, seed=seed + 9000),
-            "uncertainty_calibration": evaluate_uncertainty_calibration(model, episodes=args.episodes, seed=seed + 10000),
+            "uncertainty_calibration": evaluate_uncertainty_calibration_matrix(model, episodes=args.episodes, seed=seed + 10000),
             "agent_rendering": {
                 "in_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 7000),
                 "out_of_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 8000, ood=True),

@@ -64,6 +64,7 @@ def collect_random_rollouts(
     full_state_range: bool = False,
     barrier_probability: float = 0.0,
     collision_seek_probability: float = 0.0,
+    agent_speed_scale: float = 1.0,
 ) -> RolloutBatch:
     """Collect contiguous trajectories for multi-step world-model training."""
     rng = np.random.default_rng(seed)
@@ -88,7 +89,7 @@ def collect_random_rollouts(
             sampling_walls = DEFAULT_WALLS if walls is None else walls
             start = _sample_free_point(rng, sampling_walls, start_low, start_high)
             goal = _sample_free_point(rng, sampling_walls, goal_low, goal_high)
-        env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+        env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal, agent_speed_scale=agent_speed_scale)
         observation, _ = env.reset()
         observations = [observation]
         positions = [env.position.copy()]

@@ -5,6 +5,7 @@ from pocketworld.evaluate import (
     evaluate_prediction,
     evaluate_temporal_velocity,
     evaluate_uncertainty_calibration,
+    evaluate_uncertainty_calibration_matrix,
 )
 from pocketworld.model import PocketWorldModel
 
@@ -54,3 +55,16 @@ def test_temporal_velocity_and_uncertainty_reports_are_calibratable():
     assert "finite_difference_velocity_mae_px" in velocity_report
     assert set(uncertainty_report["position_coverage"]) == {"0.50", "0.80", "0.90", "0.95"}
     assert len(uncertainty_report["calibration_scale"]) == 4
+
+
+def test_uncertainty_calibration_matrix_covers_speed_and_map_shifts():
+    report = evaluate_uncertainty_calibration_matrix(PocketWorldModel(), episodes=1, horizon=2, seed=5)
+
+    assert set(report) == {
+        "in_distribution",
+        "ood_speed_slow",
+        "ood_speed_fast",
+        "ood_map",
+        "ood_map_fast",
+    }
+    assert all("position_coverage" in condition for condition in report.values())

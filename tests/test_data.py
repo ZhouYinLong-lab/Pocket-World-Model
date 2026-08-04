@@ -22,3 +22,16 @@ def test_collision_labels_are_present_for_barrier_rollouts():
     assert batch.collisions.shape == (8, 16)
     assert np.any(batch.collisions > 0)
     assert np.any(batch.collisions == 0)
+
+
+def test_rollout_collection_supports_speed_and_map_shift_parameters():
+    batch = collect_random_rollouts(
+        episodes=2,
+        horizon=3,
+        seed=12,
+        map_variant=True,
+        agent_speed_scale=1.2,
+    )
+
+    assert batch.observations.shape == (2, 4, 3, 64, 64)
+    assert batch.velocities.shape == (2, 4, 2)

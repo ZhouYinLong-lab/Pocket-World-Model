@@ -23,3 +23,12 @@ def test_collision_evaluation_compares_all_planner_variants():
     }
     assert all("real_success" in metrics for metrics in report.values())
     assert all("collision_count" in metrics for metrics in report.values())
+
+
+def test_collision_evaluation_can_run_only_new_probability_variant():
+    report = evaluate_seed(
+        PocketWorldModel(), episodes=1, horizon=2, candidates=4, seed=5,
+        only="learned_velocity_probabilistic_closed",
+    )
+
+    assert set(report) == {"learned_velocity_probabilistic_closed"}

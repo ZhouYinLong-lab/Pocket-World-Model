@@ -114,16 +114,36 @@ def evaluate_seed(
     horizon: int,
     candidates: int,
     seed: int,
+    only: str | None = None,
+    include_new: bool = True,
 ) -> dict[str, dict[str, float]]:
-    rows: dict[str, list[dict[str, float]]] = {
-        "point_open": [],
-        "uncertainty_open": [],
-        "history_closed": [],
-        "history_uncertainty_closed": [],
-        "learned_velocity_probabilistic_closed": [],
-    }
+    if only not in (None, "learned_velocity_probabilistic_closed"):
+        raise ValueError(f"unsupported planner variant: {only}")
+    if only == "learned_velocity_probabilistic_closed" and not include_new:
+        raise ValueError("the checkpoint does not contain the learned temporal/probabilistic planner")
+    labels = (only,) if only is not None else (
+        "point_open",
+        "uncertainty_open",
+        "history_closed",
+        "history_uncertainty_closed",
+    ) + (("learned_velocity_probabilistic_closed",) if include_new else ())
+    rows: dict[str, list[dict[str, float]]] = {label: [] for label in labels}
     for episode, (start, goal) in enumerate(_episode_cases(episodes, seed)):
         episode_seed = seed * 100_000 + episode
+        if only == "learned_velocity_probabilistic_closed":
+            torch.manual_seed(episode_seed)
+            rows[only].append(
+                _closed_loop_episode(
+                    model,
+                    start,
+                    goal,
+                    horizon,
+                    candidates,
+                    use_learned_velocity=True,
+                    probabilistic_uncertainty=True,
+                )
+            )
+            continue
         torch.manual_seed(episode_seed)
         rows["point_open"].append(_open_loop_episode(model, start, goal, horizon, candidates))
         torch.manual_seed(episode_seed)
@@ -136,18 +156,19 @@ def evaluate_seed(
         rows["history_uncertainty_closed"].append(
             _closed_loop_episode(model, start, goal, horizon, candidates, 0.25, 0.025)
         )
-        torch.manual_seed(episode_seed)
-        rows["learned_velocity_probabilistic_closed"].append(
-            _closed_loop_episode(
-                model,
-                start,
-                goal,
-                horizon,
-                candidates,
-                use_learned_velocity=True,
-                probabilistic_uncertainty=True,
+        if include_new:
+            torch.manual_seed(episode_seed)
+            rows["learned_velocity_probabilistic_closed"].append(
+                _closed_loop_episode(
+                    model,
+                    start,
+                    goal,
+                    horizon,
+                    candidates,
+                    use_learned_velocity=True,
+                    probabilistic_uncertainty=True,
+                )
             )
-        )
     return {
         label: {
             metric: float(np.mean([row[metric] for row in variant_rows]))
@@ -164,17 +185,34 @@ def main() -> None:
     parser.add_argument("--horizon", type=int, default=48)
     parser.add_argument("--candidates", type=int, default=1024)
     parser.add_argument("--seeds", default="71,83,97")
+    parser.add_argument("--only", choices=("learned_velocity_probabilistic_closed",), default=None, help="run one planner variant without the other comparison baselines")
     parser.add_argument("--output", default="artifacts/evaluation-collision-v3.json")
     args = parser.parse_args()
 
     payload = torch.load(args.checkpoint, map_location="cpu")
     model = PocketWorldModel()
-    model.load_state_dict(payload["model"], strict=True)
+    missing, unexpected = model.load_state_dict(payload["model"], strict=False)
+    has_temporal_probability = not missing and not unexpected
+    if not has_temporal_probability:
+        print(
+            "warning: checkpoint predates the temporal/probabilistic heads; "
+            "running the four legacy collision variants only"
+        )
+    if args.only == "learned_velocity_probabilistic_closed" and not has_temporal_probability:
+        raise RuntimeError("--only learned_velocity_probabilistic_closed requires a temporal/probabilistic checkpoint")
     model.eval()
     seeds = [int(value.strip()) for value in args.seeds.split(",") if value.strip()]
     runs = []
     for seed in seeds:
-        report = evaluate_seed(model, args.episodes, args.horizon, args.candidates, seed)
+        report = evaluate_seed(
+            model,
+            args.episodes,
+            args.horizon,
+            args.candidates,
+            seed,
+            only=args.only,
+            include_new=has_temporal_probability,
+        )
         runs.append({"seed": seed, **report})
         print(json.dumps(runs[-1], indent=2))
     summary = _summarize([{key: value for key, value in run.items() if key != "seed"} for run in runs])
@@ -185,6 +223,7 @@ def main() -> None:
             "horizon": args.horizon,
             "candidates": args.candidates,
             "seeds": seeds,
+            "only": args.only,
         },
         "runs": runs,
         "summary": summary,
