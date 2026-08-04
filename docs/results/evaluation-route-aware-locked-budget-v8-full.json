@@ -1,0 +1,39 @@
+{
+  "config": {
+    "checkpoint": "artifacts\\pocketworld-temporal-probability-v8.pt",
+    "episodes": 50,
+    "horizon": 48,
+    "candidates": 1024,
+    "seeds": [71, 83, 97],
+    "only": "learned_velocity_probabilistic_closed",
+    "shift_threshold": null,
+    "alignment_fallback_threshold": 6.0
+  },
+  "runs": [
+    {"seed": 71, "learned_velocity_probabilistic_closed": {"imagined_success": 0.9, "real_success": 0.32, "real_final_distance_px": 10.953675899505615, "collision_count": 2.12, "executed_actions": 46.52, "replans": 8.26, "route_alignment_error_px": 2.904186352013326, "max_route_alignment_error_px": 7.173897123336792, "mean_shift_score": 0.0, "max_shift_score": 0.0, "shift_detected_count": 0.0, "predicted_route_completion_probability": 0.7735521826107272, "alignment_fallback_trigger_count": 0.98, "fallback_steps": 32.22, "wall_route_progress_px": 50.17507456302643, "wall_route_remaining_px": 11.730235571861266, "wall_route_regression_count": 18.64, "wall_route_side_switch_count": 0.0}},
+    {"seed": 83, "learned_velocity_probabilistic_closed": {"imagined_success": 0.94, "real_success": 0.44, "real_final_distance_px": 10.713575191497803, "collision_count": 1.56, "executed_actions": 46.4, "replans": 7.56, "route_alignment_error_px": 3.0392927364809337, "max_route_alignment_error_px": 7.35788366317749, "mean_shift_score": 0.0, "max_shift_score": 0.0, "shift_detected_count": 0.0, "predicted_route_completion_probability": 0.8159919516188926, "alignment_fallback_trigger_count": 1.0, "fallback_steps": 33.06, "wall_route_progress_px": 51.25507435798645, "wall_route_remaining_px": 12.55851969718933, "wall_route_regression_count": 19.52, "wall_route_side_switch_count": 0.0}},
+    {"seed": 97, "learned_velocity_probabilistic_closed": {"imagined_success": 0.94, "real_success": 0.28, "real_final_distance_px": 10.53257507801056, "collision_count": 2.4, "executed_actions": 47.2, "replans": 8.56, "route_alignment_error_px": 2.9451902288117022, "max_route_alignment_error_px": 7.259790420532227, "mean_shift_score": 0.0, "max_shift_score": 0.0, "shift_detected_count": 0.0, "predicted_route_completion_probability": 0.8092863765147714, "alignment_fallback_trigger_count": 1.0, "fallback_steps": 34.64, "wall_route_progress_px": 53.295318398475644, "wall_route_remaining_px": 12.731656622886657, "wall_route_regression_count": 20.62, "wall_route_side_switch_count": 0.0}}
+  ],
+  "summary": {
+    "learned_velocity_probabilistic_closed": {
+      "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+      "real_success": {"mean": 0.3466666666666667, "std": 0.06798692684790379},
+      "real_final_distance_px": {"mean": 10.733275389671325, "std": 0.1724771459682119},
+      "collision_count": {"mean": 2.026666666666667, "std": 0.34922135609890115},
+      "executed_actions": {"mean": 46.70666666666667, "std": 0.3522625283632787},
+      "replans": {"mean": 8.126666666666667, "std": 0.41899350299921817},
+      "route_alignment_error_px": {"mean": 2.9628897724353203, "std": 0.05655904975828668},
+      "max_route_alignment_error_px": {"mean": 7.263857069015503, "std": 0.07516721330053912},
+      "mean_shift_score": {"mean": 0.0, "std": 0.0},
+      "max_shift_score": {"mean": 0.0, "std": 0.0},
+      "shift_detected_count": {"mean": 0.0, "std": 0.0},
+      "predicted_route_completion_probability": {"mean": 0.7996101702481305, "std": 0.01862802949236348},
+      "alignment_fallback_trigger_count": {"mean": 0.9933333333333333, "std": 0.009428090415820642},
+      "fallback_steps": {"mean": 33.306666666666665, "std": 1.00323919824182},
+      "wall_route_progress_px": {"mean": 51.57515577316284, "std": 1.2937850111000406},
+      "wall_route_remaining_px": {"mean": 12.340137297312419, "std": 0.43701959131614787},
+      "wall_route_regression_count": {"mean": 19.593333333333334, "std": 0.8099931412603993},
+      "wall_route_side_switch_count": {"mean": 0.0, "std": 0.0}
+    }
+  }
+}

@@ -18,6 +18,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Machine-readable route-alignment and shift-detection diagnostics for the v8 checkpoint.
 - Explicit route-completion probability and 6px alignment-triggered wall-aware hybrid fallback.
 - RGB-observed footprint-inflated A* global routes with bend-only inertial tracking for obstacle-crossing fallback.
+- Route-side commitment, remaining-budget penalties, geometric progress tracking, and emergency side-switch diagnostics.
 
 ### Changed
 
@@ -26,6 +27,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
 - Python verification now covers 48 tests at 79% line coverage.
 - The A* fallback raises the strict 150-episode barrier result to 30.67% ± 2.49pp real success, with 3.19 ± 0.52 collisions per episode.
+- Locked-budget A* fallback raises the same result to 34.67% ± 6.80pp real success, with 2.03 ± 0.35 collisions and zero emergency side switches per episode.
 
 ### Planned
 
