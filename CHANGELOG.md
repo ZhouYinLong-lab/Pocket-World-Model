@@ -16,6 +16,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Full 50-episode × three-seed revalidation for the learned temporal/probabilistic barrier planner.
 - Route-aware candidate scoring, executed-prefix alignment metrics, and online predictive-shift alarms.
 - Machine-readable route-alignment and shift-detection diagnostics for the v8 checkpoint.
+- Explicit route-completion probability and 6px alignment-triggered wall-aware hybrid fallback.
 
 ### Changed
 
@@ -40,6 +41,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 ### Changed
 
 - Route-aware planning reaches 0.667% ± 0.943pp real success in the strict 150-episode protocol, improving the prior 0% boundary while documenting that the core problem remains open.
+- Alignment-triggered hybrid fallback raises the same protocol to 7.333% ± 0.943pp real success and reduces mean collisions from 5.92 to 5.10 per episode.
 
 ## [0.2.0] - 2026-08-03
 

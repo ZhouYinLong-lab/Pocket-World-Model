@@ -1,0 +1,32 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_seed": 50,
+  "horizon": 48,
+  "candidates": 1024,
+  "seeds": [71, 83, 97],
+  "planner": "learned_velocity_probabilistic_closed with alignment-triggered wall-aware hybrid fallback",
+  "route_objective": true,
+  "route_execution_horizon": 12,
+  "alignment_fallback_threshold_px": 6.0,
+  "shift_threshold": null,
+  "protocol": "full three-seed single-barrier evaluation; learned route is used until imagined-vs-real alignment error reaches 6px, then explicit wall-aware hybrid planning takes over",
+  "runs": {
+    "71": {"imagined_success": 0.9, "real_success": 0.06, "real_final_distance_px": 29.717329931259155, "collision_count": 5.24, "executed_actions": 47.78, "replans": 31.02, "route_alignment_error_px": 1.792314805146623, "max_route_alignment_error_px": 6.366120567321778, "predicted_route_completion_probability": 0.7735521826107272, "alignment_fallback_trigger_count": 0.98, "fallback_steps": 33.48},
+    "83": {"imagined_success": 0.94, "real_success": 0.08, "real_final_distance_px": 30.132448105812074, "collision_count": 4.88, "executed_actions": 47.66, "replans": 32.18, "route_alignment_error_px": 1.768718882175795, "max_route_alignment_error_px": 6.372457952499389, "predicted_route_completion_probability": 0.8159919516188926, "alignment_fallback_trigger_count": 1.0, "fallback_steps": 34.32},
+    "97": {"imagined_success": 0.94, "real_success": 0.08, "real_final_distance_px": 33.096054148674014, "collision_count": 5.18, "executed_actions": 47.54, "replans": 33.66, "route_alignment_error_px": 1.6981484914845189, "max_route_alignment_error_px": 6.375336866378785, "predicted_route_completion_probability": 0.8092863765147714, "alignment_fallback_trigger_count": 1.0, "fallback_steps": 34.98}
+  },
+  "summary": {
+    "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+    "real_success": {"mean": 0.07333333333333335, "std": 0.009428090415820637},
+    "real_final_distance_px": {"mean": 30.981944061915083, "std": 1.504477067270205},
+    "collision_count": {"mean": 5.1000000000000005, "std": 0.15748015748023628},
+    "executed_actions": {"mean": 47.66, "std": 0.09797958971132793},
+    "replans": {"mean": 32.28666666666667, "std": 1.0804114442604198},
+    "route_alignment_error_px": {"mean": 1.7530607262689788, "std": 0.04000589158260786},
+    "max_route_alignment_error_px": {"mean": 6.371305128733318, "std": 0.003849830650280862},
+    "predicted_route_completion_probability": {"mean": 0.7996101702481305, "std": 0.01862802949236348},
+    "alignment_fallback_trigger_count": {"mean": 0.9933333333333333, "std": 0.009428090415820642},
+    "fallback_steps": {"mean": 34.26, "std": 0.6138403701289125}
+  },
+  "interpretation": "Alignment-triggered wall-aware fallback improves real success from 0.667% to 7.333%, reduces collisions from 5.92 to 5.10 per episode, and reduces route alignment error from 2.505px to 1.753px. The barrier task remains unsolved, but the intervention is causal and materially improves transfer."
+}

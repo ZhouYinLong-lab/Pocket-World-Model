@@ -208,13 +208,13 @@ The learned planner proposes map-agnostic two-bend waypoint routes and lets the 
 
 Recent RGB frames can initialize velocity either with the legacy finite-difference estimator or with the learned temporal encoder. The calibrated probabilistic planner re-scores a shortlist by sampling future landing states; the older 64-point neighborhood and horizon-growing radius remain available as explicit robust baselines.
 
-The route-aware planner adds `route_objective=True` and reports `route_alignment_error_px` / `max_route_alignment_error_px`. To enable the online innovation alarm with the v8 threshold:
+The route-aware planner adds `route_objective=True` and reports `route_alignment_error_px` / `max_route_alignment_error_px`. If alignment exceeds a configured threshold, it switches from learned route proposals to an explicit wall-aware hybrid fallback. To enable both alarms with the v8 thresholds:
 
 ```bash
-python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probability-v8.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --only learned_velocity_probabilistic_closed --shift-threshold 0.9812744 --output artifacts/evaluation-route-shift-v8.json
+python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probability-v8.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --only learned_velocity_probabilistic_closed --alignment-fallback-threshold 6.0 --shift-threshold 0.9812744 --output artifacts/evaluation-route-shift-v8.json
 ```
 
-The completed [route-aware three-seed result](docs/results/evaluation-route-aware-temporal-probability-v8-full.json) supersedes the lower-budget diagnostic. It improves final distance and produces one real success in 150 episodes, but route alignment is still not sufficient for reliable barrier crossing.
+The completed [route-aware three-seed result](docs/results/evaluation-route-aware-temporal-probability-v8-full.json) supersedes the lower-budget diagnostic. It improves final distance and produces one real success in 150 episodes, but route alignment is still not sufficient for reliable barrier crossing. The latest [alignment-fallback result](docs/results/evaluation-route-aware-hybrid-fallback-v8-full.json) raises real success to **7.33% ± 0.94%**, lowers collisions to **5.10 ± 0.16**, and lowers route alignment error to **1.753 ± 0.040px**. This is a material transfer improvement, not a solved task.
 
 To reproduce the frozen three-seed barrier comparison:
 
