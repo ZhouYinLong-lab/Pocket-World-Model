@@ -1,0 +1,105 @@
+{
+  "config": {
+    "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+    "episodes": 50,
+    "horizon": 48,
+    "candidates": 1024,
+    "seeds": [71, 83, 97],
+    "only": "learned_velocity_probabilistic_closed",
+    "shift_threshold": null,
+    "alignment_fallback_threshold": 4.0
+  },
+  "runs": [
+    {
+      "seed": 71,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.9,
+        "real_success": 0.54,
+        "real_final_distance_px": 7.05389829158783,
+        "collision_count": 1.46,
+        "executed_actions": 45.8,
+        "replans": 7.64,
+        "route_alignment_error_px": 2.8554987760549047,
+        "max_route_alignment_error_px": 7.2360719871520995,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "shift_detected_count": 0.0,
+        "predicted_route_completion_probability": 0.7735521826107272,
+        "alignment_fallback_trigger_count": 1.0,
+        "fallback_steps": 37.98,
+        "wall_route_progress_px": 59.16957410812378,
+        "wall_route_remaining_px": 7.608914966583252,
+        "wall_route_regression_count": 24.18,
+        "wall_route_side_switch_count": 0.0
+      }
+    },
+    {
+      "seed": 83,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.94,
+        "real_success": 0.5,
+        "real_final_distance_px": 6.708902864456177,
+        "collision_count": 1.02,
+        "executed_actions": 46.04,
+        "replans": 7.38,
+        "route_alignment_error_px": 2.9162395258423457,
+        "max_route_alignment_error_px": 7.360630941390991,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "shift_detected_count": 0.0,
+        "predicted_route_completion_probability": 0.8159919516188926,
+        "alignment_fallback_trigger_count": 1.0,
+        "fallback_steps": 38.7,
+        "wall_route_progress_px": 60.40413204669952,
+        "wall_route_remaining_px": 7.168082232475281,
+        "wall_route_regression_count": 24.98,
+        "wall_route_side_switch_count": 0.0
+      }
+    },
+    {
+      "seed": 97,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.94,
+        "real_success": 0.48,
+        "real_final_distance_px": 6.885573139190674,
+        "collision_count": 0.94,
+        "executed_actions": 46.4,
+        "replans": 7.4,
+        "route_alignment_error_px": 2.952059314558125,
+        "max_route_alignment_error_px": 7.415244884490967,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "shift_detected_count": 0.0,
+        "predicted_route_completion_probability": 0.8092863765147714,
+        "alignment_fallback_trigger_count": 1.0,
+        "fallback_steps": 39.82,
+        "wall_route_progress_px": 62.47123888492584,
+        "wall_route_remaining_px": 7.319209189414978,
+        "wall_route_regression_count": 25.7,
+        "wall_route_side_switch_count": 0.0
+      }
+    }
+  ],
+  "summary": {
+    "learned_velocity_probabilistic_closed": {
+      "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+      "real_success": {"mean": 0.5066666666666667, "std": 0.024944382578492966},
+      "real_final_distance_px": {"mean": 6.882791431744894, "std": 0.14085752756520398},
+      "collision_count": {"mean": 1.14, "std": 0.2286190426597633},
+      "executed_actions": {"mean": 46.080000000000005, "std": 0.24657656011875956},
+      "replans": {"mean": 7.473333333333334, "std": 0.11813363431112882},
+      "route_alignment_error_px": {"mean": 2.9079325388184585, "std": 0.03985589813372882},
+      "max_route_alignment_error_px": {"mean": 7.33731593767802, "std": 0.07498188151726173},
+      "mean_shift_score": {"mean": 0.0, "std": 0.0},
+      "max_shift_score": {"mean": 0.0, "std": 0.0},
+      "shift_detected_count": {"mean": 0.0, "std": 0.0},
+      "predicted_route_completion_probability": {"mean": 0.7996101702481305, "std": 0.01862802949236348},
+      "alignment_fallback_trigger_count": {"mean": 1.0, "std": 0.0},
+      "fallback_steps": {"mean": 38.833333333333336, "std": 0.757070376884182},
+      "wall_route_progress_px": {"mean": 60.681648346583046, "std": 1.3621084262078467},
+      "wall_route_remaining_px": {"mean": 7.36540212949117, "std": 0.18290929564484384},
+      "wall_route_regression_count": {"mean": 24.953333333333333, "std": 0.6208238254305499},
+      "wall_route_side_switch_count": {"mean": 0.0, "std": 0.0}
+    }
+  }
+}
