@@ -409,7 +409,7 @@ def _wall_aware_route_templates(
             start_position,
             targets,
             horizon,
-            tolerance=2.5,
+            tolerance=3.5,
             damping=3.0,
             start_velocity=start_velocity,
         )
