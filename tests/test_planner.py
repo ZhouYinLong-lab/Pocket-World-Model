@@ -6,6 +6,7 @@ from pocketworld.planner import (
     _astar_path,
     _dilate,
     _learned_waypoint_templates,
+    _path_waypoints,
     _wall_aware_route_templates,
     estimate_agent_velocity,
     extract_wall_boxes,
@@ -47,6 +48,17 @@ def test_astar_route_crosses_barrier_without_entering_inflated_wall():
     assert path
     assert all(not occupied[y, x] for x, y in path)
     assert min(y for _, y in path) <= 6
+
+
+def test_path_waypoints_keep_bends_when_downsampling_dense_grid_route():
+    path = [(10, 32), (11, 31), (12, 30), (12, 29), (12, 28), (13, 27)]
+
+    assert _path_waypoints(path, spacing=len(path) + 1) == (
+        (10.0, 32.0),
+        (12.0, 30.0),
+        (12.0, 28.0),
+        (13.0, 27.0),
+    )
 
 
 def test_wall_aware_templates_are_generated_from_observed_geometry():

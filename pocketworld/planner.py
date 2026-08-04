@@ -281,6 +281,7 @@ def _route_sequence(
     horizon: int,
     tolerance: float = 1.5,
     start_velocity: np.ndarray | None = None,
+    damping: float = 3.0,
 ) -> list[int]:
     """Track generic waypoints using the learned compact kinematics."""
     state = model.state_from_latent(model.encode(start))
@@ -300,7 +301,7 @@ def _route_sequence(
             target_index += 1
             target = np.asarray(targets[target_index], dtype=np.float32)
             delta = target - position
-        control = delta - 3.0 * velocity
+        control = delta - damping * velocity
         if abs(control[0]) >= abs(control[1]):
             action = 3 if control[0] >= 0 else 2
         else:
@@ -408,7 +409,8 @@ def _wall_aware_route_templates(
             start_position,
             targets,
             horizon,
-            tolerance=3.5,
+            tolerance=2.5,
+            damping=0.75,
             start_velocity=start_velocity,
         )
         key = tuple(actions)
