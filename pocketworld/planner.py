@@ -410,7 +410,7 @@ def _wall_aware_route_templates(
             targets,
             horizon,
             tolerance=2.5,
-            damping=0.75,
+            damping=3.0,
             start_velocity=start_velocity,
         )
         key = tuple(actions)
