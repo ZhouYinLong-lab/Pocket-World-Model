@@ -24,7 +24,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 47 tests at 79% line coverage.
+- Python verification now covers 48 tests at 79% line coverage.
 - The A* fallback raises the strict 150-episode barrier result to 30.67% ± 2.49pp real success, with 3.19 ± 0.52 collisions per episode.
 
 ### Planned
