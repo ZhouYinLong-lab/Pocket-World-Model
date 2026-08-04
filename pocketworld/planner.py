@@ -7,6 +7,7 @@ from typing import Callable
 import numpy as np
 import torch
 
+from .env import DEFAULT_WALLS
 from .model import PocketWorldModel
 
 
@@ -17,16 +18,37 @@ class PlanResult:
     imagined_distance: float
     imagined_collision_risk: float = 0.0
     planning_score: float = 0.0
+    route_score: float = 0.0
+    route_progress: float = 0.0
+    route_endpoint_distance: float = 0.0
 
 
 @dataclass
 class RecedingHorizonResult:
     actions: np.ndarray
     first_plan_distance: float
+    first_plan_route_distance: float
     final_observation: np.ndarray
     final_info: dict
     collision_count: int = 0
     replans: int = 0
+    route_alignment_error_px: float = 0.0
+    max_route_alignment_error_px: float = 0.0
+    mean_shift_score: float = 0.0
+    max_shift_score: float = 0.0
+    shift_detected_count: int = 0
+
+
+def _rect_wall_mask() -> np.ndarray:
+    mask = np.zeros((64, 64), dtype=bool)
+    for wall in DEFAULT_WALLS:
+        x0, y0 = int(wall.x), int(wall.y)
+        x1, y1 = int(wall.x + wall.width), int(wall.y + wall.height)
+        mask[y0:y1, x0:x1] = True
+    return mask
+
+
+_DEFAULT_WALL_MASK = _rect_wall_mask()
 
 
 def extract_wall_mask(frame: np.ndarray) -> np.ndarray:
@@ -258,6 +280,60 @@ def estimate_agent_velocity(
     return velocity.astype(np.float32)
 
 
+def wall_context_shift_score(observation: np.ndarray, mismatch_scale: float = 0.05) -> float:
+    """Measure visible wall-layout mismatch against the training-map prior."""
+    if mismatch_scale <= 0:
+        raise ValueError("mismatch_scale must be positive")
+    mismatch = float(np.mean(extract_wall_mask(observation) != _DEFAULT_WALL_MASK))
+    return mismatch / mismatch_scale
+
+
+@torch.no_grad()
+def predictive_shift_score(
+    model: PocketWorldModel,
+    previous_observation: np.ndarray,
+    action: int,
+    next_observation: np.ndarray,
+    observation_history: Sequence[np.ndarray] | None = None,
+) -> float:
+    """Score an observed transition by its calibrated standardized innovation.
+
+    The score is available after the next RGB frame arrives and does not use
+    the simulator state or an OOD label. A high value means the observed
+    position/velocity transition is unlikely under the learned transition
+    distribution. It is deliberately a scalar monitor, not a probability.
+    """
+    previous_position = extract_agent_position(previous_observation)
+    next_position = extract_agent_position(next_observation)
+    if not np.isfinite(previous_position).all() or not np.isfinite(next_position).all():
+        return float("inf")
+    history = list(observation_history) if observation_history is not None else [previous_observation]
+    if not history or not np.array_equal(history[-1], previous_observation):
+        history.append(previous_observation)
+    frame = torch.from_numpy(previous_observation[None]).float() / 255.0
+    latent = model.encode(frame)
+    state = model.state_from_latent(latent)
+    position = torch.as_tensor(previous_position / 64.0, dtype=state.dtype, device=state.device)[None]
+    velocity = torch.as_tensor(
+        estimate_agent_velocity(history) / 3.0,
+        dtype=state.dtype,
+        device=state.device,
+    )[None]
+    state = torch.cat((position, velocity), dim=-1)
+    action_tensor = torch.tensor([int(action)], device=state.device)
+    mean, std = model.transition_state_stats(latent, state, action_tensor)
+    observed_velocity = (next_position - previous_position) / 3.0
+    target = torch.as_tensor(
+        np.concatenate((next_position / 64.0, observed_velocity)),
+        dtype=state.dtype,
+        device=state.device,
+    )[None]
+    standardized = (target - mean) / std.clamp_min(1e-6)
+    transition_score = float(torch.sqrt(standardized.square().mean()).item())
+    context_score = wall_context_shift_score(previous_observation)
+    return max(transition_score, context_score)
+
+
 @torch.no_grad()
 def random_shooting(
     model: PocketWorldModel,
@@ -277,6 +353,8 @@ def random_shooting(
     probabilistic_uncertainty: bool = False,
     uncertainty_samples: int = 16,
     robust_candidates: int = 64,
+    route_objective: bool = False,
+    route_execution_horizon: int | None = None,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -392,14 +470,37 @@ def random_shooting(
     safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
     if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
         safe_scores[~eligible] = 1e6
-    best = int(np.argmin(np.min(safe_scores, axis=1)))
-    best_step = int(np.argmin(safe_scores[best]))
+    if route_objective:
+        route_regressions = np.maximum(0.0, np.diff(goal_distances, axis=1)).sum(axis=1)
+        route_scores = (
+            goal_distances[:, -1]
+            + 0.35 * goal_distances[:, 1:].mean(axis=1)
+            + 0.50 * route_regressions
+            + 64.0 * collision_prefix[:, -1]
+        )
+        route_scores = np.where(np.isfinite(route_scores), route_scores, 1e6)
+        if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+            route_scores[~eligible] = 1e6
+        best = int(np.argmin(route_scores))
+        reached = np.flatnonzero(safe_scores[best] <= 4.0)
+        best_step = int(reached[0]) if len(reached) else horizon
+        selected_route_score = float(route_scores[best])
+    else:
+        best = int(np.argmin(np.min(safe_scores, axis=1)))
+        best_step = int(np.argmin(safe_scores[best]))
+        selected_route_score = float(safe_scores[best, best_step])
+    initial_distance = float(goal_distances[best, 0])
+    if route_objective and route_execution_horizon is not None:
+        best_step = min(best_step, max(1, int(route_execution_horizon)))
     return PlanResult(
         actions=actions[best, :best_step].cpu().numpy(),
         imagined_positions=positions[best, :best_step + 1],
         imagined_distance=float(goal_distances[best, best_step]),
         imagined_collision_risk=float(collision_prefix[best, best_step]),
-        planning_score=float(safe_scores[best, best_step]),
+        planning_score=selected_route_score,
+        route_score=selected_route_score,
+        route_progress=initial_distance - float(goal_distances[best, -1]),
+        route_endpoint_distance=float(goal_distances[best, -1]),
     )
 
 
@@ -424,11 +525,15 @@ def receding_horizon_plan(
     uncertainty_growth_px: float = 0.0,
     probabilistic_uncertainty: bool = False,
     uncertainty_samples: int = 16,
+    route_objective: bool = False,
+    shift_threshold: float | None = None,
+    route_execution_horizon: int | None = None,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
     executed_actions = []
     first_plan_distance = float("nan")
+    first_plan_route_distance = float("nan")
     initial_position = extract_agent_position(observation)
     final_info: dict = {
         "position": initial_position.copy(),
@@ -441,6 +546,9 @@ def receding_horizon_plan(
     observation_history = [observation]
     collision_count = 0
     replans = 0
+    alignment_errors: list[float] = []
+    shift_scores: list[float] = []
+    shift_detected_count = 0
     for step in range(max_steps):
         if pending_plan is None or pending_index >= len(pending_plan.actions):
             replans += 1
@@ -459,28 +567,47 @@ def receding_horizon_plan(
                 uncertainty_growth_px=uncertainty_growth_px,
                 probabilistic_uncertainty=probabilistic_uncertainty,
                 uncertainty_samples=uncertainty_samples,
+                route_objective=route_objective,
+                route_execution_horizon=route_execution_horizon,
             )
             pending_index = 0
         plan = pending_plan
         if step == 0:
             first_plan_distance = plan.imagined_distance
+            first_plan_route_distance = plan.route_endpoint_distance
         if len(plan.actions) == 0:
             break
         actions_to_execute = plan.actions[pending_index:pending_index + max(1, commit_steps)]
         for action_value in actions_to_execute:
             action = int(action_value)
+            previous_observation = current_observation
+            previous_history = list(observation_history)
             current_observation, _, terminated, truncated, final_info = step_fn(action)
             observation_history.append(current_observation)
             observation_history = observation_history[-4:]
             executed_actions.append(action)
             collision_count += int(final_info.get("collision", False))
             pending_index += 1
+            expected_index = min(pending_index, len(plan.imagined_positions) - 1)
+            actual_position = extract_agent_position(current_observation)
+            expected_position = plan.imagined_positions[expected_index]
+            if np.isfinite(actual_position).all() and np.isfinite(expected_position).all():
+                alignment_errors.append(float(np.linalg.norm(actual_position - expected_position)))
+            if shift_threshold is not None:
+                shift_score = predictive_shift_score(
+                    model,
+                    previous_observation,
+                    action,
+                    current_observation,
+                    previous_history,
+                )
+                shift_scores.append(shift_score)
+                if shift_score >= shift_threshold:
+                    shift_detected_count += 1
+                    pending_plan = None
             if terminated or truncated:
                 break
             if preserve_route:
-                expected_index = min(pending_index, len(plan.imagined_positions) - 1)
-                actual_position = extract_agent_position(current_observation)
-                expected_position = plan.imagined_positions[expected_index]
                 deviated = not np.all(np.isfinite(actual_position)) or np.linalg.norm(actual_position - expected_position) > route_tolerance
                 if final_info.get("collision", False) or deviated:
                     pending_plan = None
@@ -492,8 +619,14 @@ def receding_horizon_plan(
     return RecedingHorizonResult(
         actions=np.asarray(executed_actions, dtype=np.int64),
         first_plan_distance=first_plan_distance,
+        first_plan_route_distance=first_plan_route_distance,
         final_observation=current_observation,
         final_info=final_info,
         collision_count=collision_count,
         replans=replans,
+        route_alignment_error_px=float(np.mean(alignment_errors)) if alignment_errors else 0.0,
+        max_route_alignment_error_px=float(np.max(alignment_errors)) if alignment_errors else 0.0,
+        mean_shift_score=float(np.mean(shift_scores)) if shift_scores else 0.0,
+        max_shift_score=float(np.max(shift_scores)) if shift_scores else 0.0,
+        shift_detected_count=shift_detected_count,
     )

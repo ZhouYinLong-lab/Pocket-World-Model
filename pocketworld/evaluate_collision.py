@@ -75,6 +75,7 @@ def _closed_loop_episode(
     uncertainty_growth_px: float = 0.0,
     use_learned_velocity: bool = False,
     probabilistic_uncertainty: bool = False,
+    shift_threshold: float | None = None,
 ) -> dict[str, float]:
     env = PocketWorldEnv(walls=WALLS, agent_start=start, goal=goal)
     observation, _ = env.reset()
@@ -96,15 +97,26 @@ def _closed_loop_episode(
         uncertainty_growth_px=uncertainty_growth_px,
         probabilistic_uncertainty=probabilistic_uncertainty,
         uncertainty_samples=16,
+        route_objective=use_learned_velocity,
+        route_execution_horizon=12 if use_learned_velocity else None,
+        shift_threshold=shift_threshold,
     )
     distance = float(result.final_info.get("distance_to_goal", float("inf")))
     return {
-        "imagined_success": float(result.first_plan_distance <= env.goal_radius),
+        "imagined_success": float(
+            (result.first_plan_route_distance if use_learned_velocity else result.first_plan_distance)
+            <= env.goal_radius
+        ),
         "real_success": float(distance <= env.goal_radius),
         "real_final_distance_px": distance,
         "collision_count": float(result.collision_count),
         "executed_actions": float(len(result.actions)),
         "replans": float(result.replans),
+        "route_alignment_error_px": float(result.route_alignment_error_px),
+        "max_route_alignment_error_px": float(result.max_route_alignment_error_px),
+        "mean_shift_score": float(result.mean_shift_score),
+        "max_shift_score": float(result.max_shift_score),
+        "shift_detected_count": float(result.shift_detected_count),
     }
 
 
@@ -116,6 +128,7 @@ def evaluate_seed(
     seed: int,
     only: str | None = None,
     include_new: bool = True,
+    shift_threshold: float | None = None,
 ) -> dict[str, dict[str, float]]:
     if only not in (None, "learned_velocity_probabilistic_closed"):
         raise ValueError(f"unsupported planner variant: {only}")
@@ -141,6 +154,7 @@ def evaluate_seed(
                     candidates,
                     use_learned_velocity=True,
                     probabilistic_uncertainty=True,
+                    shift_threshold=shift_threshold,
                 )
             )
             continue
@@ -167,6 +181,7 @@ def evaluate_seed(
                     candidates,
                     use_learned_velocity=True,
                     probabilistic_uncertainty=True,
+                    shift_threshold=shift_threshold,
                 )
             )
     return {
@@ -186,6 +201,7 @@ def main() -> None:
     parser.add_argument("--candidates", type=int, default=1024)
     parser.add_argument("--seeds", default="71,83,97")
     parser.add_argument("--only", choices=("learned_velocity_probabilistic_closed",), default=None, help="run one planner variant without the other comparison baselines")
+    parser.add_argument("--shift-threshold", type=float, default=None, help="enable online predictive-shift alarms at this standardized-innovation threshold")
     parser.add_argument("--output", default="artifacts/evaluation-collision-v3.json")
     args = parser.parse_args()
 
@@ -212,6 +228,7 @@ def main() -> None:
             seed,
             only=args.only,
             include_new=has_temporal_probability,
+            shift_threshold=args.shift_threshold,
         )
         runs.append({"seed": seed, **report})
         print(json.dumps(runs[-1], indent=2))
@@ -224,6 +241,7 @@ def main() -> None:
             "candidates": args.candidates,
             "seeds": seeds,
             "only": args.only,
+            "shift_threshold": args.shift_threshold,
         },
         "runs": runs,
         "summary": summary,

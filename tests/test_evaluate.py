@@ -6,6 +6,7 @@ from pocketworld.evaluate import (
     evaluate_temporal_velocity,
     evaluate_uncertainty_calibration,
     evaluate_uncertainty_calibration_matrix,
+    evaluate_shift_detection_matrix,
 )
 from pocketworld.model import PocketWorldModel
 
@@ -68,3 +69,17 @@ def test_uncertainty_calibration_matrix_covers_speed_and_map_shifts():
         "ood_map_fast",
     }
     assert all("position_coverage" in condition for condition in report.values())
+
+
+def test_shift_detection_matrix_reports_online_alarm_rates():
+    report = evaluate_shift_detection_matrix(PocketWorldModel(), episodes=1, horizon=2, seed=5)
+
+    assert "threshold" in report
+    assert set(report["conditions"]) == {
+        "in_distribution",
+        "ood_speed_slow",
+        "ood_speed_fast",
+        "ood_map",
+        "ood_map_fast",
+    }
+    assert 0.0 <= report["conditions"]["ood_map_fast"]["trigger_rate"] <= 1.0

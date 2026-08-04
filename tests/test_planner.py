@@ -1,7 +1,15 @@
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
-from pocketworld.planner import _collision_prefix, _learned_waypoint_templates, estimate_agent_velocity, extract_wall_boxes, extract_wall_mask
+from pocketworld.planner import (
+    _collision_prefix,
+    _learned_waypoint_templates,
+    estimate_agent_velocity,
+    extract_wall_boxes,
+    extract_wall_mask,
+    predictive_shift_score,
+    wall_context_shift_score,
+)
 
 
 def test_wall_mask_detects_wall_but_not_grid_or_agent():
@@ -25,6 +33,18 @@ def test_wall_boxes_find_single_barrier():
     mask = np.zeros((64, 64), dtype=bool)
     mask[10:54, 29:34] = True
     assert extract_wall_boxes(mask) == ((29.0, 10.0, 33.0, 53.0),)
+
+
+def test_wall_context_shift_score_is_zero_on_training_map_and_high_on_shifted_map():
+    from pocketworld.data import _variant_walls
+
+    default_env = PocketWorldEnv(agent_start=(8, 8), goal=(55, 55))
+    default_frame, _ = default_env.reset()
+    shifted_env = PocketWorldEnv(walls=_variant_walls(np.random.default_rng(3)), agent_start=(8, 8), goal=(55, 55))
+    shifted_frame, _ = shifted_env.reset()
+
+    assert wall_context_shift_score(default_frame) == 0.0
+    assert wall_context_shift_score(shifted_frame) > 1.0
 
 
 def test_receding_horizon_result_exposes_executed_trace():
@@ -117,6 +137,31 @@ def test_random_shooting_accepts_learned_velocity_and_probability_flags():
     assert np.isfinite(result.planning_score)
 
 
+def test_route_objective_reports_progress_and_alignment_monitor_is_finite():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(), agent_start=(10, 10), goal=(54, 54))
+    first, _ = env.reset()
+    second, _, _, _, _ = env.step(3)
+    result = random_shooting(
+        PocketWorldModel(),
+        second,
+        (54, 54),
+        horizon=4,
+        candidates=8,
+        route_objective=True,
+        observation_history=[first, second],
+        use_learned_velocity=True,
+    )
+
+    assert np.isfinite(result.route_score)
+    assert np.isfinite(result.route_progress)
+    assert np.isfinite(predictive_shift_score(PocketWorldModel(), first, 3, second, [first]))
+
+
 def test_receding_horizon_reports_collision_and_replan_counts():
     from pocketworld.model import PocketWorldModel
     from pocketworld.planner import receding_horizon_plan
@@ -132,8 +177,12 @@ def test_receding_horizon_reports_collision_and_replan_counts():
         rollout_horizon=2,
         candidates=4,
         use_history_velocity=True,
+        route_objective=True,
+        shift_threshold=0.0,
     )
 
     assert result.collision_count >= 0
     assert result.replans >= 1
     assert np.isfinite(result.final_info["distance_to_goal"])
+    assert result.route_alignment_error_px >= 0.0
+    assert result.shift_detected_count >= 0

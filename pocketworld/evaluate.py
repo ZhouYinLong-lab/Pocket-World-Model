@@ -10,7 +10,13 @@ import torch
 from .data import _variant_walls, collect_random_rollouts
 from .env import PocketWorldEnv, Rect
 from .model import PocketWorldModel
-from .planner import estimate_agent_velocity, extract_agent_position, random_shooting, receding_horizon_plan
+from .planner import (
+    estimate_agent_velocity,
+    extract_agent_position,
+    predictive_shift_score,
+    random_shooting,
+    receding_horizon_plan,
+)
 
 
 def evaluate_prediction(model: PocketWorldModel, episodes: int = 20, seed: int = 11, ood: bool = False) -> dict[str, dict[str, float]]:
@@ -405,6 +411,120 @@ def evaluate_uncertainty_calibration_matrix(
     }
 
 
+def _transition_shift_scores(model: PocketWorldModel, batch) -> np.ndarray:
+    """Collect online predictive-innovation scores from observable RGB rollouts."""
+    scores = []
+    for episode in range(batch.observations.shape[0]):
+        for step in range(batch.actions.shape[1]):
+            history = batch.observations[episode, max(0, step + 1 - 4):step + 1]
+            scores.append(
+                predictive_shift_score(
+                    model,
+                    batch.observations[episode, step],
+                    int(batch.actions[episode, step]),
+                    batch.observations[episode, step + 1],
+                    history,
+                )
+            )
+    return np.asarray(scores, dtype=np.float32)
+
+
+def fit_shift_threshold(
+    model: PocketWorldModel,
+    episodes: int = 20,
+    horizon: int = 8,
+    seed: int = 151,
+    false_positive_rate: float = 0.05,
+) -> dict[str, float]:
+    """Fit an ID predictive-innovation threshold for online shift alarms."""
+    if not 0.0 < false_positive_rate < 0.5:
+        raise ValueError("false_positive_rate must be between 0 and 0.5")
+    batch = collect_random_rollouts(
+        episodes=episodes,
+        horizon=horizon,
+        seed=seed,
+        sticky_probability=0.75,
+        full_state_range=True,
+    )
+    scores = _transition_shift_scores(model, batch)
+    quantile = 1.0 - false_positive_rate
+    return {
+        "threshold": float(np.quantile(scores, quantile)),
+        "false_positive_rate": false_positive_rate,
+        "quantile": quantile,
+        "calibration_samples": int(scores.size),
+        "calibration_mean_score": float(scores.mean()),
+        "calibration_p95_score": float(np.quantile(scores, 0.95)),
+    }
+
+
+def _shift_detection_metrics(scores: np.ndarray, threshold: float, shifted: bool) -> dict[str, float | None]:
+    triggered = scores >= threshold
+    trigger_rate = float(triggered.mean()) if len(triggered) else 0.0
+    return {
+        "samples": int(scores.size),
+        "mean_score": float(scores.mean()) if len(scores) else 0.0,
+        "p95_score": float(np.quantile(scores, 0.95)) if len(scores) else 0.0,
+        "threshold": float(threshold),
+        "trigger_rate": trigger_rate,
+        "false_positive_rate": trigger_rate if not shifted else None,
+        "detection_rate": trigger_rate if shifted else None,
+    }
+
+
+def _roc_auc(negative: np.ndarray, positive: np.ndarray) -> float:
+    """Compute AUROC without adding a scikit-learn dependency."""
+    if len(negative) == 0 or len(positive) == 0:
+        return 0.5
+    comparisons = positive[:, None] - negative[None, :]
+    return float((comparisons > 0).mean() + 0.5 * (comparisons == 0).mean())
+
+
+def evaluate_shift_detection_matrix(
+    model: PocketWorldModel,
+    episodes: int = 20,
+    horizon: int = 8,
+    seed: int = 151,
+) -> dict[str, object]:
+    """Evaluate online shift alarms on speed, map, and joint distribution shifts."""
+    threshold_report = fit_shift_threshold(model, episodes, horizon, seed)
+    threshold = threshold_report["threshold"]
+    conditions = {
+        "in_distribution": (False, 1.0, False),
+        "ood_speed_slow": (False, 0.8, True),
+        "ood_speed_fast": (False, 1.2, True),
+        "ood_map": (True, 1.0, True),
+        "ood_map_fast": (True, 1.2, True),
+    }
+    reports: dict[str, dict[str, float | None]] = {}
+    id_batch = collect_random_rollouts(
+        episodes=episodes,
+        horizon=horizon,
+        seed=seed + 5000,
+        sticky_probability=0.75,
+        full_state_range=True,
+    )
+    id_scores = _transition_shift_scores(model, id_batch)
+    reports["in_distribution"] = _shift_detection_metrics(id_scores, threshold, shifted=False)
+    for index, (label, (map_variant, speed_scale, shifted)) in enumerate(conditions.items()):
+        if label == "in_distribution":
+            continue
+        batch = collect_random_rollouts(
+            episodes=episodes,
+            horizon=horizon,
+            seed=seed + 6000 + index * 1000,
+            sticky_probability=0.75,
+            full_state_range=True,
+            map_variant=map_variant,
+            agent_speed_scale=speed_scale,
+        )
+        scores = _transition_shift_scores(model, batch)
+        report = _shift_detection_metrics(scores, threshold, shifted=shifted)
+        report["auroc_vs_in_distribution"] = _roc_auc(id_scores, scores)
+        reports[label] = report
+    return {"threshold": threshold_report, "conditions": reports}
+
+
 def evaluate_action_effects(model: PocketWorldModel, repeat: int = 8) -> dict[str, dict[str, list[float] | float]]:
     """Compare predicted versus real displacement for each repeated action."""
     env = PocketWorldEnv(walls=(), agent_start=(32.0, 16.0), goal=(55.0, 55.0))
@@ -488,6 +608,7 @@ def main() -> None:
             } if collision_supervision else None,
             "temporal_velocity": evaluate_temporal_velocity(model, episodes=args.episodes, seed=seed + 9000),
             "uncertainty_calibration": evaluate_uncertainty_calibration_matrix(model, episodes=args.episodes, seed=seed + 10000),
+            "shift_detection": evaluate_shift_detection_matrix(model, episodes=args.episodes, seed=seed + 11000),
             "agent_rendering": {
                 "in_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 7000),
                 "out_of_distribution": evaluate_agent_rendering(model, episodes=args.episodes, seed=seed + 8000, ood=True),
