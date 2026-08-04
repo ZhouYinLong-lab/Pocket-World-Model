@@ -23,6 +23,8 @@ class PlanResult:
     route_progress: float = 0.0
     route_endpoint_distance: float = 0.0
     predicted_route_completion_probability: float = 0.0
+    wall_route_preference: str | None = None
+    wall_route_remaining_px: float = 0.0
 
 
 @dataclass
@@ -42,6 +44,10 @@ class RecedingHorizonResult:
     first_plan_route_completion_probability: float = 0.0
     alignment_fallback_trigger_count: int = 0
     fallback_steps: int = 0
+    wall_route_progress_px: float = 0.0
+    wall_route_remaining_px: float = 0.0
+    wall_route_regression_count: int = 0
+    wall_route_side_switch_count: int = 0
 
 
 def _rect_wall_mask() -> np.ndarray:
@@ -204,6 +210,14 @@ def _path_waypoints(path: list[tuple[int, int]], spacing: int = 2) -> tuple[tupl
     if waypoints[-1] != endpoint:
         waypoints.append(endpoint)
     return tuple(waypoints)
+
+
+def _path_length(path: list[tuple[int, int]]) -> float:
+    """Return the geometric length of a dense grid route in pixels."""
+    if len(path) < 2:
+        return 0.0
+    points = np.asarray(path, dtype=np.float32)
+    return float(np.linalg.norm(np.diff(points, axis=0), axis=1).sum())
 
 
 def extract_wall_boxes(mask: np.ndarray, min_area: int = 8) -> tuple[tuple[float, float, float, float], ...]:
@@ -376,7 +390,7 @@ def _detour_templates(
     return proposals
 
 
-def _wall_aware_route_templates(
+def _wall_aware_route_candidates(
     model: PocketWorldModel,
     start: torch.Tensor,
     start_position: np.ndarray,
@@ -384,18 +398,20 @@ def _wall_aware_route_templates(
     wall_mask: np.ndarray,
     horizon: int,
     start_velocity: np.ndarray | None = None,
-) -> list[list[int]]:
-    """Build route-following proposals from the observed wall geometry.
+    route_preference: str | None = None,
+) -> list[tuple[str, float, list[int]]]:
+    """Build route proposals with side and remaining geometric distance.
 
     The wall mask is inflated by the agent radius plus one pixel of clearance,
     matching the environment's footprint collision rule.  Two biased A* runs
-    provide top/bottom alternatives for a barrier; if both runs collapse to
-    the same route, the duplicate is removed.
+    provide top/bottom alternatives for a barrier.  Once a fallback route is
+    locked, ``route_preference`` restricts the search to that side.
     """
     occupied = _dilate(wall_mask, radius=4)
-    routes: list[list[int]] = []
+    candidates: list[tuple[str, float, list[int]]] = []
     seen: set[tuple[int, ...]] = set()
-    for preference in ("top", "bottom"):
+    preferences = (route_preference,) if route_preference in ("top", "bottom") else ("top", "bottom")
+    for preference in preferences:
         path = _astar_path(occupied, tuple(start_position), goal, vertical_preference=preference)
         if not path:
             continue
@@ -416,8 +432,34 @@ def _wall_aware_route_templates(
         key = tuple(actions)
         if key not in seen:
             seen.add(key)
-            routes.append(actions)
-    return routes
+            candidates.append((preference, _path_length(path), actions))
+    return candidates
+
+
+def _wall_aware_route_templates(
+    model: PocketWorldModel,
+    start: torch.Tensor,
+    start_position: np.ndarray,
+    goal: tuple[float, float],
+    wall_mask: np.ndarray,
+    horizon: int,
+    start_velocity: np.ndarray | None = None,
+    route_preference: str | None = None,
+) -> list[list[int]]:
+    """Return route-following action proposals from observed wall geometry."""
+    return [
+        actions
+        for _, _, actions in _wall_aware_route_candidates(
+            model,
+            start,
+            start_position,
+            goal,
+            wall_mask,
+            horizon,
+            start_velocity=start_velocity,
+            route_preference=route_preference,
+        )
+    ]
 
 
 def extract_agent_position(frame: np.ndarray) -> np.ndarray:
@@ -550,6 +592,8 @@ def random_shooting(
     route_objective: bool = False,
     route_execution_horizon: int | None = None,
     wall_aware_route: bool = False,
+    wall_route_preference: str | None = None,
+    wall_route_best_remaining_px: float | None = None,
 ) -> PlanResult:
     model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -584,10 +628,14 @@ def random_shooting(
     ).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
+    count = 0
+    template_route_preferences: list[str | None] = [None] * candidates
+    template_route_lengths = np.full(candidates, np.nan, dtype=np.float32)
     if collision_aware:
         wall_mask = extract_wall_mask(observation)
+        wall_route_metadata: list[tuple[str, float]] = []
         if wall_aware_route:
-            templates = _wall_aware_route_templates(
+            wall_candidates = _wall_aware_route_candidates(
                 model,
                 start,
                 start_position,
@@ -595,17 +643,35 @@ def random_shooting(
                 wall_mask,
                 horizon,
                 start_velocity=start_velocity,
+                route_preference=wall_route_preference,
             )
+            # If a locked side became temporarily infeasible because the
+            # current pose is noisy, allow one explicitly visible emergency
+            # re-route. The executor records this side switch separately.
+            if not wall_candidates and wall_route_preference is not None:
+                wall_candidates = _wall_aware_route_candidates(
+                    model,
+                    start,
+                    start_position,
+                    goal,
+                    wall_mask,
+                    horizon,
+                    start_velocity=start_velocity,
+                )
+            templates = [actions for _, _, actions in wall_candidates]
+            wall_route_metadata = [(preference, length) for preference, length, _ in wall_candidates]
         else:
             templates = (
                 _learned_waypoint_templates(model, start, start_position, goal, horizon, start_velocity=start_velocity)
                 if learned_collision
                 else _detour_templates(model, start, start_position, goal, wall_mask, horizon)
             )
-        count = 0
         if templates:
             template_tensor = torch.as_tensor(templates, device=device, dtype=torch.long)
             count = min(len(templates), candidates)
+            for index, (preference, length) in enumerate(wall_route_metadata[:count]):
+                template_route_preferences[index] = preference
+                template_route_lengths[index] = length
             actions[:count] = template_tensor[:count]
             imagined_positions[:count] = model.imagine_positions(
                 starts[:count],
@@ -694,6 +760,18 @@ def random_shooting(
         route_scores = np.where(np.isfinite(route_scores), route_scores, 1e6)
         if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
             route_scores[~eligible] = 1e6
+        if wall_aware_route and count:
+            route_lengths = template_route_lengths[:count]
+            estimated_steps = np.ceil(route_lengths / 1.8) + 4.0
+            budget_shortfall = np.maximum(0.0, estimated_steps - float(horizon))
+            route_scores[:count] += budget_shortfall * 32.0
+            if wall_route_best_remaining_px is not None and np.isfinite(wall_route_best_remaining_px):
+                route_regressions = np.maximum(0.0, route_lengths - float(wall_route_best_remaining_px) - 2.0)
+                route_scores[:count] += route_regressions * 1.5
+            # In wall-aware mode a random action sequence has no geometric
+            # progress guarantee. Use it only as a last resort when A* found
+            # no route at all.
+            route_scores[count:] = 1e6
         best = int(np.argmin(route_scores))
         reached = np.flatnonzero(safe_scores[best] <= 4.0)
         best_step = int(reached[0]) if len(reached) else horizon
@@ -707,6 +785,11 @@ def random_shooting(
         best_step = min(best_step, max(1, int(route_execution_horizon)))
     if best_step == 0 and initial_distance > 4.0:
         best_step = 1
+    selected_wall_route_preference = None
+    selected_wall_route_remaining_px = 0.0
+    if wall_aware_route and best < len(template_route_preferences):
+        selected_wall_route_preference = template_route_preferences[best]
+        selected_wall_route_remaining_px = float(template_route_lengths[best]) if np.isfinite(template_route_lengths[best]) else 0.0
     return PlanResult(
         actions=actions[best, :best_step].cpu().numpy(),
         imagined_positions=positions[best, :best_step + 1],
@@ -717,6 +800,8 @@ def random_shooting(
         route_progress=initial_distance - float(goal_distances[best, -1]),
         route_endpoint_distance=float(goal_distances[best, -1]),
         predicted_route_completion_probability=float(route_completion_probabilities[best]),
+        wall_route_preference=selected_wall_route_preference,
+        wall_route_remaining_px=selected_wall_route_remaining_px,
     )
 
 
@@ -770,6 +855,11 @@ def receding_horizon_plan(
     alignment_fallback_trigger_count = 0
     fallback_active = False
     fallback_steps = 0
+    fallback_route_preference: str | None = None
+    fallback_route_initial_remaining_px: float | None = None
+    fallback_route_best_remaining_px: float | None = None
+    wall_route_regression_count = 0
+    wall_route_side_switch_count = 0
     for step in range(max_steps):
         if pending_plan is None or pending_index >= len(pending_plan.actions):
             replans += 1
@@ -793,9 +883,28 @@ def receding_horizon_plan(
                 route_objective=route_objective or fallback_active,
                 route_execution_horizon=route_execution_horizon if not fallback_active else None,
                 wall_aware_route=fallback_active,
+                wall_route_preference=fallback_route_preference if fallback_active else None,
+                wall_route_best_remaining_px=fallback_route_best_remaining_px if fallback_active else None,
             )
             pending_index = 0
         plan = pending_plan
+        if fallback_active and plan.wall_route_preference is not None:
+            if fallback_route_preference is not None and plan.wall_route_preference != fallback_route_preference:
+                wall_route_side_switch_count += 1
+            fallback_route_preference = plan.wall_route_preference
+        if fallback_active and plan.wall_route_remaining_px > 0.0:
+            if fallback_route_initial_remaining_px is None:
+                fallback_route_initial_remaining_px = plan.wall_route_remaining_px
+            if (
+                fallback_route_best_remaining_px is not None
+                and plan.wall_route_remaining_px > fallback_route_best_remaining_px + 2.0
+            ):
+                wall_route_regression_count += 1
+            fallback_route_best_remaining_px = (
+                plan.wall_route_remaining_px
+                if fallback_route_best_remaining_px is None
+                else min(fallback_route_best_remaining_px, plan.wall_route_remaining_px)
+            )
         if step == 0:
             first_plan_distance = plan.imagined_distance
             first_plan_route_distance = plan.route_endpoint_distance
@@ -829,6 +938,25 @@ def receding_horizon_plan(
                     pending_plan = None
             if fallback_active:
                 fallback_steps += 1
+                if fallback_route_preference is not None and np.isfinite(actual_position).all():
+                    remaining_path = _astar_path(
+                        _dilate(extract_wall_mask(current_observation), radius=4),
+                        tuple(actual_position),
+                        goal,
+                        vertical_preference=fallback_route_preference,
+                    )
+                    if remaining_path:
+                        current_remaining_px = _path_length(remaining_path)
+                        if (
+                            fallback_route_best_remaining_px is not None
+                            and current_remaining_px > fallback_route_best_remaining_px + 2.0
+                        ):
+                            wall_route_regression_count += 1
+                        fallback_route_best_remaining_px = (
+                            current_remaining_px
+                            if fallback_route_best_remaining_px is None
+                            else min(fallback_route_best_remaining_px, current_remaining_px)
+                        )
             if shift_threshold is not None:
                 shift_score = predictive_shift_score(
                     model,
@@ -872,4 +1000,12 @@ def receding_horizon_plan(
         ),
         alignment_fallback_trigger_count=alignment_fallback_trigger_count,
         fallback_steps=fallback_steps,
+        wall_route_progress_px=(
+            max(0.0, fallback_route_initial_remaining_px - fallback_route_best_remaining_px)
+            if fallback_route_initial_remaining_px is not None and fallback_route_best_remaining_px is not None
+            else 0.0
+        ),
+        wall_route_remaining_px=fallback_route_best_remaining_px or 0.0,
+        wall_route_regression_count=wall_route_regression_count,
+        wall_route_side_switch_count=wall_route_side_switch_count,
     )

@@ -83,6 +83,43 @@ def test_wall_aware_templates_are_generated_from_observed_geometry():
     assert all(set(template).issubset({0, 1, 2, 3}) for template in templates)
 
 
+def test_wall_aware_route_preference_locks_to_one_side_and_reports_budget_distance():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    wall_mask = extract_wall_mask(observation)
+    model = PocketWorldModel()
+
+    top_templates = _wall_aware_route_templates(
+        model,
+        torch.from_numpy(observation[None]).float() / 255.0,
+        np.asarray((10.0, 32.0)),
+        (54.0, 32.0),
+        wall_mask,
+        horizon=12,
+        route_preference="top",
+    )
+    assert len(top_templates) == 1
+
+    result = random_shooting(
+        model,
+        observation,
+        (54, 32),
+        horizon=12,
+        candidates=4,
+        collision_aware=True,
+        hybrid_collision=True,
+        route_objective=True,
+        wall_aware_route=True,
+    )
+    assert result.wall_route_preference in {"top", "bottom"}
+    assert result.wall_route_remaining_px > 0.0
+
+
 def test_wall_context_shift_score_is_zero_on_training_map_and_high_on_shifted_map():
     from pocketworld.data import _variant_walls
 

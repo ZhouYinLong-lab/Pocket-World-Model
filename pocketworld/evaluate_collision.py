@@ -122,6 +122,10 @@ def _closed_loop_episode(
         "predicted_route_completion_probability": float(result.first_plan_route_completion_probability),
         "alignment_fallback_trigger_count": float(result.alignment_fallback_trigger_count),
         "fallback_steps": float(result.fallback_steps),
+        "wall_route_progress_px": float(result.wall_route_progress_px),
+        "wall_route_remaining_px": float(result.wall_route_remaining_px),
+        "wall_route_regression_count": float(result.wall_route_regression_count),
+        "wall_route_side_switch_count": float(result.wall_route_side_switch_count),
     }
 
 
