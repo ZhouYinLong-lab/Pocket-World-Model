@@ -1,0 +1,18 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_seed": 20,
+  "horizon": 48,
+  "candidates": 256,
+  "seeds": [71, 83, 97],
+  "planner": "learned_velocity_probabilistic_closed with route-aware objective",
+  "note": "Diagnostic run before the 12-step route execution cap was added; it is not a replacement for the 50x1,024 headline barrier result.",
+  "summary": {
+    "imagined_success": {"mean": 0.9666666666666667, "std": 0.023570226039551584},
+    "real_success": {"mean": 0.0, "std": 0.0},
+    "real_final_distance_px": {"mean": 29.449498176574707, "std": 0.14623936437402407},
+    "collision_count": {"mean": 6.45, "std": 0.3240370349203931},
+    "route_alignment_error_px": {"mean": 2.4842723699221905, "std": 0.07447944546166596},
+    "max_route_alignment_error_px": {"mean": 7.117035738627116, "std": 0.1139965476500858}
+  },
+  "interpretation": "Route-aware scoring reduces final-distance error relative to the earlier short-horizon diagnostic but increases collision exposure and still produces 0% real success. The alignment metric makes this failure visible rather than treating imagined goal distance as route success."
+}

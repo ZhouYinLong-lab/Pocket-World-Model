@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-42%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-77%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-45%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-79%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -72,10 +72,14 @@ The latest research direction replaces two hand-designed shortcuts with measurab
 - **Learned temporal velocity:** a lightweight RGB motion encoder, latent-frame differences, and a GRU learn velocity from the latest four observations. An auxiliary position head makes the motion features explicitly locate the small agent. The previous pixel-difference estimator remains available as a privileged baseline, and `--temporal-only` supports frozen-world-model fine-tuning.
 - **Calibrated probabilistic uncertainty:** a transition head predicts diagonal state standard deviations for position and velocity. A held-out rollout split calibrates one scale per coordinate with residual quantiles, then the planner samples landing states from that calibrated distribution when estimating collision probability.
 - **Cost-controlled planning:** ordinary candidates are ranked with the point model first; only a shortlist receives probabilistic Monte Carlo rescoring. This keeps the uncertainty experiment inspectable and computationally bounded.
+- **Route-level alignment:** candidates can be scored by endpoint distance, average along-route distance, regressions in progress, and accumulated collision risk. The executor reports imagined-vs-real route alignment error after every action and uses short route prefixes before replanning.
+- **Online shift detection:** after each observed transition, a standardized position/velocity innovation score can trigger a fresh replan. Its threshold is fit from an in-distribution rollout quantile and is explicitly evaluated separately from the OOD label.
 
 This is a marginal, split-calibrated Gaussian approximation—not a Bayesian posterior or an ensemble. The evaluation report now includes learned velocity error, finite-difference baseline error, 50/80/90/95% empirical coverage, interval width, and state Gaussian NLL.
 
 The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. The v8 checkpoint stays near nominal 90% marginal coverage in-distribution (position 87.7%, velocity 90.8%), but coverage falls under fast speed and map shifts, reaching 79.0% / 81.5% in the joint OOD condition. This is a measured risk boundary, not a claim of OOD calibration invariance.
+
+The first shift detector fits a 95th-percentile innovation threshold of 0.9813. It combines the calibrated motion innovation with a transparent wall-context mismatch against the known training-map prior. ID alarms stay near the 5% target; changed-map and joint map/fast detection reach 88% and 86% (AUROC 0.98 and 0.97), while fast-speed-only detection remains 9%. It is a useful map-shift gate, not a complete speed-shift classifier. See the [shift-detection result](docs/results/evaluation-temporal-probability-shift-detection-v8.json).
 
 The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md) and [machine-readable result](docs/results/evaluation-temporal-probability-v8.json).
 
@@ -198,6 +202,14 @@ Learned imagined collisions now freeze the compact state and zero velocity after
 The learned planner proposes map-agnostic two-bend waypoint routes and lets the wall-relative collision head rank them. It does not inspect wall boxes when running in pure learned mode; the explicit pixel planner remains a separately reported baseline.
 
 Recent RGB frames can initialize velocity either with the legacy finite-difference estimator or with the learned temporal encoder. The calibrated probabilistic planner re-scores a shortlist by sampling future landing states; the older 64-point neighborhood and horizon-growing radius remain available as explicit robust baselines.
+
+The route-aware planner adds `route_objective=True` and reports `route_alignment_error_px` / `max_route_alignment_error_px`. To enable the online innovation alarm with the v8 threshold:
+
+```bash
+python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probability-v8.pt --episodes 50 --horizon 48 --candidates 1024 --seeds 71,83,97 --only learned_velocity_probabilistic_closed --shift-threshold 0.9812744 --output artifacts/evaluation-route-shift-v8.json
+```
+
+The route diagnostic is recorded in [evaluation-route-alignment-sanity-v8.json](docs/results/evaluation-route-alignment-sanity-v8.json). It improves imagined route distance but still has 0% real barrier success, so route alignment is now measurable rather than considered solved.
 
 To reproduce the frozen three-seed barrier comparison:
 

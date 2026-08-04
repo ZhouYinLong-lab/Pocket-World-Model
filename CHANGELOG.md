@@ -14,18 +14,20 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Reproducible three-seed collision planner evaluation and committed result data.
 - OOD calibration matrix for nominal, slow, fast, changed-map, and joint speed/map rollouts.
 - Full 50-episode × three-seed revalidation for the learned temporal/probabilistic barrier planner.
+- Route-aware candidate scoring, executed-prefix alignment metrics, and online predictive-shift alarms.
+- Machine-readable route-alignment and shift-detection diagnostics for the v8 checkpoint.
 
 ### Changed
 
 - The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 42 tests at 77% line coverage.
+- Python verification now covers 45 tests at 79% line coverage.
 
 ### Planned
 
 - Improve route-level model alignment so low learned collision risk transfers to real barrier success.
-- Add shift detection or recalibration before trusting probabilistic plans under fast-speed and changed-map OOD conditions.
+- Strengthen shift detection with representation-level and route-level features; the current innovation alarm is not sufficient for map OOD.
 - Online demo deployment and browser controls for history/uncertainty planning.
 
 ## [0.2.0] - 2026-08-03

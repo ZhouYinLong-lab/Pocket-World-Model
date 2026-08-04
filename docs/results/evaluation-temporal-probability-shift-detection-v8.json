@@ -1,0 +1,55 @@
+{
+  "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+  "episodes_per_condition": 50,
+  "horizon": 8,
+  "threshold_fit": {
+    "seed": 151,
+    "false_positive_rate_target": 0.05,
+    "threshold": 0.981274425983429,
+    "calibration_samples": 400,
+    "calibration_mean_score": 0.35618576407432556,
+    "calibration_p95_score": 0.981274425983429
+  },
+  "conditions": {
+    "in_distribution": {
+      "samples": 400,
+      "mean_score": 0.3352493643760681,
+      "p95_score": 1.0296968221664429,
+      "trigger_rate": 0.0525,
+      "false_positive_rate": 0.0525
+    },
+    "ood_speed_slow": {
+      "samples": 400,
+      "mean_score": 0.25387677550315857,
+      "p95_score": 0.8121496438980103,
+      "trigger_rate": 0.0425,
+      "detection_rate": 0.0425,
+      "auroc_vs_in_distribution": 0.38034375
+    },
+    "ood_speed_fast": {
+      "samples": 400,
+      "mean_score": 0.4694097936153412,
+      "p95_score": 1.374738335609436,
+      "trigger_rate": 0.09,
+      "detection_rate": 0.09,
+      "auroc_vs_in_distribution": 0.63573125
+    },
+    "ood_map": {
+      "samples": 400,
+      "mean_score": 1.9887518882751465,
+      "p95_score": 3.1982421875,
+      "trigger_rate": 0.88,
+      "detection_rate": 0.88,
+      "auroc_vs_in_distribution": 0.98245
+    },
+    "ood_map_fast": {
+      "samples": 400,
+      "mean_score": 1.6345345973968506,
+      "p95_score": 3.1982421875,
+      "trigger_rate": 0.86,
+      "detection_rate": 0.86,
+      "auroc_vs_in_distribution": 0.9731875
+    }
+  },
+  "interpretation": "The combined standardized innovation and visible wall-context gate meets its nominal in-distribution false-positive target and separates changed-map conditions strongly. Fast-speed-only shift remains difficult at this threshold, so the alarm is useful for map shift and conservative replanning but is not a complete speed-shift classifier."
+}
