@@ -1,0 +1,88 @@
+{
+  "config": {
+    "checkpoint": "artifacts\\pocketworld-temporal-probability-v8.pt",
+    "episodes": 50,
+    "horizon": 48,
+    "candidates": 1024,
+    "seeds": [71, 83, 97],
+    "only": "learned_velocity_probabilistic_closed",
+    "shift_threshold": null,
+    "alignment_fallback_threshold": 6.0
+  },
+  "runs": [
+    {
+      "seed": 71,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.9,
+        "real_success": 0.28,
+        "real_final_distance_px": 16.806961817741396,
+        "collision_count": 2.96,
+        "executed_actions": 46.64,
+        "replans": 8.9,
+        "route_alignment_error_px": 2.8818991526273168,
+        "max_route_alignment_error_px": 7.200008573532105,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "shift_detected_count": 0.0,
+        "predicted_route_completion_probability": 0.7735521826107272,
+        "alignment_fallback_trigger_count": 0.98,
+        "fallback_steps": 32.34
+      }
+    },
+    {
+      "seed": 83,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.94,
+        "real_success": 0.34,
+        "real_final_distance_px": 16.438715467453004,
+        "collision_count": 2.7,
+        "executed_actions": 46.4,
+        "replans": 8.46,
+        "route_alignment_error_px": 2.975651394695788,
+        "max_route_alignment_error_px": 7.168753318786621,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "shift_detected_count": 0.0,
+        "predicted_route_completion_probability": 0.8159919516188926,
+        "alignment_fallback_trigger_count": 1.0,
+        "fallback_steps": 33.06
+      }
+    },
+    {
+      "seed": 97,
+      "learned_velocity_probabilistic_closed": {
+        "imagined_success": 0.94,
+        "real_success": 0.3,
+        "real_final_distance_px": 18.566767301559448,
+        "collision_count": 3.92,
+        "executed_actions": 46.72,
+        "replans": 9.54,
+        "route_alignment_error_px": 2.835682317963969,
+        "max_route_alignment_error_px": 7.233985452651978,
+        "mean_shift_score": 0.0,
+        "max_shift_score": 0.0,
+        "predicted_route_completion_probability": 0.8092863765147714,
+        "alignment_fallback_trigger_count": 1.0,
+        "fallback_steps": 34.16
+      }
+    }
+  ],
+  "summary": {
+    "learned_velocity_probabilistic_closed": {
+      "imagined_success": {"mean": 0.9266666666666666, "std": 0.018856180831641232},
+      "real_success": {"mean": 0.3066666666666667, "std": 0.024944382578492946},
+      "real_final_distance_px": {"mean": 17.270814862251285, "std": 0.9286265440016843},
+      "collision_count": {"mean": 3.1933333333333334, "std": 0.5246797965320266},
+      "executed_actions": {"mean": 46.586666666666666, "std": 0.13597385369580794},
+      "replans": {"mean": 8.966666666666667, "std": 0.4434210439550897},
+      "route_alignment_error_px": {"mean": 2.8977442884290245, "std": 0.058230214704054206},
+      "max_route_alignment_error_px": {"mean": 7.200915781656902, "std": 0.026638632248337322},
+      "mean_shift_score": {"mean": 0.0, "std": 0.0},
+      "max_shift_score": {"mean": 0.0, "std": 0.0},
+      "shift_detected_count": {"mean": 0.0, "std": 0.0},
+      "predicted_route_completion_probability": {"mean": 0.7996101702481305, "std": 0.01862802949236348},
+      "alignment_fallback_trigger_count": {"mean": 0.9933333333333333, "std": 0.009428090415820642},
+      "fallback_steps": {"mean": 33.18666666666667, "std": 0.748390866385263}
+    }
+  }
+}

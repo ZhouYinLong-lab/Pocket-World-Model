@@ -17,17 +17,19 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Route-aware candidate scoring, executed-prefix alignment metrics, and online predictive-shift alarms.
 - Machine-readable route-alignment and shift-detection diagnostics for the v8 checkpoint.
 - Explicit route-completion probability and 6px alignment-triggered wall-aware hybrid fallback.
+- RGB-observed footprint-inflated A* global routes with bend-only inertial tracking for obstacle-crossing fallback.
 
 ### Changed
 
 - The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 45 tests at 79% line coverage.
+- Python verification now covers 47 tests at 79% line coverage.
+- The A* fallback raises the strict 150-episode barrier result to 30.67% ± 2.49pp real success, with 3.19 ± 0.52 collisions per episode.
 
 ### Planned
 
-- Improve route-level model alignment so low learned collision risk transfers to real barrier success.
+- Improve route-level model alignment so low learned collision risk transfers to real barrier success without relying on explicit geometry fallback.
 - Strengthen shift detection with representation-level and route-level features; the current innovation alarm is not sufficient for map OOD.
 - Online demo deployment and browser controls for history/uncertainty planning.
 

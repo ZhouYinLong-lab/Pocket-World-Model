@@ -54,6 +54,10 @@ It also supports an OOD calibration matrix covering nominal speed, 0.8x and 1.2x
 
 ## Current evidence
 
+### Obstacle-crossing A* fallback
+
+The current fallback inflates the RGB wall mask by the agent footprint, runs top/bottom A* searches, and follows bend-only routes with the learned kinematics. On the same 50-episode × three-seed protocol it reaches **30.667% ± 2.494pp real success**, **17.271 ± 0.929px** final distance, **3.193 ± 0.525** collisions, and 2.898 ± 0.058px mean alignment error. This is a substantial transfer improvement, but it remains an explicit-geometry fallback rather than a fully learned obstacle model. See [A* fallback result](../results/evaluation-route-aware-astar-fallback-v8-full.json).
+
 The v8 development checkpoint reaches 0.407–0.450px learned velocity MAE across three 50-episode seeds, compared with 0.215–0.283px for the privileged finite-difference baseline. Fresh-seed 90% marginal coverage is 86.4–88.4% for position and 89.5–91.0% for velocity; the held-out calibration split itself is calibrated by construction. The machine-readable slice is [evaluation-temporal-probability-v8.json](../results/evaluation-temporal-probability-v8.json).
 
 The completed full barrier run uses 50 episodes per seed, seeds `71,83,97`, horizon 48, and 1,024 candidates. The learned temporal/probabilistic planner reaches 92.7% ± 1.9pp imagined success, 0% real success, 31.33 ± 0.06px final distance, and 0.547 ± 0.025 collisions per episode. Its low collision count is stable, but the imagined detours do not cross the real barrier reliably. See [evaluation-temporal-probability-probabilistic-v8-full.json](../results/evaluation-temporal-probability-probabilistic-v8-full.json).
