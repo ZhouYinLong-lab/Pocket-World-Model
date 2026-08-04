@@ -19,6 +19,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Explicit route-completion probability and 6px alignment-triggered wall-aware hybrid fallback.
 - RGB-observed footprint-inflated A* global routes with bend-only inertial tracking for obstacle-crossing fallback.
 - Route-side commitment, remaining-budget penalties, geometric progress tracking, and emergency side-switch diagnostics.
+- Early 4px alignment-triggered fallback configuration to keep route distance compatible with the 48-step execution budget.
 
 ### Changed
 
@@ -28,6 +29,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Python verification now covers 48 tests at 79% line coverage.
 - The A* fallback raises the strict 150-episode barrier result to 30.67% ± 2.49pp real success, with 3.19 ± 0.52 collisions per episode.
 - Locked-budget A* fallback raises the same result to 34.67% ± 6.80pp real success, with 2.03 ± 0.35 collisions and zero emergency side switches per episode.
+- Early alignment fallback raises the same result to 50.67% ± 2.49pp real success, with 6.88 ± 0.14px final distance, 1.14 ± 0.23 collisions, and 7.37px remaining route distance.
 
 ### Planned
 
