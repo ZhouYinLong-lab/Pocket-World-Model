@@ -53,7 +53,17 @@ def evaluate_map_prediction(
         start = torch.from_numpy(observation[None]).float() / 255.0
         action_tensor = torch.from_numpy(actions[None])
         predicted_frames = model.imagine(start, action_tensor, compose_agent=True)[0].cpu().numpy()
-        predicted_positions = model.imagine_positions(start, action_tensor)[0].cpu().numpy() * 64.0
+        # Evaluate the learned world as a collision-aware simulator.  The
+        # open-loop position head is still available through the model API,
+        # but letting the learned collision response stop an invalid landing
+        # makes this benchmark test the intended obstacle dynamics rather
+        # than rewarding a model that predicts straight through walls.
+        predicted_positions = model.imagine_positions(
+            start,
+            action_tensor,
+            collision_response=True,
+            visual_collision_guard=True,
+        )[0].cpu().numpy() * 64.0
         for step in horizons:
             actual_frame = actual_frames[step].astype(np.float32) / 255.0
             image_errors[str(step)].append(float(np.abs(predicted_frames[step] - actual_frame).mean()))
@@ -64,6 +74,7 @@ def evaluate_map_prediction(
         "map_name": map_name,
         "map_description": spec.description,
         "episodes": episodes,
+        "rollout_mode": "learned_collision_response+visual_guard",
         "position_error_px": {key: _mean(value) for key, value in position_errors.items()},
         "image_mae": {key: _mean(value) for key, value in image_errors.items()},
     }

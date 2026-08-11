@@ -558,6 +558,40 @@ def route_following_action(
         action = 3 if control[0] >= 0 else 2
     else:
         action = 1 if control[1] >= 0 else 0
+
+    # Guard the one-step landing point with the same visible RGB wall mask.
+    # This prevents repeated attempts to push through a wall when inertia
+    # carries the agent past a bend.  It is deliberately local and
+    # observation-only; the environment remains the final collision oracle.
+    occupied_for_landing = _dilate(wall_mask, radius=3)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+
+    def landing(action_index: int) -> tuple[np.ndarray, bool]:
+        next_velocity = 0.84 * velocity + 0.75 * directions[action_index]
+        speed = float(np.linalg.norm(next_velocity))
+        if speed > 2.3:
+            next_velocity *= 2.3 / speed
+        next_position = position + next_velocity
+        x, y = np.rint(next_position).astype(int)
+        valid = 3 <= x < 61 and 3 <= y < 61 and not occupied_for_landing[y, x]
+        return next_position, bool(valid)
+
+    _, safe = landing(action)
+    if not safe:
+        alternatives = []
+        for candidate in range(4):
+            next_position, candidate_safe = landing(candidate)
+            if candidate_safe:
+                next_velocity = next_position - position
+                alternatives.append(
+                    (
+                        float(np.linalg.norm(next_position - np.asarray(goal, dtype=np.float32)))
+                        + 0.3 * float(np.linalg.norm(next_velocity - velocity)),
+                        candidate,
+                    )
+                )
+        if alternatives:
+            action = min(alternatives)[1]
     return action, _path_length(path)
 
 

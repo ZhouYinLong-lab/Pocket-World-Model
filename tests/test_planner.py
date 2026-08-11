@@ -59,6 +59,14 @@ def test_route_following_action_uses_four_action_visible_route():
     assert remaining > 0.0
 
 
+def test_route_following_action_does_not_choose_visible_wall_landing():
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(25, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    action, _ = route_following_action(observation, (54, 32), [observation])
+    _, _, _, _, info = env.step(action)
+    assert not info["collision"]
+
+
 def test_path_waypoints_keep_bends_when_downsampling_dense_grid_route():
     path = [(10, 32), (11, 31), (12, 30), (12, 29), (12, 28), (13, 27)]
 
