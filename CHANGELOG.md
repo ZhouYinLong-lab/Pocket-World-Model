@@ -23,6 +23,8 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Named `train`/`holdout`/`all` map suites with double-barrier, cross, zig-zag, and open layouts.
 - Sequential waypoint task generation and `pocketworld-evaluate-generalization` for unseen-layout and multi-goal evaluation.
 - Formal map-suite checkpoint trained from v8 on 1,000 episodes across three named training layouts.
+- `pocketworld-evaluate-maturity` for three-seed uncertainty calibration and OOD shift gates.
+- RGB-only four-action route follower with visible landing safety guard and a route-budget-preserving generalization evaluator.
 
 ### Changed
 
@@ -34,6 +36,8 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Locked-budget A* fallback raises the same result to 34.67% ± 6.80pp real success, with 2.03 ± 0.35 collisions and zero emergency side switches per episode.
 - Early alignment fallback raises the same result to 50.67% ± 2.49pp real success, with 6.88 ± 0.14px final distance, 1.14 ± 0.23 collisions, and 7.37px remaining route distance.
 - Formal map-suite evaluation reaches 4.85px train / 4.84px unseen 20-step position error; two-waypoint task success remains 6.67% / 5.00%.
+- v2 collision-aware three-seed map-suite evaluation reaches 3.94 ± 0.27px train / 4.13 ± 0.30px unseen 20-step position error and 97.8% / 93.3% two-waypoint task success.
+- Three-waypoint stress evaluation reaches 96.7% train / 93.3% unseen task success; the remaining gap is collision frequency on a small set of hard routes and calibration under joint speed/map shift.
 
 ### Planned
 

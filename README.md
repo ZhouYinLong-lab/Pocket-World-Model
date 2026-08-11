@@ -180,10 +180,20 @@ python -m pocketworld.train --resume artifacts/pocketworld-temporal-probability-
 The generalization evaluator measures per-map multi-step prediction error and sequential two-waypoint tasks:
 
 ```bash
-python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite.pt --episodes 20 --horizon 20 --candidates 128 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-generalization.json
+python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite-v2.pt --episodes 20 --horizon 64 --candidates 32 --seeds 11,23,41 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-map-suite-v2-3seed.json
 ```
 
-The first diagnostic run against the existing v8 baseline is recorded in [evaluation-generalization-v8.json](docs/results/evaluation-generalization-v8.json). The formal multi-map checkpoint is trained from v8 for 12 epochs on 1,000 train and 200 validation episodes and is evaluated in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json): 20 episodes per map, 20-step prediction, 64 planning candidates, and two ordered waypoints. It reaches **4.85px train / 4.84px unseen 20-step position error**, but only **6.67% train / 5.00% unseen two-waypoint task success**. The prediction transfer is encouraging; sequential planning remains the next research bottleneck.
+The original v1 diagnostic is preserved in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json). The v2 checkpoint adds a four-action, RGB-observed route follower, one-step landing safety guard, and a physically traversable zig-zag holdout. The formal [three-seed two-waypoint result](docs/results/evaluation-map-suite-v2-3seed-collision-guard.json) uses 20 episodes per map, 64-step execution budgets, and 32 candidates: collision-aware 20-step position error is **3.94 ± 0.27px on train / 4.13 ± 0.30px on unseen maps**; task success is **97.8% ± 3.1pp / 93.3% ± 2.4pp**. The task benchmark is explicitly hybrid: learned collision-aware prediction plus RGB-only visible-route control, not a claim that pure random shooting has solved obstacle navigation.
+
+The three-waypoint stress test uses the same three seeds and a 96-step budget. It reaches **96.7% train / 93.3% unseen task success** and **97.4% / 96.1% waypoint completion**; see [evaluation-map-suite-v2-3seed-waypoint3.json](docs/results/evaluation-map-suite-v2-3seed-waypoint3.json). Collision count remains the main engineering gap on the hardest unseen routes, averaging about **1.16 per train leg and 2.41 per unseen leg** in the two-waypoint protocol.
+
+For the maturity-gate calibration and OOD protocol:
+
+```bash
+python -m pocketworld.evaluate_maturity artifacts/pocketworld-map-suite-v2.pt --episodes 50 --horizon 8 --seeds 11,23,41 --output artifacts/evaluation-maturity-v2-3seed.json
+```
+
+The [three-seed maturity report](docs/results/evaluation-maturity-v2-3seed.json) gives 90% position/velocity coverage of **91.8%/91.9% in-distribution**, **87.5%/90.8% on changed maps**, and map-shift AUROC **0.95**. Fast-speed velocity coverage and joint map+speed coverage remain below the 85–95% target band, so uncertainty is calibrated enough for conservative map fallback but not yet uniformly calibrated under every dynamics shift.
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
