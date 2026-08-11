@@ -1,8 +1,47 @@
 from __future__ import annotations
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
+
+
+def observable_velocity_from_frames(
+    observation_history: np.ndarray,
+    max_speed: float = 2.3,
+) -> np.ndarray:
+    """Estimate pixel velocity from the mint-green agent in RGB frames.
+
+    This deliberately uses only information available to the deployed RGB
+    agent.  It is kept next to the calibration code so the held-out scale fit
+    and online evaluation cannot accidentally use simulator state.
+    """
+    frames = np.asarray(observation_history)
+    if frames.ndim == 3:
+        frames = frames[None]
+    if frames.ndim != 4 or frames.shape[1] != 3:
+        raise ValueError("expected RGB history with shape [time, channels, height, width]")
+    if frames.dtype != np.uint8:
+        frames = (frames * 255).clip(0, 255).astype(np.uint8)
+    positions = []
+    for frame in frames[-4:]:
+        red, green, blue = frame.astype(np.int16)
+        mask = (green > red + 25) & (green > blue + 15)
+        ys, xs = np.where(mask)
+        positions.append((xs.mean(), ys.mean()) if len(xs) else (np.nan, np.nan))
+    positions_array = np.asarray(positions, dtype=np.float32)
+    positions_array = positions_array[np.isfinite(positions_array).all(axis=1)]
+    if len(positions_array) < 2:
+        return np.zeros(2, dtype=np.float32)
+    differences = np.diff(positions_array, axis=0)
+    if np.linalg.norm(differences[-1]) <= 0.15:
+        return np.zeros(2, dtype=np.float32)
+    weights = np.arange(1, len(differences) + 1, dtype=np.float32)
+    velocity = np.average(differences, axis=0, weights=weights)
+    speed = float(np.linalg.norm(velocity))
+    if speed > max_speed:
+        velocity *= max_speed / speed
+    return velocity.astype(np.float32)
 
 
 class PocketWorldModel(nn.Module):
@@ -222,6 +261,7 @@ class PocketWorldModel(nn.Module):
         positions: torch.Tensor,
         velocities: torch.Tensor,
         coverage: float = 0.90,
+        observed_velocity_blend: float = 0.50,
     ) -> dict[str, object]:
         """Calibrate marginal Gaussian scales on a held-out rollout set.
 
@@ -232,6 +272,8 @@ class PocketWorldModel(nn.Module):
         """
         if not 0.5 < coverage < 0.999:
             raise ValueError("coverage must be between 0.5 and 0.999")
+        if not 0.0 <= observed_velocity_blend <= 1.0:
+            raise ValueError("observed_velocity_blend must be between 0 and 1")
         was_training = self.training
         self.eval()
         self.uncertainty_scale.fill_(1.0)
@@ -239,7 +281,22 @@ class PocketWorldModel(nn.Module):
         ratios = []
         for step in range(actions.shape[1]):
             latent = self.encode(observations[:, step])
-            state = self.state_from_latent(latent)
+            history = observations[:, : step + 1]
+            state = self.state_from_history(history)
+            if observed_velocity_blend > 0.0:
+                observed_velocity = torch.as_tensor(
+                    np.stack([
+                        observable_velocity_from_frames(history[index].detach().cpu().numpy())
+                        for index in range(history.shape[0])
+                    ]),
+                    device=state.device,
+                    dtype=state.dtype,
+                ) / 3.0
+                velocity = (
+                    (1.0 - observed_velocity_blend) * state[..., 2:]
+                    + observed_velocity_blend * observed_velocity
+                )
+                state = torch.cat((state[..., :2], velocity.clamp(-1.0, 1.0)), dim=-1)
             target = normalized_states[:, step + 1]
             mean, std = self.transition_state_stats(latent, state, actions[:, step])
             ratios.append(((target - mean).abs() / std.clamp_min(1e-6)).detach())
@@ -255,6 +312,8 @@ class PocketWorldModel(nn.Module):
             "normal_quantile": normal_quantile,
             "scale": [float(value) for value in scale],
             "samples": int(ratio.shape[0]),
+            "state_representation": "learned_temporal_velocity+observable_rgb_velocity",
+            "observed_velocity_blend": observed_velocity_blend,
         }
 
     @torch.no_grad()

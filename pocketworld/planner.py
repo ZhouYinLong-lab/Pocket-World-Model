@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from .env import DEFAULT_WALLS
-from .model import PocketWorldModel
+from .model import PocketWorldModel, observable_velocity_from_frames
 
 
 @dataclass
@@ -704,7 +704,11 @@ def random_shooting(
         if use_learned_velocity:
             history_tensor = torch.from_numpy(np.stack(observation_history)).float().to(device) / 255.0
             learned_velocity, _ = model.temporal_velocity_stats(history_tensor[None])
-            start_velocity = (learned_velocity[0].cpu().numpy() * 3.0).astype(np.float32)
+            learned_velocity_px = learned_velocity[0].cpu().numpy() * 3.0
+            observed_velocity_px = observable_velocity_from_frames(np.stack(observation_history))
+            start_velocity = (
+                0.50 * learned_velocity_px + 0.50 * observed_velocity_px
+            ).astype(np.float32)
         else:
             start_velocity = estimate_agent_velocity(observation_history)
         normalized_start_velocities = torch.as_tensor(start_velocity / 3.0, device=device, dtype=start.dtype).expand(candidates, -1)

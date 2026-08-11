@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
-from pocketworld.model import PocketWorldModel
+from pocketworld.model import PocketWorldModel, observable_velocity_from_frames
 from pocketworld.planner import extract_agent_position
 
 
@@ -53,6 +53,17 @@ def test_agent_position_extractor_does_not_confuse_yellow_goal():
     frame[:, 50, 50] = [247, 190, 69]
     frame[:, 10, 10] = [93, 224, 183]
     assert np.allclose(extract_agent_position(frame), [10, 10])
+
+
+def test_observable_velocity_uses_only_rgb_history():
+    frames = np.zeros((3, 3, 64, 64), dtype=np.uint8)
+    for index, x in enumerate((10, 12, 14)):
+        frames[index, 1, 20:24, x:x + 4] = 220
+        frames[index, 0, 20:24, x:x + 4] = 30
+    velocity = observable_velocity_from_frames(frames)
+    assert velocity[0] > 0.0
+    assert abs(velocity[1]) < 0.1
+    assert np.linalg.norm(velocity) <= 2.3
 
 
 def test_structured_state_dynamics_preserves_action_effect():

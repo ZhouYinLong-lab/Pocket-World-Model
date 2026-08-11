@@ -9,7 +9,7 @@ import torch
 
 from .data import _variant_walls, collect_random_rollouts
 from .env import PocketWorldEnv, Rect
-from .model import PocketWorldModel
+from .model import PocketWorldModel, observable_velocity_from_frames
 from .planner import (
     estimate_agent_velocity,
     extract_agent_position,
@@ -358,7 +358,23 @@ def evaluate_uncertainty_calibration(
     with torch.no_grad():
         for step in range(horizon):
             latent = model.encode(observations[:, step])
-            state = model.state_from_latent(latent)
+            history = observations[:, : step + 1]
+            state = model.state_from_history(history)
+            observed_velocity = torch.as_tensor(
+                np.stack([
+                    observable_velocity_from_frames(history[index].cpu().numpy())
+                    for index in range(history.shape[0])
+                ]),
+                dtype=state.dtype,
+                device=state.device,
+            ) / 3.0
+            state = torch.cat(
+                (
+                    state[..., :2],
+                    (0.50 * state[..., 2:] + 0.50 * observed_velocity).clamp(-1.0, 1.0),
+                ),
+                dim=-1,
+            )
             target = normalized_states[:, step + 1]
             mean, std = model.transition_state_stats(latent, state, actions[:, step])
             residuals.append((target - mean).abs())
