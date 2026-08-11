@@ -300,6 +300,18 @@ def test_beam_search_returns_valid_discrete_plan_under_budget():
     assert np.isfinite(result.imagined_distance)
 
 
+def test_collision_risk_budget_prefers_feasible_steps_and_has_soft_fallback():
+    from pocketworld.planner import _risk_budget_scores
+
+    distances = np.asarray([[10.0, 5.0, 2.0], [10.0, 5.0, 2.0]], dtype=np.float32)
+    risks = np.asarray([[0.0, 0.10, 0.30], [0.0, 0.40, 0.50]], dtype=np.float32)
+    scores = _risk_budget_scores(distances, risks, 0.20)
+
+    assert np.isclose(scores[0, 1], 5.0)
+    assert scores[0, 2] > 100.0
+    assert np.isfinite(scores[1]).all()
+
+
 def test_route_objective_reports_progress_and_alignment_monitor_is_finite():
     import torch
 

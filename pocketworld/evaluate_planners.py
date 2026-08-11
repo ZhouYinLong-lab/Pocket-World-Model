@@ -16,6 +16,7 @@ from .planner import beam_search, cem_shooting, random_shooting, receding_horizo
 
 
 SINGLE_BARRIER_WALLS = (Rect(29, 10, 5, 44),)
+COLLISION_RISK_BUDGET = 0.15
 DEFAULT_PLANNERS = (
     "random_shooting",
     "cem",
@@ -91,6 +92,7 @@ def _planner_result(
             candidates=candidates,
             collision_aware=True,
             learned_collision=True,
+            collision_risk_budget=COLLISION_RISK_BUDGET,
             observation_history=[observation],
         )
     if planner == "route_aware_hybrid":
@@ -230,6 +232,7 @@ def evaluate_planner_tournament(
             "budget_scope": "nominal candidate budget per planning call; closed-loop totals are reported separately",
             "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
             "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
+            "collision_risk_budget": COLLISION_RISK_BUDGET,
         },
         "runs": runs,
         "summary": summary,

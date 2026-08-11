@@ -261,6 +261,29 @@ def _collision_prefix(positions: np.ndarray, wall_mask: np.ndarray, agent_radius
     return np.maximum.accumulate(collisions, axis=1)
 
 
+def _risk_budget_scores(
+    distances: np.ndarray,
+    collision_prefix: np.ndarray,
+    collision_risk_budget: float | None,
+) -> np.ndarray:
+    """Rank goal distance subject to a calibrated collision-risk budget.
+
+    If a candidate has any post-action step within the budget, only those
+    steps compete on goal distance. If every step violates the budget, the
+    planner falls back to a soft distance-plus-risk score so the search never
+    becomes undefined when calibration is temporarily too strict.
+    """
+    soft_scores = distances + collision_prefix * 64.0
+    if collision_risk_budget is None:
+        return soft_scores
+    budget = float(np.clip(collision_risk_budget, 0.0, 1.0))
+    feasible = collision_prefix <= budget
+    feasible[:, 0] = False
+    budget_scores = np.where(feasible, distances, np.inf)
+    has_feasible = np.isfinite(budget_scores).any(axis=1)
+    return np.where(has_feasible[:, None], budget_scores, soft_scores)
+
+
 def _detour_sequence(
     model: PocketWorldModel,
     start: torch.Tensor,
@@ -745,6 +768,7 @@ def random_shooting(
     collision_aware: bool = False,
     learned_collision: bool = False,
     hybrid_collision: bool = False,
+    collision_risk_budget: float | None = None,
     observation_history: Sequence[np.ndarray] | None = None,
     use_learned_velocity: bool = False,
     uncertainty_radius_px: float = 0.0,
@@ -910,7 +934,7 @@ def random_shooting(
             )
     else:
         collision_prefix = np.zeros_like(goal_distances, dtype=np.float32)
-    planning_scores = goal_distances + collision_prefix * 64.0
+    planning_scores = _risk_budget_scores(goal_distances, collision_prefix, collision_risk_budget)
     safe_scores = np.where(np.isfinite(planning_scores), planning_scores, 1e6)
     if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
         safe_scores[~eligible] = 1e6
@@ -988,6 +1012,7 @@ def cem_shooting(
     collision_aware: bool = False,
     learned_collision: bool = False,
     hybrid_collision: bool = False,
+    collision_risk_budget: float | None = None,
 ) -> PlanResult:
     """Plan with categorical CEM under an explicit model-query budget.
 
@@ -1078,7 +1103,7 @@ def cem_shooting(
                     axis=1,
                 ),
             )
-        scores_by_step = distances + collision_prefix * 64.0
+        scores_by_step = _risk_budget_scores(distances, collision_prefix, collision_risk_budget)
         scores = np.min(scores_by_step, axis=1)
         elite_count = max(2, min(population, int(round(population * elite_fraction))))
         elite_indices = np.argsort(scores)[:elite_count]
@@ -1121,6 +1146,7 @@ def beam_search(
     collision_aware: bool = False,
     learned_collision: bool = False,
     hybrid_collision: bool = False,
+    collision_risk_budget: float | None = None,
 ) -> PlanResult:
     """Search discrete action prefixes with a query-budgeted beam.
 
@@ -1179,7 +1205,7 @@ def beam_search(
                     axis=1,
                 ),
             )
-        scores_by_step = distances + collision_prefix * 64.0
+        scores_by_step = _risk_budget_scores(distances, collision_prefix, collision_risk_budget)
         scores = np.min(scores_by_step, axis=1)
         keep = min(width, expanded.shape[0])
         elite = torch.as_tensor(np.argsort(scores)[:keep], device=device, dtype=torch.long)
