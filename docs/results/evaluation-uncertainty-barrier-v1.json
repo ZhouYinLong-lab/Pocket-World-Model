@@ -2497,6 +2497,68 @@
       "mean_upper_risk": 0.08349699208823343,
       "real_collision_rate": 1.0,
       "routes": 60.0
+    },
+    "held_out_reliability_bins": {
+      "learned_collision": [
+        {
+          "lower": 0.0,
+          "upper": 0.05,
+          "routes": 10.0,
+          "mean_predicted_risk": 0.024034053925424813,
+          "empirical_collision_rate": 1.0,
+          "absolute_gap": 0.9759659460745752
+        },
+        {
+          "lower": 0.05,
+          "upper": 0.1,
+          "routes": 15.0,
+          "mean_predicted_risk": 0.07322068537274996,
+          "empirical_collision_rate": 0.9333333333333333,
+          "absolute_gap": 0.8601126479605834
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "routes": 33.0,
+          "mean_predicted_risk": 0.13486417360378034,
+          "empirical_collision_rate": 0.8787878787878788,
+          "absolute_gap": 0.7439237051840984
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.5,
+          "routes": 2.0,
+          "mean_predicted_risk": 0.21532130986452103,
+          "empirical_collision_rate": 1.0,
+          "absolute_gap": 0.784678690135479
+        }
+      ],
+      "ensemble_collision": [
+        {
+          "lower": 0.0,
+          "upper": 0.05,
+          "routes": 18.0,
+          "mean_predicted_risk": 0.01796762164061268,
+          "empirical_collision_rate": 1.0,
+          "absolute_gap": 0.9820323783593873
+        },
+        {
+          "lower": 0.05,
+          "upper": 0.1,
+          "routes": 12.0,
+          "mean_predicted_risk": 0.07377801711360614,
+          "empirical_collision_rate": 1.0,
+          "absolute_gap": 0.9262219828863939
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "routes": 30.0,
+          "mean_predicted_risk": 0.1267022043466568,
+          "empirical_collision_rate": 1.0,
+          "absolute_gap": 0.8732977956533432
+        }
+      ]
     }
   }
 }

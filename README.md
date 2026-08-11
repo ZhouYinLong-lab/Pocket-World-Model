@@ -278,6 +278,8 @@ The learned planner proposes map-agnostic two-bend waypoint routes and lets the 
 
 To test whether the remaining barrier gap is caused by an underpowered risk estimator, the project now compares the single learned collision head with a three-checkpoint ensemble and a split-conformal upper-risk wrapper. The comparison keeps the v3-final dynamics model, 48-step horizon, 256-candidate budget, and paired three-seed barrier tasks fixed. The ensemble reaches **20.0% real success** and the conformal wrapper reaches **0.0%**, versus **61.7%** for the single learned collision planner. Conformal coverage is **100%**, but its calibration quantile is **0.9984** because every selected calibration route collided; it therefore stops almost immediately. This is an intentional negative result: stronger uncertainty guarantees can become unusable when the calibration unit is mismatched to route-level failure. See the [uncertainty-method comparison](docs/plans/uncertainty-methods.md) and [machine-readable report](docs/results/evaluation-uncertainty-barrier-v1.json).
 
+The reliability bins sharpen the diagnosis: ensemble plans with predicted risk in the 0–0.20 range still collide on **100%** of held-out routes. The next optimization target is therefore route-conditioned collision supervision and route-completion prediction, not a larger search population.
+
 Reproduce the risk-method study with:
 
 ```bash

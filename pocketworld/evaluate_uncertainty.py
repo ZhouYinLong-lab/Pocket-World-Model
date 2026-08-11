@@ -76,6 +76,35 @@ def _coverage(rows: dict[str, dict[str, list[dict[str, float | None]]]], planner
     }
 
 
+def _risk_bins(
+    rows: dict[str, dict[str, list[dict[str, float | None]]]],
+    planner: str,
+) -> list[dict[str, float]]:
+    """Return route-level reliability bins for the selected plans."""
+    selected = [row for seed_rows in rows.values() for row in seed_rows[planner]]
+    predicted = np.asarray([float(row["imagined_collision_risk"]) for row in selected], dtype=np.float64)
+    labels = np.asarray([float(row["collision_count"] > 0) for row in selected], dtype=np.float64)
+    edges = np.asarray([0.0, 0.05, 0.10, 0.20, 0.50, 1.000001], dtype=np.float64)
+    bins: list[dict[str, float]] = []
+    for lower, upper in zip(edges[:-1], edges[1:]):
+        mask = (predicted >= lower) & (predicted < upper)
+        if not mask.any():
+            continue
+        mean_predicted = float(predicted[mask].mean())
+        collision_rate = float(labels[mask].mean())
+        bins.append(
+            {
+                "lower": float(lower),
+                "upper": float(min(1.0, upper)),
+                "routes": float(mask.sum()),
+                "mean_predicted_risk": mean_predicted,
+                "empirical_collision_rate": collision_rate,
+                "absolute_gap": abs(mean_predicted - collision_rate),
+            }
+        )
+    return bins
+
+
 def evaluate_uncertainty_methods(
     checkpoint: str | Path,
     ensemble_checkpoints: list[str | Path],
@@ -140,6 +169,10 @@ def evaluate_uncertainty_methods(
         },
         "held_out_coverage": _coverage(rows, "conformal_collision"),
         "held_out_ensemble": _coverage(rows, "ensemble_collision"),
+        "held_out_reliability_bins": {
+            "learned_collision": _risk_bins(rows, "learned_collision"),
+            "ensemble_collision": _risk_bins(rows, "ensemble_collision"),
+        },
     }
     return report
 
@@ -181,4 +214,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

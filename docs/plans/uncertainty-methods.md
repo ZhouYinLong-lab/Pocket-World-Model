@@ -59,6 +59,23 @@ still collide. The ensemble's lower mean reported risk than the single model
 must not be read as better calibration: it is partly caused by selecting
 shorter, less-complete plans.
 
+The held-out reliability bins make the misspecification explicit:
+
+| Method | Predicted-risk bin | Mean predicted risk | Observed collision rate |
+| --- | ---: | ---: | ---: |
+| Single learned collision | 0–0.05 | 0.024 | 100.0% |
+| Single learned collision | 0.05–0.10 | 0.073 | 93.3% |
+| Single learned collision | 0.10–0.20 | 0.135 | 87.9% |
+| Ensemble | 0–0.05 | 0.018 | 100.0% |
+| Ensemble | 0.05–0.10 | 0.074 | 100.0% |
+| Ensemble | 0.10–0.20 | 0.127 | 100.0% |
+
+Thus the issue is not only a poorly chosen threshold. Across every populated
+ensemble bin, the observed route collision rate is one while the predicted
+risk remains below 0.20. The next model change should target route-conditioned
+collision supervision or an explicit route-completion head, not merely add
+more search iterations.
+
 ## Interpretation and next comparison
 
 The bottleneck has moved from “which search method?” to “what is the unit of
@@ -71,4 +88,3 @@ selected routes produced by one planner.
 
 The machine-readable report is
 [`evaluation-uncertainty-barrier-v1.json`](../results/evaluation-uncertainty-barrier-v1.json).
-
