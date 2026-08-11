@@ -1,0 +1,48 @@
+{
+  "config": {
+    "checkpoint": "artifacts/pocketworld-map-suite-v1.pt",
+    "training": {
+      "resume": "artifacts/pocketworld-temporal-probability-v8.pt",
+      "epochs": 12,
+      "episodes": 1000,
+      "validation_episodes": 200,
+      "unroll_horizon": 16,
+      "map_suite": "train"
+    },
+    "evaluation": {
+      "episodes_per_map": 20,
+      "prediction_horizon": 20,
+      "planning_candidates": 64,
+      "seed": 101,
+      "waypoint_count": 2
+    },
+    "train_maps": ["default", "single_barrier", "double_barrier"],
+    "holdout_maps": ["cross", "zigzag"]
+  },
+  "prediction_summary": {
+    "train": {
+      "mean_position_error_px": {"1": 1.2839327899739146, "5": 1.6133449479937554, "10": 2.7399948646624885, "20": 4.847801044086615},
+      "mean_image_mae": {"1": 0.027903969741115964, "5": 0.06387320968012015, "10": 0.07628258336335421, "20": 0.0825433778266112}
+    },
+    "unseen": {
+      "mean_position_error_px": {"1": 1.3115327791310847, "5": 1.6860109345987437, "10": 2.707928389310837, "20": 4.83918517678976},
+      "mean_image_mae": {"1": 0.0518733655102551, "5": 0.0711869902908802, "10": 0.08466400932520629, "20": 0.09147330559790134}
+    }
+  },
+  "per_map_position_error_px": {
+    "default": {"1": 1.1013720825314521, "5": 1.1950559496879578, "10": 2.07690389752388, "20": 3.6951446935534475},
+    "single_barrier": {"1": 1.437205483019352, "5": 1.944005537033081, "10": 3.1517661035060884, "20": 6.257713285088539},
+    "double_barrier": {"1": 1.3132208043709397, "5": 1.7009733572602272, "10": 2.9913145929574965, "20": 4.5905451536178585},
+    "cross": {"1": 1.19891437292099, "5": 1.609051576629281, "10": 2.32229240834713, "20": 4.1739409297704695},
+    "zigzag": {"1": 1.4241511853411795, "5": 1.7629702925682067, "10": 3.0935643702745437, "20": 5.504429423809052}
+  },
+  "waypoint_summary": {
+    "train": {"task_success_rate": 0.06666666666666667, "waypoint_completion_rate": 0.2333333333333333, "mean_final_distance_px": 18.285505756906826},
+    "unseen": {"task_success_rate": 0.05, "waypoint_completion_rate": 0.225, "mean_final_distance_px": 17.49372237156599}
+  },
+  "interpretation": {
+    "prediction": "multi-map training transfers position prediction to cross and zigzag layouts with a small 20-step error gap, while image MAE remains higher on holdout maps",
+    "planning": "sequential two-waypoint completion remains low and is the next bottleneck",
+    "protocol_note": "This is a 20-episode-per-map diagnostic with 64 planning candidates, not the earlier 50x3 barrier protocol."
+  }
+}
