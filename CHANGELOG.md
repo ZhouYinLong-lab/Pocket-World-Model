@@ -9,6 +9,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Discrete Beam Search and collision-aware CEM planner variants.
 - Six-method, three-seed planner tournament covering open-space and single-barrier tasks.
 - Explicit negative result showing that search improvements do not repair a misspecified obstacle model.
+- Calibrated collision-risk budget ablation for CEM, with a machine-readable negative result.
 
 ### Changed
 
