@@ -1,6 +1,7 @@
 import numpy as np
 
 from pocketworld.env import PocketWorldEnv, Rect
+from pocketworld.maps import get_map
 from pocketworld.planner import (
     _collision_prefix,
     _astar_path,
@@ -63,6 +64,18 @@ def test_route_following_action_does_not_choose_visible_wall_landing():
     env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(25, 32), goal=(54, 32))
     observation, _ = env.reset()
     action, _ = route_following_action(observation, (54, 32), [observation])
+    _, _, _, _, info = env.step(action)
+    assert not info["collision"]
+
+
+def test_route_following_action_matches_continuous_wall_boundary_at_cross_corner():
+    env = PocketWorldEnv(
+        walls=get_map("cross").walls,
+        agent_start=(44.59, 58.28),
+        goal=(7.3, 11.0),
+    )
+    observation, _ = env.reset()
+    action, _ = route_following_action(observation, (7.3, 11.0), [observation])
     _, _, _, _, info = env.step(action)
     assert not info["collision"]
 

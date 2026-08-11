@@ -563,7 +563,7 @@ def route_following_action(
     # This prevents repeated attempts to push through a wall when inertia
     # carries the agent past a bend.  It is deliberately local and
     # observation-only; the environment remains the final collision oracle.
-    occupied_for_landing = _dilate(wall_mask, radius=3)
+    wall_y, wall_x = np.where(wall_mask)
     directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
 
     def landing(action_index: int) -> tuple[np.ndarray, bool]:
@@ -572,8 +572,20 @@ def route_following_action(
         if speed > 2.3:
             next_velocity *= 2.3 / speed
         next_position = position + next_velocity
-        x, y = np.rint(next_position).astype(int)
-        valid = 3 <= x < 61 and 3 <= y < 61 and not occupied_for_landing[y, x]
+        x, y = next_position
+        # Match ``PocketWorldEnv._collides`` in continuous coordinates.  A
+        # rounded lookup under-approximates the inclusive wall boundary for
+        # poses such as x=43.84, which can cause repeated attempts at a corner.
+        inside = 3 <= x < 61 and 3 <= y < 61
+        intersects_visible_wall = bool(
+            np.any(
+                (x >= wall_x - 3.0)
+                & (x <= wall_x + 4.0)
+                & (y >= wall_y - 3.0)
+                & (y <= wall_y + 4.0)
+            )
+        )
+        valid = inside and not intersects_visible_wall
         return next_position, bool(valid)
 
     _, safe = landing(action)
