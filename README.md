@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-45%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-62%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-79%25-69A94E">
 </p>
 
@@ -79,11 +79,11 @@ The latest research direction replaces two hand-designed shortcuts with measurab
 
 This is a marginal, split-calibrated Gaussian approximation—not a Bayesian posterior or an ensemble. The evaluation report now includes learned velocity error, finite-difference baseline error, 50/80/90/95% empirical coverage, interval width, and state Gaussian NLL.
 
-The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. With the blended observable RGB velocity state, the v2 checkpoint reaches 90% coverage of **95.1%/94.9% position/velocity in-distribution**, **90.8%/93.8% on joint map+fast OOD**, and map-shift AUROC **0.949–0.951** across three seeds. Speed-only shift detection remains weak; this is a measured risk boundary, not a claim of OOD calibration invariance. See [the RGB-velocity maturity report](docs/results/evaluation-maturity-v2-rgb-velocity-3seed.json).
+The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. The v3 kinematics checkpoint uses a learned temporal velocity representation blended with observable RGB velocity and a conservative post-fit uncertainty shrink. Across three seeds, 90% coverage is **94.0%/94.3% position/velocity in-distribution**, **89.3%/93.7% on joint map+fast OOD**, and speed/map shift AUROC is **0.885–0.955**. The detector uses an eight-frame mature RGB/action window, so the result is a calibrated online gate rather than a per-frame oracle. See [the v3 maturity report](docs/results/evaluation-maturity-v3-final-3seed.json).
 
-The first shift detector fits a 95th-percentile innovation threshold of 0.9813. It combines the calibrated motion innovation with a transparent wall-context mismatch against the known training-map prior. ID alarms stay near the 5% target; changed-map and joint map/fast detection reach 88% and 86% (AUROC 0.98 and 0.97), while fast-speed-only detection remains 9%. It is a useful map-shift gate, not a complete speed-shift classifier. See the [shift-detection result](docs/results/evaluation-temporal-probability-shift-detection-v8.json).
+The formal imagination-gap evaluator fixes candidate sampling per seed and reports the same selected plan in the learned model and the real simulator. On the released v3-final checkpoint, 24-step imagined/real success is **100.0% / 95.3%** (4.7pp gap) and 32-step success is **100.0% / 93.3%** (6.7pp gap). This is the central reliability result: short-horizon planning transfers closely, while longer imagined rollouts expose a measurable but bounded bias. See [the imagination-gap result](docs/results/evaluation-imagination-gap-v3-final.json).
 
-The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md) and [machine-readable result](docs/results/evaluation-temporal-probability-v8.json).
+The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md), [v3 maturity matrix](docs/results/evaluation-maturity-v3-final-3seed.json), and [formal imagination-gap result](docs/results/evaluation-imagination-gap-v3-final.json).
 
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
@@ -114,7 +114,11 @@ The repository keeps the research loop inspectable:
   <img src="docs/assets/pocketworld-results.svg" alt="PocketWorld planning success, imagination gap, collision failure, and agent position error" width="100%" />
 </p>
 
-The main large-scale checkpoint reaches **98% imagined / 96% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success falls to 93%—a visible, measurable imagination gap. On the earlier 150-episode, three-seed barrier validation, history-aware uncertainty planning reached **76.7% ± 2.5pp** real success. The latest RGB-observed A* fallback reaches **50.67% ± 2.49pp real success**, **6.88 ± 0.14px** final distance, and **1.14 ± 0.23** collisions per episode across the strict 150-episode protocol. The key fix was triggering the geometry fallback at 4px route misalignment, leaving about 39 of the 48 actions for route completion. This is a strong obstacle-crossing improvement, but the fallback is still explicit geometry rather than a fully learned obstacle model.
+The released v3-final checkpoint reaches **97.3% imagined / 97.3% real success** at 16 planning steps. At 24–32 steps, imagined success stays at 100% while real success is **95.3% / 93.3%**, giving a formal **4.7pp / 6.7pp** gap. On named train/holdout obstacle maps, the hybrid route controller reaches **98.9% / 93.3%** two-waypoint task success and **98.9% / 95.0%** three-waypoint task success across three seeds, with **0.40 / 0.45** and **0.41 / 0.57** collisions per leg. The strict single-barrier fallback reaches **50.67% ± 2.49pp** real success, **6.88 ± 0.14px** final distance, and **1.14 ± 0.23** collisions per episode. This is a mature, reproducible world-model/planning laboratory; it is not yet a claim that pure learned obstacle navigation is solved.
+
+### Maturity gate
+
+PocketWorld is considered mature as a research prototype when it passes all of these gates: deterministic three-seed reports; 20-step position error below 5px on train and holdout maps; at least 90% real waypoint success on unseen layouts; fewer than one collision per leg; a 24-step imagination gap below 10pp; 90% uncertainty coverage approximately within 85–95%; OOD shift AUROC above 0.85; and a published checkpoint plus machine-readable results. v3-final passes these gates on the stated protocols. The remaining red flag is scope-specific: the pure learned barrier planner still needs the explicit RGB/A* fallback for reliable obstacle crossing.
 
 The full methodology, per-seed statistics, OOD results, and negative ablations are recorded in [the evaluation report](docs/evaluation-2026-08.md).
 
@@ -134,6 +138,12 @@ The `v0.3.0` route-aware probabilistic milestone publishes the v8 checkpoint and
 
 - [`pocketworld-temporal-probability-v8.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.3.0/pocketworld-temporal-probability-v8.pt) — temporal velocity, calibrated uncertainty, and route-aware planning checkpoint.
 - [`evaluation-route-aware-temporal-probability-v8-full.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.3.0/evaluation-route-aware-temporal-probability-v8-full.json) — exact protocol and per-seed metrics.
+
+The `v0.4.0` maturity milestone publishes the calibrated v3-final checkpoint and formal imagination-gap evidence:
+
+- [`pocketworld-map-suite-v3-final.pt`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.4.0/pocketworld-map-suite-v3-final.pt) — learned kinematics, temporal velocity, calibrated uncertainty, and map-suite training metadata.
+- [`pocketworld-map-suite-v3-final.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.4.0/pocketworld-map-suite-v3-final.onnx) — browser-compatible one-step RGB/position graph.
+- [`evaluation-imagination-gap-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.4.0/evaluation-imagination-gap-v3-final.json) — deterministic 16/24/32-step imagined-versus-real sweep.
 
 Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
@@ -180,20 +190,28 @@ python -m pocketworld.train --resume artifacts/pocketworld-temporal-probability-
 The generalization evaluator measures per-map multi-step prediction error and sequential two-waypoint tasks:
 
 ```bash
-python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite-v2.pt --episodes 20 --horizon 64 --candidates 32 --seeds 11,23,41 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-map-suite-v2-3seed-continuous-landing.json
+python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite-v3-final.pt --episodes 20 --horizon 64 --candidates 32 --seeds 11,23,41 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-map-suite-v3-final-3seed.json
 ```
 
-The original v1 diagnostic is preserved in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json). The v2 checkpoint adds a four-action, RGB-observed route follower, continuous-coordinate landing safety guard, and a physically traversable zig-zag holdout. The formal [three-seed two-waypoint result](docs/results/evaluation-map-suite-v2-3seed-continuous-landing.json) uses 20 episodes per map, 64-step execution budgets, and 32 candidates: collision-aware 20-step position error is **3.94 ± 0.27px on train / 4.13 ± 0.30px on unseen maps**; task success is **98.9% ± 1.6pp / 93.3% ± 2.4pp**; mean collisions are **0.40 / 0.45 per leg**. The task benchmark is explicitly hybrid: learned collision-aware prediction plus RGB-only visible-route control, not a claim that pure random shooting has solved obstacle navigation.
+The original v1 diagnostic is preserved in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json). The v3-final kinematics checkpoint preserves the four-action RGB-observed route follower, continuous-coordinate landing safety guard, and physically traversable zig-zag holdout while reducing 20-step position error to **3.02 ± 0.27px on train / 3.72 ± 0.32px on unseen maps**. The formal [three-seed two-waypoint result](docs/results/evaluation-map-suite-v3-kinematics-3seed.json) uses 20 episodes per map, 64-step execution budgets, and 32 candidates: task success is **98.9% ± 1.6pp / 93.3% ± 2.4pp**, waypoint completion is **98.9% / 94.2%**, and mean collisions are **0.40 / 0.45 per leg**. These are explicitly hybrid benchmarks: learned dynamics and collision-aware prediction plus RGB-only visible-route control.
 
-The three-waypoint stress test uses the same three seeds and a 96-step budget. It reaches **98.9% train / 95.0% unseen task success**, **98.9% / 97.2% waypoint completion**, and **0.41 / 0.57 collisions per leg**; see [evaluation-map-suite-v2-3seed-continuous-landing-waypoint3.json](docs/results/evaluation-map-suite-v2-3seed-continuous-landing-waypoint3.json).
+The three-waypoint stress test uses the same three seeds and a 96-step budget. It reaches **98.9% train / 95.0% unseen task success**, **98.9% / 97.2% waypoint completion**, and **0.41 / 0.57 collisions per leg**; see [evaluation-map-suite-v3-kinematics-waypoint3-3seed.json](docs/results/evaluation-map-suite-v3-kinematics-waypoint3-3seed.json).
 
 For the maturity-gate calibration and OOD protocol:
 
 ```bash
-python -m pocketworld.evaluate_maturity artifacts/pocketworld-map-suite-v2.pt --episodes 50 --horizon 8 --seeds 11,23,41 --output artifacts/evaluation-maturity-v2-rgb-velocity-3seed.json
+python -m pocketworld.evaluate_maturity artifacts/pocketworld-map-suite-v3-final.pt --episodes 50 --horizon 8 --seeds 11,23,41 --output artifacts/evaluation-maturity-v3-final-3seed.json
 ```
 
-The [three-seed maturity report](docs/results/evaluation-maturity-v2-rgb-velocity-3seed.json) gives 90% position/velocity coverage of **95.1%/94.9% in-distribution**, **90.8%/93.8% on joint map+fast OOD**, and map-shift AUROC **0.949–0.951**. Coverage is now inside the target band for the main map/speed matrix, while speed-only AUROC remains near chance; the uncertainty layer is mature for map fallback but not yet a complete dynamics-shift detector.
+The [three-seed maturity report](docs/results/evaluation-maturity-v3-final-3seed.json) gives 90% position/velocity coverage of **94.0%/94.3% in-distribution**, **89.3%/93.7% on joint map+fast OOD**, and speed/map AUROC of **0.885–0.955**. The shift score waits for an eight-frame mature RGB/action window, keeping the detector observable and reproducible. The matrix is inside the practical 85–95% coverage band up to ordinary seed variation; it is not a guarantee of calibration under arbitrary physics changes.
+
+To reproduce the formal imagination-gap sweep:
+
+```bash
+python -m pocketworld.evaluate_imagination artifacts/pocketworld-map-suite-v3-final.pt --episodes 50 --horizons 16,24,32 --candidates 256 --seeds 11,23,41 --output artifacts/evaluation-imagination-gap-v3-final.json
+```
+
+The [formal result](docs/results/evaluation-imagination-gap-v3-final.json) reports a **4.7pp** gap at 24 steps and **6.7pp** at 32 steps. The evaluator fixes candidate sampling per seed, so the imagined and real rates refer to the same selected action sequences.
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 

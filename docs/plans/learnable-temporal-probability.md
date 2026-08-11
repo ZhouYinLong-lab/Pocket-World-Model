@@ -1,6 +1,6 @@
 # Learnable temporal velocity and calibrated probabilistic uncertainty
 
-Status: route-aware scoring and online shift monitoring implemented; the main remaining gap is real barrier success and reliable map-OOD detection.
+Status: v3-final learned-kinematics calibration and mature-window shift monitoring are implemented; the remaining scope boundary is pure learned barrier crossing.
 
 ## Objective
 
@@ -39,6 +39,8 @@ Replace the previous hand-designed history velocity estimate and fixed robust un
 
 The uncertainty is intentionally described as a marginal split-calibrated Gaussian approximation. It is not a Bayesian posterior, deep ensemble, or distribution-free joint confidence set.
 
+The online shift score now includes a robust RGB/action speed-response estimate. It is calibrated from in-distribution episodes and evaluated after an eight-frame mature window, where the response can be separated from one-frame rendering noise. The detector remains label-free at inference time and reports its false-trigger rate, speed-shift AUROC, map-shift AUROC, and joint-shift AUROC separately.
+
 ## Evaluation contract
 
 `pocketworld.evaluate` reports:
@@ -71,3 +73,5 @@ The OOD matrix shows nominal position/velocity coverage of 87.7%/90.8%, improvin
 The completed route-aware full protocol reports 2.505 ± 0.055px mean route alignment error, 92.7% ± 1.9pp imagined success, and 0.667% ± 0.943pp real success across 150 episodes. The alignment-triggered wall-aware fallback raises real success to 7.333% ± 0.943pp, lowers collisions from 5.92 to 5.10 per episode, and lowers alignment error to 1.753 ± 0.040px. This is the first material transfer improvement, but not a solved barrier planner. See [route-aware result](../results/evaluation-route-aware-temporal-probability-v8-full.json) and [fallback result](../results/evaluation-route-aware-hybrid-fallback-v8-full.json). The shift detector fits a 0.9813 threshold with 5.25% ID alarms. After adding the visible wall-context gate, it catches 88% changed-map and 86% joint map/fast transitions (AUROC 0.98/0.97), while fast-speed-only detection remains 9%. See [evaluation-temporal-probability-shift-detection-v8.json](../results/evaluation-temporal-probability-shift-detection-v8.json).
 
 The next research question is how to align route-level imagined progress with real barrier crossing while improving map-OOD detection. Candidate follow-ups are route-conditioned collision supervision, latent feature density or conformal scores, and uncertainty-aware replanning triggers that distinguish ordinary model noise from a genuine map shift.
+
+The v3-final maturity-gate result narrows that question: on the open-space reference, the 24-step imagined/real gap is 4.7pp and the 32-step gap is 6.7pp; on named unseen maps, two-waypoint success is 93.3% with 0.45 collisions per leg. The remaining obstacle result is therefore a transfer problem at wall crossings, not an absence of temporal state in free-space dynamics. See [the formal imagination-gap report](../results/evaluation-imagination-gap-v3-final.json) and [the v3 maturity matrix](../results/evaluation-maturity-v3-final-3seed.json).

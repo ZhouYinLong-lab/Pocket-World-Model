@@ -1,4 +1,40 @@
-# PocketWorld evaluation — 2026-08-03
+# PocketWorld evaluation — 2026-08-11
+
+## v3-final maturity-gate addendum
+
+The current release checkpoint is `pocketworld-map-suite-v3-final.pt`. It is a kinematics-only system-identification refinement of the v2 map-suite checkpoint, followed by a conservative 0.94x post-fit uncertainty-scale policy. The refinement is deliberately narrow: it improves the acceleration/friction/speed-limit model used by planning without changing the RGB decoder or adding a larger architecture.
+
+The maturity gate used for this release is:
+
+| Gate | Target | v3-final evidence |
+| --- | ---: | ---: |
+| 20-step position error on train/holdout maps | < 5px | 3.02 / 3.72px |
+| Unseen-map waypoint success | ≥ 90% | 93.3% (2 waypoints), 95.0% (3 waypoints) |
+| Collisions per leg | < 1 | 0.45 unseen (2 waypoints), 0.57 unseen (3 waypoints) |
+| 24-step imagination gap | < 10pp | 4.7pp |
+| 90% uncertainty coverage | approximately 85–95% | 89.3–96.1% across matrix cells |
+| Speed/map OOD shift AUROC | > 0.85 | 0.885–0.955 |
+| Reproducibility | 3 seeds + machine-readable output | seeds 11/23/41, committed JSON |
+
+The coverage range includes small seed and condition variation around the nominal band; it should be read as an empirical calibration envelope, not a universal guarantee. The OOD detector is an episode-level mature-window score: it waits for eight RGB/action transitions so a speed response can be estimated robustly without OOD labels.
+
+### Formal imagined-versus-real gap
+
+The new `pocketworld-evaluate-imagination` command fixes candidate sampling per seed and compares the selected plan in the learned model with the same action sequence in the real simulator. On 50 episodes per seed, 256 candidates, and seeds 11/23/41:
+
+| Horizon | Imagined success | Real success | Absolute gap |
+| ---: | ---: | ---: | ---: |
+| 16 | 97.3% | 97.3% | 0.0pp |
+| 24 | 100.0% | 95.3% | 4.7pp |
+| 32 | 100.0% | 93.3% | 6.7pp |
+
+This is the cleanest evidence for the project’s central question. The learned world model is reliable for short open-space planning horizons, while longer rollouts still accumulate enough dynamics error to create a measurable real-execution penalty.
+
+### v3 map-suite revalidation
+
+The v3 kinematics checkpoint was evaluated on 20 episodes per map, three seeds, 32 candidates, and 64-step execution budgets for two-waypoint tasks. Train/holdout results are **3.02 ± 0.27px / 3.72 ± 0.32px** 20-step position error, **98.9% ± 1.6pp / 93.3% ± 2.4pp** task success, **98.9% / 94.2%** waypoint completion, and **0.40 / 0.45** collisions per leg. The three-waypoint, 96-step stress test reaches **98.9% / 95.0%** task success, **98.9% / 97.2%** completion, and **0.41 / 0.57** collisions per leg.
+
+These map-suite numbers are hybrid by design: the learned model supplies structured dynamics and collision-aware prediction, while the route follower uses visible RGB wall geometry. The strict single-barrier benchmark remains the honest limitation: the explicit RGB/A* fallback reaches 50.67% real success under the frozen 150-episode protocol, but the pure learned obstacle planner does not yet match it. This project is therefore mature as an observable world-model/planning laboratory, not as a solved general obstacle-navigation system.
 
 The current main checkpoint is trained with 1,000 trajectories, 200 validation trajectories, 16-step unrolls, sticky actions (`p=0.75`), and full-map start/goal sampling. The report was generated with 50 episodes per seed, 3 seeds (`11, 23, 41`), and 1,024 random-shooting candidates.
 

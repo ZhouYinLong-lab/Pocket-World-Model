@@ -1,0 +1,746 @@
+{
+  "config": {
+    "episodes": 20,
+    "horizon": 64,
+    "candidates": 32,
+    "seeds": [
+      11,
+      23,
+      41
+    ],
+    "train_suite": "train",
+    "holdout_suite": "holdout",
+    "waypoint_count": 2
+  },
+  "runs": [
+    {
+      "config": {
+        "episodes": 20,
+        "horizon": 64,
+        "candidates": 32,
+        "seed": 11,
+        "train_suite": "train",
+        "holdout_suite": "holdout",
+        "waypoint_count": 2
+      },
+      "map_suites": {
+        "baseline": [
+          "default"
+        ],
+        "train": [
+          "default",
+          "single_barrier",
+          "double_barrier"
+        ],
+        "holdout": [
+          "cross",
+          "zigzag"
+        ],
+        "all": [
+          "default",
+          "single_barrier",
+          "double_barrier",
+          "cross",
+          "zigzag",
+          "open"
+        ]
+      },
+      "prediction": {
+        "train": [
+          {
+            "map_name": "default",
+            "map_description": "three staggered walls; compatibility baseline",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.1638808503746987,
+              "5": 1.7685190726071596,
+              "10": 2.5876045785844326,
+              "20": 3.2139421880245207
+            },
+            "image_mae": {
+              "1": 0.024234767910093068,
+              "5": 0.07859780713915825,
+              "10": 0.09051369726657868,
+              "20": 0.09605052657425403
+            }
+          },
+          {
+            "map_name": "single_barrier",
+            "map_description": "one vertical barrier with top and bottom passages",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.7483342237770557,
+              "5": 1.1609043225646019,
+              "10": 1.8423153087496758,
+              "20": 3.7596909314394
+            },
+            "image_mae": {
+              "1": 0.021285359933972358,
+              "5": 0.04149771109223366,
+              "10": 0.05103928204625845,
+              "20": 0.056799286603927614
+            }
+          },
+          {
+            "map_name": "double_barrier",
+            "map_description": "two offset vertical barriers requiring alternating detours",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.6911785278469325,
+              "5": 1.0629587948322297,
+              "10": 1.6834393322467804,
+              "20": 2.7894470684230326
+            },
+            "image_mae": {
+              "1": 0.021344317775219678,
+              "5": 0.06851073950529099,
+              "10": 0.08186372630298137,
+              "20": 0.08692128211259842
+            }
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "map_description": "cross-shaped central obstruction with four approach directions",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.8149074226617814,
+              "5": 1.7053417086601257,
+              "10": 2.387898603081703,
+              "20": 3.8934301167726515
+            },
+            "image_mae": {
+              "1": 0.06115357577800751,
+              "5": 0.06801753640174865,
+              "10": 0.07837543860077859,
+              "20": 0.08333232775330543
+            }
+          },
+          {
+            "map_name": "zigzag",
+            "map_description": "zig-zag corridor with a physically traversable holdout passage",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 2.0019907623529436,
+              "5": 2.2059500008821487,
+              "10": 2.9169646859169007,
+              "20": 3.8588199198246
+            },
+            "image_mae": {
+              "1": 0.04538000654429197,
+              "5": 0.07501025833189487,
+              "10": 0.08760544918477535,
+              "20": 0.0937707144767046
+            }
+          }
+        ]
+      },
+      "prediction_summary": {
+        "train": {
+          "mean_position_error_px": {
+            "1": 0.8677978673328957,
+            "5": 1.3307940633346638,
+            "10": 2.037786406526963,
+            "20": 3.2543600626289844
+          },
+          "mean_image_mae": {
+            "1": 0.0222881485397617,
+            "5": 0.0628687525788943,
+            "10": 0.07447223520527284,
+            "20": 0.07992369843026002
+          }
+        },
+        "unseen": {
+          "mean_position_error_px": {
+            "1": 1.9084490925073625,
+            "5": 1.955645854771137,
+            "10": 2.652431644499302,
+            "20": 3.8761250182986258
+          },
+          "mean_image_mae": {
+            "1": 0.05326679116114974,
+            "5": 0.07151389736682176,
+            "10": 0.08299044389277696,
+            "20": 0.08855152111500501
+          }
+        }
+      },
+      "waypoint_tasks": {
+        "train": [
+          {
+            "map_name": "default",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 3.0764279425144196,
+            "mean_collisions": 0.9,
+            "mean_actions_per_leg": 31.35
+          },
+          {
+            "map_name": "single_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 3.2264738023281097,
+            "mean_collisions": 0.15,
+            "mean_actions_per_leg": 18.15
+          },
+          {
+            "map_name": "double_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.9227925062179567,
+            "mean_collisions": 0.3,
+            "mean_actions_per_leg": 25.3
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 0.8,
+            "waypoint_completion_rate": 0.85,
+            "mean_final_distance_px": 6.459722707146092,
+            "mean_collisions": 0.631578947368421,
+            "mean_actions_per_leg": 32.26315789473684
+          },
+          {
+            "map_name": "zigzag",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 3.0595370888710023,
+            "mean_collisions": 0.15,
+            "mean_actions_per_leg": 20.05
+          }
+        ]
+      },
+      "waypoint_summary": {
+        "train": {
+          "mean_task_success_rate": 1.0,
+          "mean_waypoint_completion_rate": 1.0,
+          "mean_final_distance_px": 3.0752314170201616,
+          "mean_collisions_per_leg": 0.45
+        },
+        "unseen": {
+          "mean_task_success_rate": 0.9,
+          "mean_waypoint_completion_rate": 0.925,
+          "mean_final_distance_px": 4.759629898008547,
+          "mean_collisions_per_leg": 0.3907894736842105
+        }
+      }
+    },
+    {
+      "config": {
+        "episodes": 20,
+        "horizon": 64,
+        "candidates": 32,
+        "seed": 23,
+        "train_suite": "train",
+        "holdout_suite": "holdout",
+        "waypoint_count": 2
+      },
+      "map_suites": {
+        "baseline": [
+          "default"
+        ],
+        "train": [
+          "default",
+          "single_barrier",
+          "double_barrier"
+        ],
+        "holdout": [
+          "cross",
+          "zigzag"
+        ],
+        "all": [
+          "default",
+          "single_barrier",
+          "double_barrier",
+          "cross",
+          "zigzag",
+          "open"
+        ]
+      },
+      "prediction": {
+        "train": [
+          {
+            "map_name": "default",
+            "map_description": "three staggered walls; compatibility baseline",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.0124428756535053,
+              "5": 1.6695935606956482,
+              "10": 2.381047361716628,
+              "20": 2.9952752232551574
+            },
+            "image_mae": {
+              "1": 0.02302756058052182,
+              "5": 0.079693016782403,
+              "10": 0.0913727805018425,
+              "20": 0.09661292769014836
+            }
+          },
+          {
+            "map_name": "single_barrier",
+            "map_description": "one vertical barrier with top and bottom passages",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.7382860943675041,
+              "5": 0.9054276069626213,
+              "10": 1.439996757498011,
+              "20": 2.143369036912918
+            },
+            "image_mae": {
+              "1": 0.021018506586551668,
+              "5": 0.04176903758198023,
+              "10": 0.050553759559988976,
+              "20": 0.05574621520936489
+            }
+          },
+          {
+            "map_name": "double_barrier",
+            "map_description": "two offset vertical barriers requiring alternating detours",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.0613787174224854,
+              "5": 1.6038879677653313,
+              "10": 2.6215745653957128,
+              "20": 2.7756081245839597
+            },
+            "image_mae": {
+              "1": 0.02264329269528389,
+              "5": 0.06777767427265644,
+              "10": 0.08295118249952793,
+              "20": 0.0877182051539421
+            }
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "map_description": "cross-shaped central obstruction with four approach directions",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.6297496274113654,
+              "5": 1.6218660145998,
+              "10": 1.9363106690347194,
+              "20": 3.608099266886711
+            },
+            "image_mae": {
+              "1": 0.05990439765155316,
+              "5": 0.06749951932579279,
+              "10": 0.07865359596908092,
+              "20": 0.08301807194948196
+            }
+          },
+          {
+            "map_name": "zigzag",
+            "map_description": "zig-zag corridor with a physically traversable holdout passage",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.7845585096627474,
+              "5": 2.207459969818592,
+              "10": 3.1121364325284957,
+              "20": 4.408148032426834
+            },
+            "image_mae": {
+              "1": 0.043753010034561154,
+              "5": 0.07530472539365292,
+              "10": 0.08826779723167419,
+              "20": 0.09304493144154549
+            }
+          }
+        ]
+      },
+      "prediction_summary": {
+        "train": {
+          "mean_position_error_px": {
+            "1": 0.9373692291478316,
+            "5": 1.3929697118078668,
+            "10": 2.147539561536784,
+            "20": 2.638084128250678
+          },
+          "mean_image_mae": {
+            "1": 0.022229786620785796,
+            "5": 0.0630799095456799,
+            "10": 0.07495924085378647,
+            "20": 0.08002578268448511
+          }
+        },
+        "unseen": {
+          "mean_position_error_px": {
+            "1": 1.7071540685370565,
+            "5": 1.914662992209196,
+            "10": 2.5242235507816075,
+            "20": 4.008123649656772
+          },
+          "mean_image_mae": {
+            "1": 0.051828703843057156,
+            "5": 0.07140212235972285,
+            "10": 0.08346069660037755,
+            "20": 0.08803150169551373
+          }
+        }
+      },
+      "waypoint_tasks": {
+        "train": [
+          {
+            "map_name": "default",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 3.037931489944458,
+            "mean_collisions": 0.8,
+            "mean_actions_per_leg": 28.45
+          },
+          {
+            "map_name": "single_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.9410370588302612,
+            "mean_collisions": 0.35,
+            "mean_actions_per_leg": 20.6
+          },
+          {
+            "map_name": "double_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.8262588560581205,
+            "mean_collisions": 0.2,
+            "mean_actions_per_leg": 27.25
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 0.9,
+            "waypoint_completion_rate": 0.9,
+            "mean_final_distance_px": 5.689361296202007,
+            "mean_collisions": 0.7894736842105263,
+            "mean_actions_per_leg": 33.473684210526315
+          },
+          {
+            "map_name": "zigzag",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.8500288128852844,
+            "mean_collisions": 0.2,
+            "mean_actions_per_leg": 29.7
+          }
+        ]
+      },
+      "waypoint_summary": {
+        "train": {
+          "mean_task_success_rate": 1.0,
+          "mean_waypoint_completion_rate": 1.0,
+          "mean_final_distance_px": 2.9350758016109464,
+          "mean_collisions_per_leg": 0.44999999999999996
+        },
+        "unseen": {
+          "mean_task_success_rate": 0.95,
+          "mean_waypoint_completion_rate": 0.95,
+          "mean_final_distance_px": 4.269695054543646,
+          "mean_collisions_per_leg": 0.49473684210526314
+        }
+      }
+    },
+    {
+      "config": {
+        "episodes": 20,
+        "horizon": 64,
+        "candidates": 32,
+        "seed": 41,
+        "train_suite": "train",
+        "holdout_suite": "holdout",
+        "waypoint_count": 2
+      },
+      "map_suites": {
+        "baseline": [
+          "default"
+        ],
+        "train": [
+          "default",
+          "single_barrier",
+          "double_barrier"
+        ],
+        "holdout": [
+          "cross",
+          "zigzag"
+        ],
+        "all": [
+          "default",
+          "single_barrier",
+          "double_barrier",
+          "cross",
+          "zigzag",
+          "open"
+        ]
+      },
+      "prediction": {
+        "train": [
+          {
+            "map_name": "default",
+            "map_description": "three staggered walls; compatibility baseline",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.9004689272493124,
+              "5": 1.280746129155159,
+              "10": 2.3551938027143478,
+              "20": 3.420627290010452
+            },
+            "image_mae": {
+              "1": 0.023215250484645365,
+              "5": 0.07824589572846889,
+              "10": 0.08895794898271561,
+              "20": 0.09419959224760532
+            }
+          },
+          {
+            "map_name": "single_barrier",
+            "map_description": "one vertical barrier with top and bottom passages",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.8323781497776508,
+              "5": 1.0103643283247947,
+              "10": 2.036380385607481,
+              "20": 3.580194130539894
+            },
+            "image_mae": {
+              "1": 0.021507390402257444,
+              "5": 0.04119315929710865,
+              "10": 0.05106482449918985,
+              "20": 0.05608080625534058
+            }
+          },
+          {
+            "map_name": "double_barrier",
+            "map_description": "two offset vertical barriers requiring alternating detours",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 0.9401944860816002,
+              "5": 1.1768601194024086,
+              "10": 1.7098126694560052,
+              "20": 2.5278683863580227
+            },
+            "image_mae": {
+              "1": 0.023565843980759383,
+              "5": 0.06786711495369672,
+              "10": 0.08251881822943688,
+              "20": 0.08753148503601552
+            }
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "map_description": "cross-shaped central obstruction with four approach directions",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.475801695138216,
+              "5": 1.6258445717394352,
+              "10": 1.996815139055252,
+              "20": 3.219843389093876
+            },
+            "image_mae": {
+              "1": 0.060173810087144376,
+              "5": 0.06708038821816445,
+              "10": 0.07779280841350555,
+              "20": 0.082119644805789
+            }
+          },
+          {
+            "map_name": "zigzag",
+            "map_description": "zig-zag corridor with a physically traversable holdout passage",
+            "episodes": 20,
+            "rollout_mode": "learned_collision_response+visual_guard",
+            "position_error_px": {
+              "1": 1.966849187016487,
+              "5": 2.148438313603401,
+              "10": 2.7788476943969727,
+              "20": 3.33570159971714
+            },
+            "image_mae": {
+              "1": 0.04446065053343773,
+              "5": 0.07704313285648823,
+              "10": 0.08867667727172375,
+              "20": 0.092924939468503
+            }
+          }
+        ]
+      },
+      "prediction_summary": {
+        "train": {
+          "mean_position_error_px": {
+            "1": 0.8910138543695211,
+            "5": 1.155990192294121,
+            "10": 2.033795619259278,
+            "20": 3.176229935636123
+          },
+          "mean_image_mae": {
+            "1": 0.02276282828922073,
+            "5": 0.06243538999309142,
+            "10": 0.07418053057044745,
+            "20": 0.07927062784632047
+          }
+        },
+        "unseen": {
+          "mean_position_error_px": {
+            "1": 1.7213254410773515,
+            "5": 1.8871414426714181,
+            "10": 2.3878314167261125,
+            "20": 3.277772494405508
+          },
+          "mean_image_mae": {
+            "1": 0.05231723031029105,
+            "5": 0.07206176053732634,
+            "10": 0.08323474284261465,
+            "20": 0.08752229213714599
+          }
+        }
+      },
+      "waypoint_tasks": {
+        "train": [
+          {
+            "map_name": "default",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.8407224237918856,
+            "mean_collisions": 0.55,
+            "mean_actions_per_leg": 22.4
+          },
+          {
+            "map_name": "single_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 2.973856747150421,
+            "mean_collisions": 0.25,
+            "mean_actions_per_leg": 20.8
+          },
+          {
+            "map_name": "double_barrier",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 0.9,
+            "waypoint_completion_rate": 0.9,
+            "mean_final_distance_px": 4.779203138853374,
+            "mean_collisions": 0.10526315789473684,
+            "mean_actions_per_leg": 25.68421052631579
+          }
+        ],
+        "unseen": [
+          {
+            "map_name": "cross",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 1.0,
+            "waypoint_completion_rate": 1.0,
+            "mean_final_distance_px": 3.2426149368286135,
+            "mean_collisions": 0.85,
+            "mean_actions_per_leg": 24.25
+          },
+          {
+            "map_name": "zigzag",
+            "episodes": 10,
+            "waypoint_count": 2,
+            "task_success_rate": 0.9,
+            "waypoint_completion_rate": 0.9,
+            "mean_final_distance_px": 3.374887228012085,
+            "mean_collisions": 0.10526315789473684,
+            "mean_actions_per_leg": 24.68421052631579
+          }
+        ]
+      },
+      "waypoint_summary": {
+        "train": {
+          "mean_task_success_rate": 0.9666666666666667,
+          "mean_waypoint_completion_rate": 0.9666666666666667,
+          "mean_final_distance_px": 3.531260769931894,
+          "mean_collisions_per_leg": 0.3017543859649123
+        },
+        "unseen": {
+          "mean_task_success_rate": 0.95,
+          "mean_waypoint_completion_rate": 0.95,
+          "mean_final_distance_px": 3.308751082420349,
+          "mean_collisions_per_leg": 0.4776315789473684
+        }
+      }
+    }
+  ],
+  "summary": {
+    "prediction_20_step_position_error_px": {
+      "train": {
+        "mean": 3.022891375505262,
+        "std": 0.27396294438082663
+      },
+      "unseen": {
+        "mean": 3.720673720786969,
+        "std": 0.3177808803958657
+      }
+    },
+    "waypoint_task_success_rate": {
+      "train": {
+        "mean": 0.9888888888888889,
+        "std": 0.01571348402636772
+      },
+      "unseen": {
+        "mean": 0.9333333333333332,
+        "std": 0.023570226039551553
+      }
+    },
+    "waypoint_completion_rate": {
+      "train": {
+        "mean": 0.9888888888888889,
+        "std": 0.01571348402636772
+      },
+      "unseen": {
+        "mean": 0.9416666666666668,
+        "std": 0.01178511301977575
+      }
+    },
+    "mean_collisions_per_leg": {
+      "train": {
+        "mean": 0.40058479532163743,
+        "std": 0.06988365264358276
+      },
+      "unseen": {
+        "mean": 0.4543859649122807,
+        "std": 0.04550848110932519
+      }
+    }
+  }
+}

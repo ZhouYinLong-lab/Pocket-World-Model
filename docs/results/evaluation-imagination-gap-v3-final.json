@@ -1,0 +1,170 @@
+{
+  "config": {
+    "seeds": [
+      11,
+      23,
+      41
+    ],
+    "episodes": 50,
+    "horizons": [
+      16,
+      24,
+      32
+    ],
+    "candidates": 256,
+    "primary_horizon": 24,
+    "environment": "open-space planning reference"
+  },
+  "runs": [
+    {
+      "seed": 11,
+      "planning_sweep": {
+        "16": {
+          "imagined_success_rate": 0.98,
+          "real_success_rate": 0.98,
+          "planning_gap": 0.0,
+          "mean_imagined_final_distance_px": 1.339886692650616,
+          "mean_real_final_distance_px": 3.1938927364349365
+        },
+        "24": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.94,
+          "planning_gap": 0.06,
+          "mean_imagined_final_distance_px": 0.37339686289429663,
+          "mean_real_final_distance_px": 3.24660005569458
+        },
+        "32": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.98,
+          "planning_gap": 0.02,
+          "mean_imagined_final_distance_px": 0.2752608984895051,
+          "mean_real_final_distance_px": 3.2456367301940916
+        }
+      }
+    },
+    {
+      "seed": 23,
+      "planning_sweep": {
+        "16": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.98,
+          "planning_gap": 0.02,
+          "mean_imagined_final_distance_px": 1.0728881400823593,
+          "mean_real_final_distance_px": 3.190768213272095
+        },
+        "24": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.94,
+          "planning_gap": 0.06,
+          "mean_imagined_final_distance_px": 0.3832324276864529,
+          "mean_real_final_distance_px": 3.3707372093200685
+        },
+        "32": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.94,
+          "planning_gap": 0.06,
+          "mean_imagined_final_distance_px": 0.3015334151685238,
+          "mean_real_final_distance_px": 3.3642129373550413
+        }
+      }
+    },
+    {
+      "seed": 41,
+      "planning_sweep": {
+        "16": {
+          "imagined_success_rate": 0.94,
+          "real_success_rate": 0.96,
+          "planning_gap": -0.02,
+          "mean_imagined_final_distance_px": 1.61521031036973,
+          "mean_real_final_distance_px": 2.964734752178192
+        },
+        "24": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.98,
+          "planning_gap": 0.02,
+          "mean_imagined_final_distance_px": 0.39110356718301775,
+          "mean_real_final_distance_px": 3.164062385559082
+        },
+        "32": {
+          "imagined_success_rate": 1.0,
+          "real_success_rate": 0.88,
+          "planning_gap": 0.12,
+          "mean_imagined_final_distance_px": 0.2854110046103597,
+          "mean_real_final_distance_px": 3.5640400004386903
+        }
+      }
+    }
+  ],
+  "summary": {
+    "16": {
+      "imagined_success_rate": {
+        "mean": 0.9733333587646484,
+        "std": 0.024944385513663292
+      },
+      "real_success_rate": {
+        "mean": 0.9733333587646484,
+        "std": 0.009428109042346478
+      },
+      "planning_gap": {
+        "mean": 0.0,
+        "std": 0.0163299310952425
+      },
+      "mean_imagined_final_distance_px": {
+        "mean": 1.342661738395691,
+        "std": 0.22141079604625702
+      },
+      "mean_real_final_distance_px": {
+        "mean": 3.1164653301239014,
+        "std": 0.10729721933603287
+      }
+    },
+    "24": {
+      "imagined_success_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "real_success_rate": {
+        "mean": 0.9533333778381348,
+        "std": 0.018856190145015717
+      },
+      "planning_gap": {
+        "mean": 0.046666666865348816,
+        "std": 0.01885618083178997
+      },
+      "mean_imagined_final_distance_px": {
+        "mean": 0.3825776278972626,
+        "std": 0.007243539672344923
+      },
+      "mean_real_final_distance_px": {
+        "mean": 3.2604665756225586,
+        "std": 0.08494245260953903
+      }
+    },
+    "32": {
+      "imagined_success_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "real_success_rate": {
+        "mean": 0.9333333969116211,
+        "std": 0.04109610244631767
+      },
+      "planning_gap": {
+        "mean": 0.06666666269302368,
+        "std": 0.04109609127044678
+      },
+      "mean_imagined_final_distance_px": {
+        "mean": 0.2874017655849457,
+        "std": 0.010817686095833778
+      },
+      "mean_real_final_distance_px": {
+        "mean": 3.391296625137329,
+        "std": 0.1313907504081726
+      }
+    }
+  },
+  "primary_absolute_gap": {
+    "mean": 0.046666666865348816,
+    "std": 0.01885618083178997
+  }
+}

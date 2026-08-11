@@ -2,6 +2,19 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.4.0] - 2026-08-11
+
+### Added
+
+- v3-final maturity-gate checkpoint with learned kinematics identification, formal imagined-versus-real planning-gap evaluation, and browser-ready ONNX export.
+- Mature-window RGB/action speed-response shift detector with three-seed OOD stability measurements.
+
+### Changed
+
+- Formal open-space imagination gap is 4.7pp at 24 steps and 6.7pp at 32 steps on the v3-final checkpoint.
+- Map-suite v3 reduces 20-step position error to 3.02px train / 3.72px unseen and reaches 98.9% / 93.3% two-waypoint task success across three seeds.
+- The maturity report now covers 90% uncertainty coverage and speed/map shift AUROC rather than reporting map-only calibration.
+
 ## [Unreleased]
 
 ### Added
@@ -88,7 +101,8 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Pure learned collision planning still fails the real single-barrier benchmark.
 - The learned agent-mask head has low shape IoU and remains an ablation.
 
-[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0
