@@ -11,6 +11,7 @@ from pocketworld.planner import (
     _wall_aware_route_templates,
     estimate_agent_velocity,
     estimate_speed_response,
+    cem_shooting,
     extract_wall_boxes,
     extract_wall_mask,
     predictive_shift_score,
@@ -262,6 +263,23 @@ def test_random_shooting_accepts_learned_velocity_and_probability_flags():
 
     assert result.actions.ndim == 1
     assert np.isfinite(result.planning_score)
+
+
+def test_cem_shooting_returns_valid_discrete_plan_under_budget():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+
+    env = PocketWorldEnv(walls=(), agent_start=(8, 8), goal=(18, 28))
+    observation, _ = env.reset()
+    torch.manual_seed(9)
+    result = cem_shooting(PocketWorldModel(), observation, (18, 28), horizon=6, candidates=32)
+
+    assert 1 <= len(result.actions) <= 6
+    assert result.actions.dtype == np.int64
+    assert np.all((result.actions >= 0) & (result.actions < 4))
+    assert result.imagined_positions.shape == (len(result.actions) + 1, 2)
+    assert np.isfinite(result.imagined_distance)
 
 
 def test_route_objective_reports_progress_and_alignment_monitor_is_finite():

@@ -973,6 +973,146 @@ def random_shooting(
 
 
 @torch.no_grad()
+def cem_shooting(
+    model: PocketWorldModel,
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    horizon: int = 12,
+    candidates: int = 256,
+    iterations: int = 4,
+    elite_fraction: float = 0.20,
+    smoothing: float = 0.25,
+    device: str = "cpu",
+    observation_history: Sequence[np.ndarray] | None = None,
+    use_learned_velocity: bool = False,
+    collision_aware: bool = False,
+    learned_collision: bool = False,
+    hybrid_collision: bool = False,
+) -> PlanResult:
+    """Plan with categorical CEM under an explicit model-query budget.
+
+    The action space is discrete, so CEM maintains one categorical
+    distribution per horizon step. ``candidates`` is a total rollout budget;
+    every iteration receives an equal share. This makes comparisons against
+    random shooting compute-controlled rather than population-controlled.
+    """
+    if horizon < 1 or candidates < 4:
+        raise ValueError("horizon must be positive and candidates must be at least 4")
+    if iterations < 1:
+        raise ValueError("iterations must be positive")
+    iterations = min(int(iterations), max(1, candidates // 4))
+    population = max(4, candidates // iterations)
+    total_queries = population * iterations
+    model.eval()
+
+    start = torch.from_numpy(observation[None]).float().to(device) / 255.0
+    start_position = extract_agent_position(observation).astype(np.float32)
+    normalized_start_position = torch.as_tensor(
+        start_position / 64.0, device=device, dtype=start.dtype
+    )
+    start_velocity = None
+    normalized_start_velocity = None
+    if observation_history is not None and len(observation_history) >= 2:
+        if use_learned_velocity:
+            history_tensor = torch.from_numpy(np.stack(observation_history)).float().to(device) / 255.0
+            learned_velocity, _ = model.temporal_velocity_stats(history_tensor[None])
+            learned_velocity_px = learned_velocity[0].cpu().numpy() * 3.0
+            observed_velocity_px = observable_velocity_from_frames(np.stack(observation_history))
+            start_velocity = (0.50 * learned_velocity_px + 0.50 * observed_velocity_px).astype(np.float32)
+        else:
+            start_velocity = estimate_agent_velocity(observation_history)
+        normalized_start_velocity = torch.as_tensor(
+            start_velocity / 3.0, device=device, dtype=start.dtype
+        )
+
+    delta = np.asarray(goal, dtype=np.float32) - start_position
+    preferred_action = (
+        3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0
+        else 2 if abs(delta[0]) >= abs(delta[1])
+        else 1 if delta[1] >= 0
+        else 0
+    )
+    probabilities = torch.full((horizon, 4), 0.25, device=device, dtype=start.dtype)
+    probabilities[:, preferred_action] += 0.35
+    probabilities /= probabilities.sum(dim=-1, keepdim=True)
+    wall_mask = extract_wall_mask(observation) if collision_aware or hybrid_collision else None
+    best_score = float("inf")
+    best_actions: torch.Tensor | None = None
+    best_positions: np.ndarray | None = None
+    best_step = horizon
+    best_collision_risk = 0.0
+    goal_tensor = torch.as_tensor(goal, device=device, dtype=start.dtype)
+
+    for _ in range(iterations):
+        actions = torch.stack(
+            [torch.multinomial(probabilities[step], population, replacement=True) for step in range(horizon)],
+            dim=1,
+        )
+        starts = start.expand(population, -1, -1, -1)
+        imagined = model.imagine_positions(
+            starts,
+            actions,
+            collision_response=learned_collision or hybrid_collision,
+            visual_collision_guard=hybrid_collision,
+            initial_position=normalized_start_position.expand(population, -1),
+            initial_velocity=None if normalized_start_velocity is None else normalized_start_velocity.expand(population, -1),
+        )
+        positions = imagined.cpu().numpy() * 64.0
+        positions_with_start = np.concatenate(
+            (np.broadcast_to(start_position, (population, 1, 2)), positions), axis=1
+        )
+        distances = np.linalg.norm(positions_with_start - np.asarray(goal), axis=-1)
+        if wall_mask is not None:
+            collision_prefix = _collision_prefix(positions_with_start, wall_mask).astype(np.float32)
+        else:
+            collision_prefix = np.zeros_like(distances, dtype=np.float32)
+        if learned_collision:
+            collision_probability = model.imagine_collision_probabilities(
+                starts,
+                actions,
+                visual_collision_guard=hybrid_collision,
+                initial_position=normalized_start_position.expand(population, -1),
+                initial_velocity=None if normalized_start_velocity is None else normalized_start_velocity.expand(population, -1),
+            ).cpu().numpy()
+            collision_prefix = np.maximum(
+                collision_prefix,
+                np.concatenate(
+                    (np.zeros((population, 1), dtype=np.float32), np.maximum.accumulate(collision_probability, axis=1)),
+                    axis=1,
+                ),
+            )
+        scores_by_step = distances + collision_prefix * 64.0
+        scores = np.min(scores_by_step, axis=1)
+        elite_count = max(2, min(population, int(round(population * elite_fraction))))
+        elite_indices = np.argsort(scores)[:elite_count]
+        elite_actions = actions[elite_indices]
+        empirical = torch.nn.functional.one_hot(elite_actions, num_classes=4).float().mean(dim=0)
+        probabilities = (1.0 - smoothing) * empirical + smoothing * probabilities
+        probabilities = probabilities / probabilities.sum(dim=-1, keepdim=True).clamp_min(1e-6)
+        candidate = int(elite_indices[0])
+        if float(scores[candidate]) < best_score:
+            best_score = float(scores[candidate])
+            best_actions = actions[candidate].clone()
+            best_positions = positions_with_start[candidate].copy()
+            best_step = int(np.argmin(scores_by_step[candidate]))
+            best_collision_risk = float(collision_prefix[candidate, best_step])
+
+    if best_actions is None or best_positions is None:
+        raise RuntimeError("CEM produced no candidate plan")
+    if best_step == 0 and best_score > 4.0:
+        best_step = 1
+    return PlanResult(
+        actions=best_actions[:best_step].cpu().numpy(),
+        imagined_positions=best_positions[:best_step + 1],
+        imagined_distance=float(np.linalg.norm(best_positions[best_step] - np.asarray(goal))),
+        imagined_collision_risk=best_collision_risk if collision_aware else 0.0,
+        planning_score=float(best_score),
+        route_score=float(best_score),
+        route_progress=float(np.linalg.norm(start_position - np.asarray(goal)) - np.linalg.norm(best_positions[-1] - np.asarray(goal))),
+    )
+
+
+@torch.no_grad()
 def receding_horizon_plan(
     model: PocketWorldModel,
     observation: np.ndarray,
