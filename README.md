@@ -69,7 +69,7 @@ In short, PocketWorld is best viewed as a **microscope for world-model reliabili
 
 The latest research direction replaces two hand-designed shortcuts with measurable learned components:
 
-- **Learned temporal velocity:** a lightweight RGB motion encoder, latent-frame differences, and a GRU learn velocity from the latest four observations. An auxiliary position head makes the motion features explicitly locate the small agent. The previous pixel-difference estimator remains available as a privileged baseline, and `--temporal-only` supports frozen-world-model fine-tuning.
+- **Learned temporal velocity:** a lightweight RGB motion encoder, latent-frame differences, and a GRU learn velocity from the latest four observations. An auxiliary position head makes the motion features explicitly locate the small agent. Planning and calibration blend this learned estimate with an observable RGB finite-difference estimate, while `--temporal-only` supports frozen-world-model fine-tuning.
 - **Calibrated probabilistic uncertainty:** a transition head predicts diagonal state standard deviations for position and velocity. A held-out rollout split calibrates one scale per coordinate with residual quantiles, then the planner samples landing states from that calibrated distribution when estimating collision probability.
 - **Cost-controlled planning:** ordinary candidates are ranked with the point model first; only a shortlist receives probabilistic Monte Carlo rescoring. This keeps the uncertainty experiment inspectable and computationally bounded.
 - **Route-level alignment:** candidates can be scored by endpoint distance, average along-route distance, regressions in progress, and accumulated collision risk. The executor reports imagined-vs-real route alignment error after every action and uses short route prefixes before replanning.
@@ -79,7 +79,7 @@ The latest research direction replaces two hand-designed shortcuts with measurab
 
 This is a marginal, split-calibrated Gaussian approximation—not a Bayesian posterior or an ensemble. The evaluation report now includes learned velocity error, finite-difference baseline error, 50/80/90/95% empirical coverage, interval width, and state Gaussian NLL.
 
-The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. The v8 checkpoint stays near nominal 90% marginal coverage in-distribution (position 87.7%, velocity 90.8%), but coverage falls under fast speed and map shifts, reaching 79.0% / 81.5% in the joint OOD condition. This is a measured risk boundary, not a claim of OOD calibration invariance.
+The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x speed, 1.2x speed, a changed map, and the joint changed-map/1.2x-speed condition. With the blended observable RGB velocity state, the v2 checkpoint reaches 90% coverage of **95.1%/94.9% position/velocity in-distribution**, **90.8%/93.8% on joint map+fast OOD**, and map-shift AUROC **0.949–0.951** across three seeds. Speed-only shift detection remains weak; this is a measured risk boundary, not a claim of OOD calibration invariance. See [the RGB-velocity maturity report](docs/results/evaluation-maturity-v2-rgb-velocity-3seed.json).
 
 The first shift detector fits a 95th-percentile innovation threshold of 0.9813. It combines the calibrated motion innovation with a transparent wall-context mismatch against the known training-map prior. ID alarms stay near the 5% target; changed-map and joint map/fast detection reach 88% and 86% (AUROC 0.98 and 0.97), while fast-speed-only detection remains 9%. It is a useful map-shift gate, not a complete speed-shift classifier. See the [shift-detection result](docs/results/evaluation-temporal-probability-shift-detection-v8.json).
 
@@ -180,20 +180,20 @@ python -m pocketworld.train --resume artifacts/pocketworld-temporal-probability-
 The generalization evaluator measures per-map multi-step prediction error and sequential two-waypoint tasks:
 
 ```bash
-python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite-v2.pt --episodes 20 --horizon 64 --candidates 32 --seeds 11,23,41 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-map-suite-v2-3seed.json
+python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite-v2.pt --episodes 20 --horizon 64 --candidates 32 --seeds 11,23,41 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-map-suite-v2-3seed-continuous-landing.json
 ```
 
-The original v1 diagnostic is preserved in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json). The v2 checkpoint adds a four-action, RGB-observed route follower, one-step landing safety guard, and a physically traversable zig-zag holdout. The formal [three-seed two-waypoint result](docs/results/evaluation-map-suite-v2-3seed-collision-guard.json) uses 20 episodes per map, 64-step execution budgets, and 32 candidates: collision-aware 20-step position error is **3.94 ± 0.27px on train / 4.13 ± 0.30px on unseen maps**; task success is **97.8% ± 3.1pp / 93.3% ± 2.4pp**. The task benchmark is explicitly hybrid: learned collision-aware prediction plus RGB-only visible-route control, not a claim that pure random shooting has solved obstacle navigation.
+The original v1 diagnostic is preserved in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json). The v2 checkpoint adds a four-action, RGB-observed route follower, continuous-coordinate landing safety guard, and a physically traversable zig-zag holdout. The formal [three-seed two-waypoint result](docs/results/evaluation-map-suite-v2-3seed-continuous-landing.json) uses 20 episodes per map, 64-step execution budgets, and 32 candidates: collision-aware 20-step position error is **3.94 ± 0.27px on train / 4.13 ± 0.30px on unseen maps**; task success is **98.9% ± 1.6pp / 93.3% ± 2.4pp**; mean collisions are **0.40 / 0.45 per leg**. The task benchmark is explicitly hybrid: learned collision-aware prediction plus RGB-only visible-route control, not a claim that pure random shooting has solved obstacle navigation.
 
-The three-waypoint stress test uses the same three seeds and a 96-step budget. It reaches **96.7% train / 93.3% unseen task success** and **97.4% / 96.1% waypoint completion**; see [evaluation-map-suite-v2-3seed-waypoint3.json](docs/results/evaluation-map-suite-v2-3seed-waypoint3.json). Collision count remains the main engineering gap on the hardest unseen routes, averaging about **1.16 per train leg and 2.41 per unseen leg** in the two-waypoint protocol.
+The three-waypoint stress test uses the same three seeds and a 96-step budget. It reaches **98.9% train / 95.0% unseen task success**, **98.9% / 97.2% waypoint completion**, and **0.41 / 0.57 collisions per leg**; see [evaluation-map-suite-v2-3seed-continuous-landing-waypoint3.json](docs/results/evaluation-map-suite-v2-3seed-continuous-landing-waypoint3.json).
 
 For the maturity-gate calibration and OOD protocol:
 
 ```bash
-python -m pocketworld.evaluate_maturity artifacts/pocketworld-map-suite-v2.pt --episodes 50 --horizon 8 --seeds 11,23,41 --output artifacts/evaluation-maturity-v2-3seed.json
+python -m pocketworld.evaluate_maturity artifacts/pocketworld-map-suite-v2.pt --episodes 50 --horizon 8 --seeds 11,23,41 --output artifacts/evaluation-maturity-v2-rgb-velocity-3seed.json
 ```
 
-The [three-seed maturity report](docs/results/evaluation-maturity-v2-3seed.json) gives 90% position/velocity coverage of **91.8%/91.9% in-distribution**, **87.5%/90.8% on changed maps**, and map-shift AUROC **0.95**. Fast-speed velocity coverage and joint map+speed coverage remain below the 85–95% target band, so uncertainty is calibrated enough for conservative map fallback but not yet uniformly calibrated under every dynamics shift.
+The [three-seed maturity report](docs/results/evaluation-maturity-v2-rgb-velocity-3seed.json) gives 90% position/velocity coverage of **95.1%/94.9% in-distribution**, **90.8%/93.8% on joint map+fast OOD**, and map-shift AUROC **0.949–0.951**. Coverage is now inside the target band for the main map/speed matrix, while speed-only AUROC remains near chance; the uncertainty layer is mature for map fallback but not yet a complete dynamics-shift detector.
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 

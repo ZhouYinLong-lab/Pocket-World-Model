@@ -301,7 +301,15 @@ class PocketWorldModel(nn.Module):
             mean, std = self.transition_state_stats(latent, state, actions[:, step])
             ratios.append(((target - mean).abs() / std.clamp_min(1e-6)).detach())
         ratio = torch.cat(ratios, dim=0)
+        # RGB velocity is the least stationary coordinate under speed shifts.
+        # Use a conservative tail for those two dimensions while retaining a
+        # nominal split-conformal quantile for position.  This avoids a narrow
+        # ID velocity interval becoming overconfident on fast dynamics.
         quantile = torch.quantile(ratio, coverage, dim=0)
+        velocity_tail_quantile = torch.quantile(
+            ratio[:, 2:], min(0.98, coverage + 0.05), dim=0
+        )
+        quantile[2:] = velocity_tail_quantile
         normal_quantile = {0.80: 1.2816, 0.90: 1.6449, 0.95: 1.9600}.get(round(coverage, 2), 1.6449)
         scale = (quantile / normal_quantile).clamp(0.25, 12.0)
         self.uncertainty_scale.copy_(scale)
@@ -314,6 +322,7 @@ class PocketWorldModel(nn.Module):
             "samples": int(ratio.shape[0]),
             "state_representation": "learned_temporal_velocity+observable_rgb_velocity",
             "observed_velocity_blend": observed_velocity_blend,
+            "velocity_tail_quantile": min(0.98, coverage + 0.05),
         }
 
     @torch.no_grad()

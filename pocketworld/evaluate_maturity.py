@@ -65,7 +65,13 @@ def evaluate_maturity(
             ]),
         }
     return {
-        "config": {"seeds": list(seeds), "episodes": episodes, "horizon": horizon},
+        "config": {
+            "seeds": list(seeds),
+            "episodes": episodes,
+            "horizon": horizon,
+            "state_representation": "learned_temporal_velocity+observable_rgb_velocity",
+            "observed_velocity_blend": 0.50,
+        },
         "runs": runs,
         "summary": {
             "uncertainty_calibration": calibration_summary,

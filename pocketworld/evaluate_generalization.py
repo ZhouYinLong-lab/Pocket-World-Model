@@ -197,6 +197,7 @@ def evaluate_generalization(
             "mean_task_success_rate": _mean([float(report["task_success_rate"]) for report in reports]),
             "mean_waypoint_completion_rate": _mean([float(report["waypoint_completion_rate"]) for report in reports]),
             "mean_final_distance_px": _mean([float(report["mean_final_distance_px"]) for report in reports]),
+            "mean_collisions_per_leg": _mean([float(report["mean_collisions"]) for report in reports]),
         }
         for split, reports in waypoint_tasks.items()
     }
@@ -275,6 +276,17 @@ def evaluate_generalization_seeds(
                 ])),
                 "std": float(np.std([
                     run["waypoint_summary"][split]["mean_waypoint_completion_rate"] for run in runs
+                ])),
+            }
+            for split in ("train", "unseen")
+        },
+        "mean_collisions_per_leg": {
+            split: {
+                "mean": float(np.mean([
+                    run["waypoint_summary"][split]["mean_collisions_per_leg"] for run in runs
+                ])),
+                "std": float(np.std([
+                    run["waypoint_summary"][split]["mean_collisions_per_leg"] for run in runs
                 ])),
             }
             for split in ("train", "unseen")

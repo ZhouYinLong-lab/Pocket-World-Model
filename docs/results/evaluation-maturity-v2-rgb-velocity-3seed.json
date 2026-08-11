@@ -1,0 +1,679 @@
+{
+  "config": {
+    "seeds": [
+      11,
+      23,
+      41
+    ],
+    "episodes": 50,
+    "horizon": 8,
+    "state_representation": "learned_temporal_velocity+observable_rgb_velocity",
+    "observed_velocity_blend": 0.5
+  },
+  "runs": [
+    {
+      "seed": 11,
+      "uncertainty_calibration": {
+        "in_distribution": {
+          "position_coverage": {
+            "0.50": 0.5849999785423279,
+            "0.80": 0.8475000262260437,
+            "0.90": 0.9362499713897705,
+            "0.95": 0.9787499904632568
+          },
+          "velocity_coverage": {
+            "0.50": 0.8712499737739563,
+            "0.80": 0.9287499785423279,
+            "0.90": 0.9599999785423279,
+            "0.95": 0.9750000238418579
+          },
+          "position_coverage_error_90": 0.036249971389770486,
+          "velocity_coverage_error_90": 0.05999997854232786,
+          "mean_interval_width_px_90": 3.7764511108398438,
+          "state_gaussian_nll": -2.395514488220215,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_slow": {
+          "position_coverage": {
+            "0.50": 0.6537500023841858,
+            "0.80": 0.8924999833106995,
+            "0.90": 0.9624999761581421,
+            "0.95": 0.987500011920929
+          },
+          "velocity_coverage": {
+            "0.50": 0.887499988079071,
+            "0.80": 0.9424999952316284,
+            "0.90": 0.956250011920929,
+            "0.95": 0.96875
+          },
+          "position_coverage_error_90": 0.06249997615814207,
+          "velocity_coverage_error_90": 0.05625001192092893,
+          "mean_interval_width_px_90": 3.673705816268921,
+          "state_gaussian_nll": -2.578646659851074,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_fast": {
+          "position_coverage": {
+            "0.50": 0.5887500047683716,
+            "0.80": 0.8737499713897705,
+            "0.90": 0.9537500143051147,
+            "0.95": 0.9862499833106995
+          },
+          "velocity_coverage": {
+            "0.50": 0.7262499928474426,
+            "0.80": 0.8912500143051147,
+            "0.90": 0.9437500238418579,
+            "0.95": 0.9674999713897705
+          },
+          "position_coverage_error_90": 0.053750014305114724,
+          "velocity_coverage_error_90": 0.04375002384185789,
+          "mean_interval_width_px_90": 3.6722729206085205,
+          "state_gaussian_nll": -2.4483530521392822,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map": {
+          "position_coverage": {
+            "0.50": 0.5224999785423279,
+            "0.80": 0.8149999976158142,
+            "0.90": 0.9049999713897705,
+            "0.95": 0.9474999904632568
+          },
+          "velocity_coverage": {
+            "0.50": 0.8475000262260437,
+            "0.80": 0.9399999976158142,
+            "0.90": 0.9474999904632568,
+            "0.95": 0.96875
+          },
+          "position_coverage_error_90": 0.004999971389770486,
+          "velocity_coverage_error_90": 0.047499990463256814,
+          "mean_interval_width_px_90": 3.7519261837005615,
+          "state_gaussian_nll": -2.379399299621582,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map_fast": {
+          "position_coverage": {
+            "0.50": 0.5062500238418579,
+            "0.80": 0.8274999856948853,
+            "0.90": 0.9312499761581421,
+            "0.95": 0.96875
+          },
+          "velocity_coverage": {
+            "0.50": 0.7099999785423279,
+            "0.80": 0.8837500214576721,
+            "0.90": 0.9287499785423279,
+            "0.95": 0.9512500166893005
+          },
+          "position_coverage_error_90": 0.031249976158142068,
+          "velocity_coverage_error_90": 0.02874997854232786,
+          "mean_interval_width_px_90": 3.7060296535491943,
+          "state_gaussian_nll": -2.3755452632904053,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        }
+      },
+      "shift_detection": {
+        "threshold": {
+          "threshold": 1.1795196533203125,
+          "false_positive_rate": 0.05,
+          "quantile": 0.95,
+          "calibration_samples": 400,
+          "calibration_mean_score": 0.4597480893135071,
+          "calibration_p95_score": 1.1795196533203125
+        },
+        "conditions": {
+          "in_distribution": {
+            "samples": 400,
+            "mean_score": 0.5070244669914246,
+            "p95_score": 1.321342945098877,
+            "threshold": 1.1795196533203125,
+            "trigger_rate": 0.065,
+            "false_positive_rate": 0.065,
+            "detection_rate": null
+          },
+          "ood_speed_slow": {
+            "samples": 400,
+            "mean_score": 0.39761030673980713,
+            "p95_score": 1.2133216857910156,
+            "threshold": 1.1795196533203125,
+            "trigger_rate": 0.0575,
+            "false_positive_rate": null,
+            "detection_rate": 0.0575,
+            "auroc_vs_in_distribution": 0.3695
+          },
+          "ood_speed_fast": {
+            "samples": 400,
+            "mean_score": 0.5025229454040527,
+            "p95_score": 1.285706877708435,
+            "threshold": 1.1795196533203125,
+            "trigger_rate": 0.0575,
+            "false_positive_rate": null,
+            "detection_rate": 0.0575,
+            "auroc_vs_in_distribution": 0.51108125
+          },
+          "ood_map": {
+            "samples": 400,
+            "mean_score": 1.7583661079406738,
+            "p95_score": 3.1982421875,
+            "threshold": 1.1795196533203125,
+            "trigger_rate": 0.85,
+            "false_positive_rate": null,
+            "detection_rate": 0.85,
+            "auroc_vs_in_distribution": 0.95585
+          },
+          "ood_map_fast": {
+            "samples": 400,
+            "mean_score": 1.7676992416381836,
+            "p95_score": 2.5244140625,
+            "threshold": 1.1795196533203125,
+            "trigger_rate": 0.85,
+            "false_positive_rate": null,
+            "detection_rate": 0.85,
+            "auroc_vs_in_distribution": 0.95525625
+          }
+        }
+      }
+    },
+    {
+      "seed": 23,
+      "uncertainty_calibration": {
+        "in_distribution": {
+          "position_coverage": {
+            "0.50": 0.6050000190734863,
+            "0.80": 0.8787500262260437,
+            "0.90": 0.9487500190734863,
+            "0.95": 0.9775000214576721
+          },
+          "velocity_coverage": {
+            "0.50": 0.8287500143051147,
+            "0.80": 0.9125000238418579,
+            "0.90": 0.9449999928474426,
+            "0.95": 0.9599999785423279
+          },
+          "position_coverage_error_90": 0.048750019073486306,
+          "velocity_coverage_error_90": 0.044999992847442605,
+          "mean_interval_width_px_90": 3.867722272872925,
+          "state_gaussian_nll": -2.4395275115966797,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_slow": {
+          "position_coverage": {
+            "0.50": 0.637499988079071,
+            "0.80": 0.8974999785423279,
+            "0.90": 0.9612500071525574,
+            "0.95": 0.9887499809265137
+          },
+          "velocity_coverage": {
+            "0.50": 0.9087499976158142,
+            "0.80": 0.9524999856948853,
+            "0.90": 0.9599999785423279,
+            "0.95": 0.9712499976158142
+          },
+          "position_coverage_error_90": 0.06125000715255735,
+          "velocity_coverage_error_90": 0.05999997854232786,
+          "mean_interval_width_px_90": 3.7624239921569824,
+          "state_gaussian_nll": -2.503194808959961,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_fast": {
+          "position_coverage": {
+            "0.50": 0.5737500190734863,
+            "0.80": 0.8712499737739563,
+            "0.90": 0.9399999976158142,
+            "0.95": 0.9800000190734863
+          },
+          "velocity_coverage": {
+            "0.50": 0.7087500095367432,
+            "0.80": 0.8837500214576721,
+            "0.90": 0.9362499713897705,
+            "0.95": 0.956250011920929
+          },
+          "position_coverage_error_90": 0.03999999761581419,
+          "velocity_coverage_error_90": 0.036249971389770486,
+          "mean_interval_width_px_90": 3.9038186073303223,
+          "state_gaussian_nll": -2.2431366443634033,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map": {
+          "position_coverage": {
+            "0.50": 0.550000011920929,
+            "0.80": 0.8349999785423279,
+            "0.90": 0.8962500095367432,
+            "0.95": 0.9275000095367432
+          },
+          "velocity_coverage": {
+            "0.50": 0.831250011920929,
+            "0.80": 0.9287499785423279,
+            "0.90": 0.949999988079071,
+            "0.95": 0.96875
+          },
+          "position_coverage_error_90": 0.003749990463256858,
+          "velocity_coverage_error_90": 0.04999998807907102,
+          "mean_interval_width_px_90": 3.6990585327148438,
+          "state_gaussian_nll": -2.4090893268585205,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map_fast": {
+          "position_coverage": {
+            "0.50": 0.5337499976158142,
+            "0.80": 0.7975000143051147,
+            "0.90": 0.8912500143051147,
+            "0.95": 0.9375
+          },
+          "velocity_coverage": {
+            "0.50": 0.7174999713897705,
+            "0.80": 0.893750011920929,
+            "0.90": 0.9437500238418579,
+            "0.95": 0.9574999809265137
+          },
+          "position_coverage_error_90": 0.008749985694885276,
+          "velocity_coverage_error_90": 0.04375002384185789,
+          "mean_interval_width_px_90": 3.6314423084259033,
+          "state_gaussian_nll": -2.3805534839630127,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        }
+      },
+      "shift_detection": {
+        "threshold": {
+          "threshold": 1.1393085718154907,
+          "false_positive_rate": 0.05,
+          "quantile": 0.95,
+          "calibration_samples": 400,
+          "calibration_mean_score": 0.4577900767326355,
+          "calibration_p95_score": 1.1393085718154907
+        },
+        "conditions": {
+          "in_distribution": {
+            "samples": 400,
+            "mean_score": 0.4974857270717621,
+            "p95_score": 1.4357802867889404,
+            "threshold": 1.1393085718154907,
+            "trigger_rate": 0.0825,
+            "false_positive_rate": 0.0825,
+            "detection_rate": null
+          },
+          "ood_speed_slow": {
+            "samples": 400,
+            "mean_score": 0.362283855676651,
+            "p95_score": 1.0116124153137207,
+            "threshold": 1.1393085718154907,
+            "trigger_rate": 0.0425,
+            "false_positive_rate": null,
+            "detection_rate": 0.0425,
+            "auroc_vs_in_distribution": 0.3759375
+          },
+          "ood_speed_fast": {
+            "samples": 400,
+            "mean_score": 0.6212819814682007,
+            "p95_score": 1.415212869644165,
+            "threshold": 1.1393085718154907,
+            "trigger_rate": 0.105,
+            "false_positive_rate": null,
+            "detection_rate": 0.105,
+            "auroc_vs_in_distribution": 0.5409125
+          },
+          "ood_map": {
+            "samples": 400,
+            "mean_score": 1.780998945236206,
+            "p95_score": 3.1982421875,
+            "threshold": 1.1393085718154907,
+            "trigger_rate": 0.7775,
+            "false_positive_rate": null,
+            "detection_rate": 0.7775,
+            "auroc_vs_in_distribution": 0.94641875
+          },
+          "ood_map_fast": {
+            "samples": 400,
+            "mean_score": 1.7560818195343018,
+            "p95_score": 3.1982421875,
+            "threshold": 1.1393085718154907,
+            "trigger_rate": 0.835,
+            "false_positive_rate": null,
+            "detection_rate": 0.835,
+            "auroc_vs_in_distribution": 0.94663125
+          }
+        }
+      }
+    },
+    {
+      "seed": 41,
+      "uncertainty_calibration": {
+        "in_distribution": {
+          "position_coverage": {
+            "0.50": 0.6312500238418579,
+            "0.80": 0.9162499904632568,
+            "0.90": 0.96875,
+            "0.95": 0.987500011920929
+          },
+          "velocity_coverage": {
+            "0.50": 0.8262500166893005,
+            "0.80": 0.9300000071525574,
+            "0.90": 0.9424999952316284,
+            "0.95": 0.9612500071525574
+          },
+          "position_coverage_error_90": 0.06874999999999998,
+          "velocity_coverage_error_90": 0.042499995231628396,
+          "mean_interval_width_px_90": 3.57450795173645,
+          "state_gaussian_nll": -2.3797225952148438,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_slow": {
+          "position_coverage": {
+            "0.50": 0.7400000095367432,
+            "0.80": 0.9337499737739563,
+            "0.90": 0.9750000238418579,
+            "0.95": 0.9925000071525574
+          },
+          "velocity_coverage": {
+            "0.50": 0.9275000095367432,
+            "0.80": 0.9524999856948853,
+            "0.90": 0.9662500023841858,
+            "0.95": 0.9762499928474426
+          },
+          "position_coverage_error_90": 0.07500002384185789,
+          "velocity_coverage_error_90": 0.06625000238418577,
+          "mean_interval_width_px_90": 3.624969482421875,
+          "state_gaussian_nll": -2.622070074081421,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_speed_fast": {
+          "position_coverage": {
+            "0.50": 0.5849999785423279,
+            "0.80": 0.8887500166893005,
+            "0.90": 0.9524999856948853,
+            "0.95": 0.9787499904632568
+          },
+          "velocity_coverage": {
+            "0.50": 0.731249988079071,
+            "0.80": 0.9012500047683716,
+            "0.90": 0.9449999928474426,
+            "0.95": 0.96875
+          },
+          "position_coverage_error_90": 0.05249998569488523,
+          "velocity_coverage_error_90": 0.044999992847442605,
+          "mean_interval_width_px_90": 3.8354971408843994,
+          "state_gaussian_nll": -2.440579652786255,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map": {
+          "position_coverage": {
+            "0.50": 0.5412499904632568,
+            "0.80": 0.8500000238418579,
+            "0.90": 0.9237499833106995,
+            "0.95": 0.9462500214576721
+          },
+          "velocity_coverage": {
+            "0.50": 0.856249988079071,
+            "0.80": 0.9449999928474426,
+            "0.90": 0.9662500023841858,
+            "0.95": 0.9787499904632568
+          },
+          "position_coverage_error_90": 0.02374998331069944,
+          "velocity_coverage_error_90": 0.06625000238418577,
+          "mean_interval_width_px_90": 3.675560712814331,
+          "state_gaussian_nll": -2.4458816051483154,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        },
+        "ood_map_fast": {
+          "position_coverage": {
+            "0.50": 0.5562499761581421,
+            "0.80": 0.8149999976158142,
+            "0.90": 0.8962500095367432,
+            "0.95": 0.9387500286102295
+          },
+          "velocity_coverage": {
+            "0.50": 0.6762499809265137,
+            "0.80": 0.887499988079071,
+            "0.90": 0.9412500262260437,
+            "0.95": 0.9574999809265137
+          },
+          "position_coverage_error_90": 0.003749990463256858,
+          "velocity_coverage_error_90": 0.04125002622604368,
+          "mean_interval_width_px_90": 3.8318819999694824,
+          "state_gaussian_nll": -2.203287124633789,
+          "calibration_scale": [
+            0.6498838663101196,
+            0.6390107870101929,
+            1.138798475265503,
+            0.8877479434013367
+          ]
+        }
+      },
+      "shift_detection": {
+        "threshold": {
+          "threshold": 1.2821598052978516,
+          "false_positive_rate": 0.05,
+          "quantile": 0.95,
+          "calibration_samples": 400,
+          "calibration_mean_score": 0.4754064083099365,
+          "calibration_p95_score": 1.2821598052978516
+        },
+        "conditions": {
+          "in_distribution": {
+            "samples": 400,
+            "mean_score": 0.5359054803848267,
+            "p95_score": 1.4332647323608398,
+            "threshold": 1.2821598052978516,
+            "trigger_rate": 0.06,
+            "false_positive_rate": 0.06,
+            "detection_rate": null
+          },
+          "ood_speed_slow": {
+            "samples": 400,
+            "mean_score": 0.3878784477710724,
+            "p95_score": 1.1435914039611816,
+            "threshold": 1.2821598052978516,
+            "trigger_rate": 0.0375,
+            "false_positive_rate": null,
+            "detection_rate": 0.0375,
+            "auroc_vs_in_distribution": 0.35280625
+          },
+          "ood_speed_fast": {
+            "samples": 400,
+            "mean_score": 0.5672834515571594,
+            "p95_score": 1.3904731273651123,
+            "threshold": 1.2821598052978516,
+            "trigger_rate": 0.065,
+            "false_positive_rate": null,
+            "detection_rate": 0.065,
+            "auroc_vs_in_distribution": 0.53885
+          },
+          "ood_map": {
+            "samples": 400,
+            "mean_score": 1.8387620449066162,
+            "p95_score": 3.1982421875,
+            "threshold": 1.2821598052978516,
+            "trigger_rate": 0.68,
+            "false_positive_rate": null,
+            "detection_rate": 0.68,
+            "auroc_vs_in_distribution": 0.9442875
+          },
+          "ood_map_fast": {
+            "samples": 400,
+            "mean_score": 1.8357679843902588,
+            "p95_score": 3.1982421875,
+            "threshold": 1.2821598052978516,
+            "trigger_rate": 0.7475,
+            "false_positive_rate": null,
+            "detection_rate": 0.7475,
+            "auroc_vs_in_distribution": 0.95141875
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "uncertainty_calibration": {
+      "in_distribution": {
+        "position_coverage_90": {
+          "mean": 0.9512499968210856,
+          "std": 0.013385324836558944
+        },
+        "velocity_coverage_90": {
+          "mean": 0.9491666555404663,
+          "std": 0.00772800804290327
+        }
+      },
+      "ood_speed_slow": {
+        "position_coverage_90": {
+          "mean": 0.9662500023841858,
+          "std": 0.0062082075921596185
+        },
+        "velocity_coverage_90": {
+          "mean": 0.9608333309491476,
+          "std": 0.004124787630231889
+        }
+      },
+      "ood_speed_fast": {
+        "position_coverage_90": {
+          "mean": 0.9487499992052714,
+          "std": 0.006208195590949415
+        },
+        "velocity_coverage_90": {
+          "mean": 0.9416666626930237,
+          "std": 0.0038640233034825705
+        }
+      },
+      "ood_map": {
+        "position_coverage_90": {
+          "mean": 0.9083333214124044,
+          "std": 0.011471575194718349
+        },
+        "velocity_coverage_90": {
+          "mean": 0.9545833269755045,
+          "std": 0.008312479908283077
+        }
+      },
+      "ood_map_fast": {
+        "position_coverage_90": {
+          "mean": 0.90625,
+          "std": 0.017795113449293347
+        },
+        "velocity_coverage_90": {
+          "mean": 0.9379166762034098,
+          "std": 0.006561694726569407
+        }
+      }
+    },
+    "shift_detection": {
+      "in_distribution": {
+        "auroc_vs_in_distribution": {
+          "mean": 0.5,
+          "std": 0.0
+        },
+        "trigger_rate": {
+          "mean": 0.06916666666666667,
+          "std": 0.00964653075232519
+        }
+      },
+      "ood_speed_slow": {
+        "auroc_vs_in_distribution": {
+          "mean": 0.36608124999999997,
+          "std": 0.009747805575700954
+        },
+        "trigger_rate": {
+          "mean": 0.04583333333333334,
+          "std": 0.008498365855987976
+        }
+      },
+      "ood_speed_fast": {
+        "auroc_vs_in_distribution": {
+          "mean": 0.53028125,
+          "std": 0.013602535953821254
+        },
+        "trigger_rate": {
+          "mean": 0.07583333333333334,
+          "std": 0.020849993338661336
+        }
+      },
+      "ood_map": {
+        "auroc_vs_in_distribution": {
+          "mean": 0.9488520833333333,
+          "std": 0.005024187157861689
+        },
+        "trigger_rate": {
+          "mean": 0.7691666666666667,
+          "std": 0.06965191231322285
+        }
+      },
+      "ood_map_fast": {
+        "auroc_vs_in_distribution": {
+          "mean": 0.9511020833333333,
+          "std": 0.0035282540142241546
+        },
+        "trigger_rate": {
+          "mean": 0.8108333333333334,
+          "std": 0.04520017207440202
+        }
+      }
+    }
+  }
+}
