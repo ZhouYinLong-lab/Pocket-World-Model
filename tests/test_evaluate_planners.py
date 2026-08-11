@@ -12,12 +12,12 @@ def test_planner_tournament_uses_paired_tasks_and_recursive_summary():
         horizon=4,
         candidates=8,
         scenario="open",
-        planners=("random_shooting", "cem"),
+        planners=("random_shooting", "cem", "beam_search", "cem_collision"),
     )
 
     assert report["config"]["paired_tasks"] is True
     assert report["config"]["candidates"] == 8
-    assert set(report["summary"]) == {"random_shooting", "cem"}
+    assert set(report["summary"]) == {"random_shooting", "cem", "beam_search", "cem_collision"}
     for planner in report["summary"].values():
         assert 0.0 <= planner["real_success"]["mean"] <= 1.0
         assert np.isfinite(planner["real_final_distance_px"]["mean"])

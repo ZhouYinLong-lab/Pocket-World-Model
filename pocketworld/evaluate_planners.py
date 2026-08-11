@@ -12,16 +12,25 @@ import torch
 from .env import PocketWorldEnv, Rect
 from .evaluate import _summarize
 from .model import PocketWorldModel
-from .planner import cem_shooting, random_shooting, receding_horizon_plan
+from .planner import beam_search, cem_shooting, random_shooting, receding_horizon_plan
 
 
 SINGLE_BARRIER_WALLS = (Rect(29, 10, 5, 44),)
 DEFAULT_PLANNERS = (
     "random_shooting",
     "cem",
+    "beam_search",
     "learned_collision",
+    "cem_collision",
     "route_aware_hybrid",
 )
+
+
+def _nominal_queries(planner: str, horizon: int, candidates: int) -> int:
+    if planner == "beam_search":
+        width = max(1, candidates // (4 * horizon))
+        return 4 * horizon * width
+    return candidates
 
 
 def _episode_cases(episodes: int, seed: int, scenario: str) -> list[tuple[tuple[float, float], tuple[float, float]]]:
@@ -57,6 +66,8 @@ def _planner_result(
         return random_shooting(model, observation, goal, horizon=horizon, candidates=candidates)
     if planner == "cem":
         return cem_shooting(model, observation, goal, horizon=horizon, candidates=candidates)
+    if planner == "beam_search":
+        return beam_search(model, observation, goal, horizon=horizon, candidates=candidates)
     if planner == "learned_collision":
         return random_shooting(
             model,
@@ -69,6 +80,17 @@ def _planner_result(
             probabilistic_uncertainty=True,
             uncertainty_samples=8,
             robust_candidates=min(32, candidates),
+            observation_history=[observation],
+        )
+    if planner == "cem_collision":
+        return cem_shooting(
+            model,
+            observation,
+            goal,
+            horizon=horizon,
+            candidates=candidates,
+            collision_aware=True,
+            learned_collision=True,
             observation_history=[observation],
         )
     if planner == "route_aware_hybrid":
@@ -176,7 +198,7 @@ def evaluate_planner_tournament(
                         "executed_actions": float(len(result.actions)),
                         "imagined_collision_risk": float(result.imagined_collision_risk),
                         "planning_calls": 1.0,
-                        "estimated_model_queries": float(candidates),
+                        "estimated_model_queries": float(_nominal_queries(planner, horizon, candidates)),
                     }
                 )
         runs.append(
@@ -207,6 +229,7 @@ def evaluate_planner_tournament(
             "paired_tasks": True,
             "budget_scope": "nominal candidate budget per planning call; closed-loop totals are reported separately",
             "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
+            "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
         },
         "runs": runs,
         "summary": summary,

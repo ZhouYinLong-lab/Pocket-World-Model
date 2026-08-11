@@ -1002,7 +1002,6 @@ def cem_shooting(
         raise ValueError("iterations must be positive")
     iterations = min(int(iterations), max(1, candidates // 4))
     population = max(4, candidates // iterations)
-    total_queries = population * iterations
     model.eval()
 
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -1041,8 +1040,6 @@ def cem_shooting(
     best_positions: np.ndarray | None = None
     best_step = horizon
     best_collision_risk = 0.0
-    goal_tensor = torch.as_tensor(goal, device=device, dtype=start.dtype)
-
     for _ in range(iterations):
         actions = torch.stack(
             [torch.multinomial(probabilities[step], population, replacement=True) for step in range(horizon)],
@@ -1108,6 +1105,104 @@ def cem_shooting(
         imagined_collision_risk=best_collision_risk if collision_aware else 0.0,
         planning_score=float(best_score),
         route_score=float(best_score),
+        route_progress=float(np.linalg.norm(start_position - np.asarray(goal)) - np.linalg.norm(best_positions[-1] - np.asarray(goal))),
+    )
+
+
+@torch.no_grad()
+def beam_search(
+    model: PocketWorldModel,
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    horizon: int = 12,
+    candidates: int = 256,
+    beam_width: int | None = None,
+    device: str = "cpu",
+    collision_aware: bool = False,
+    learned_collision: bool = False,
+    hybrid_collision: bool = False,
+) -> PlanResult:
+    """Search discrete action prefixes with a query-budgeted beam.
+
+    Each beam expansion branches over all four actions. When ``beam_width``
+    is omitted, it is selected so the full search uses at most the declared
+    candidate budget: ``4 * horizon * beam_width`` model rollouts.
+    """
+    if horizon < 1 or candidates < 4:
+        raise ValueError("horizon must be positive and candidates must be at least 4")
+    model.eval()
+    width = max(1, candidates // (4 * horizon)) if beam_width is None else int(beam_width)
+    width = max(1, width)
+    start = torch.from_numpy(observation[None]).float().to(device) / 255.0
+    start_position = extract_agent_position(observation).astype(np.float32)
+    normalized_start_position = torch.as_tensor(start_position / 64.0, device=device, dtype=start.dtype)
+    wall_mask = extract_wall_mask(observation) if collision_aware or hybrid_collision else None
+    beam_actions = torch.empty((1, 0), dtype=torch.long, device=device)
+    best_score = float("inf")
+    best_actions: torch.Tensor | None = None
+    best_positions: np.ndarray | None = None
+    best_step = horizon
+    best_collision_risk = 0.0
+
+    for depth in range(1, horizon + 1):
+        expanded = beam_actions.repeat_interleave(4, dim=0)
+        next_actions = torch.arange(4, device=device, dtype=torch.long).repeat(beam_actions.shape[0])
+        expanded = torch.cat((expanded, next_actions[:, None]), dim=1)
+        starts = start.expand(expanded.shape[0], -1, -1, -1)
+        imagined = model.imagine_positions(
+            starts,
+            expanded,
+            collision_response=learned_collision or hybrid_collision,
+            visual_collision_guard=hybrid_collision,
+            initial_position=normalized_start_position.expand(expanded.shape[0], -1),
+        )
+        positions = imagined.cpu().numpy() * 64.0
+        positions_with_start = np.concatenate(
+            (np.broadcast_to(start_position, (expanded.shape[0], 1, 2)), positions), axis=1
+        )
+        distances = np.linalg.norm(positions_with_start - np.asarray(goal), axis=-1)
+        if wall_mask is not None:
+            collision_prefix = _collision_prefix(positions_with_start, wall_mask).astype(np.float32)
+        else:
+            collision_prefix = np.zeros_like(distances, dtype=np.float32)
+        if learned_collision:
+            collision_probability = model.imagine_collision_probabilities(
+                starts,
+                expanded,
+                visual_collision_guard=hybrid_collision,
+                initial_position=normalized_start_position.expand(expanded.shape[0], -1),
+            ).cpu().numpy()
+            collision_prefix = np.maximum(
+                collision_prefix,
+                np.concatenate(
+                    (np.zeros((expanded.shape[0], 1), dtype=np.float32), np.maximum.accumulate(collision_probability, axis=1)),
+                    axis=1,
+                ),
+            )
+        scores_by_step = distances + collision_prefix * 64.0
+        scores = np.min(scores_by_step, axis=1)
+        keep = min(width, expanded.shape[0])
+        elite = torch.as_tensor(np.argsort(scores)[:keep], device=device, dtype=torch.long)
+        beam_actions = expanded[elite]
+        candidate = int(elite[0].item())
+        if float(scores[candidate]) < best_score:
+            best_score = float(scores[candidate])
+            best_actions = expanded[candidate].clone()
+            best_positions = positions_with_start[candidate].copy()
+            best_step = int(np.argmin(scores_by_step[candidate]))
+            best_collision_risk = float(collision_prefix[candidate, best_step])
+
+    if best_actions is None or best_positions is None:
+        raise RuntimeError("beam search produced no candidate plan")
+    if best_step == 0 and best_score > 4.0:
+        best_step = 1
+    return PlanResult(
+        actions=best_actions[:best_step].cpu().numpy(),
+        imagined_positions=best_positions[:best_step + 1],
+        imagined_distance=float(np.linalg.norm(best_positions[best_step] - np.asarray(goal))),
+        imagined_collision_risk=best_collision_risk if collision_aware else 0.0,
+        planning_score=best_score,
+        route_score=best_score,
         route_progress=float(np.linalg.norm(start_position - np.asarray(goal)) - np.linalg.norm(best_positions[-1] - np.asarray(goal))),
     )
 

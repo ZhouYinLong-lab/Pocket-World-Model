@@ -12,6 +12,7 @@ from pocketworld.planner import (
     estimate_agent_velocity,
     estimate_speed_response,
     cem_shooting,
+    beam_search,
     extract_wall_boxes,
     extract_wall_mask,
     predictive_shift_score,
@@ -274,6 +275,23 @@ def test_cem_shooting_returns_valid_discrete_plan_under_budget():
     observation, _ = env.reset()
     torch.manual_seed(9)
     result = cem_shooting(PocketWorldModel(), observation, (18, 28), horizon=6, candidates=32)
+
+    assert 1 <= len(result.actions) <= 6
+    assert result.actions.dtype == np.int64
+    assert np.all((result.actions >= 0) & (result.actions < 4))
+    assert result.imagined_positions.shape == (len(result.actions) + 1, 2)
+    assert np.isfinite(result.imagined_distance)
+
+
+def test_beam_search_returns_valid_discrete_plan_under_budget():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+
+    env = PocketWorldEnv(walls=(), agent_start=(8, 8), goal=(18, 28))
+    observation, _ = env.reset()
+    torch.manual_seed(10)
+    result = beam_search(PocketWorldModel(), observation, (18, 28), horizon=6, candidates=32)
 
     assert 1 <= len(result.actions) <= 6
     assert result.actions.dtype == np.int64
