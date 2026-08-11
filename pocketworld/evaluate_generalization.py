@@ -112,6 +112,7 @@ def evaluate_waypoint_tasks(
                 use_learned_velocity=True,
                 route_objective=True,
                 alignment_fallback_threshold=4.0,
+                wall_aware_route=True,
             )
             reached = result.final_info.get("distance_to_goal", float("inf")) <= env.goal_radius
             completed_waypoints += int(reached)
@@ -153,8 +154,11 @@ def evaluate_generalization(
         "unseen": [evaluate_map_prediction(model, name, episodes, horizon, seed + 1000 + index * 100) for index, name in enumerate(holdout_maps)],
     }
     waypoint_tasks = {
-        "train": [evaluate_waypoint_tasks(model, name, max(1, episodes // 2), waypoint_count, min(32, max(8, horizon)), candidates, seed + 2000 + index * 100) for index, name in enumerate(train_maps)],
-        "unseen": [evaluate_waypoint_tasks(model, name, max(1, episodes // 2), waypoint_count, min(32, max(8, horizon)), candidates, seed + 3000 + index * 100) for index, name in enumerate(holdout_maps)],
+        # Keep the requested execution budget intact.  Capping this at 32
+        # steps made the evaluator silently truncate routes whose remaining
+        # geometric distance was valid but longer than the old demo budget.
+        "train": [evaluate_waypoint_tasks(model, name, max(1, episodes // 2), waypoint_count, max(8, horizon), candidates, seed + 2000 + index * 100) for index, name in enumerate(train_maps)],
+        "unseen": [evaluate_waypoint_tasks(model, name, max(1, episodes // 2), waypoint_count, max(8, horizon), candidates, seed + 3000 + index * 100) for index, name in enumerate(holdout_maps)],
     }
     prediction_summary = {
         split: {

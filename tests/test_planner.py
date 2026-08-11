@@ -13,6 +13,7 @@ from pocketworld.planner import (
     extract_wall_mask,
     predictive_shift_score,
     wall_context_shift_score,
+    route_following_action,
 )
 
 
@@ -48,6 +49,14 @@ def test_astar_route_crosses_barrier_without_entering_inflated_wall():
     assert path
     assert all(not occupied[y, x] for x, y in path)
     assert min(y for _, y in path) <= 6
+
+
+def test_route_following_action_uses_four_action_visible_route():
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    action, remaining = route_following_action(observation, (54, 32), [observation])
+    assert action in {0, 1, 2, 3}
+    assert remaining > 0.0
 
 
 def test_path_waypoints_keep_bends_when_downsampling_dense_grid_route():

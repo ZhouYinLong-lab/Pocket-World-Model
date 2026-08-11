@@ -106,6 +106,7 @@ def _astar_path(
     goal: tuple[float, float],
     vertical_preference: str | None = None,
     bounds: tuple[int, int, int, int] = (3, 60, 3, 60),
+    allow_diagonal: bool = True,
 ) -> list[tuple[int, int]]:
     """Find a collision-free 8-connected route on a binary occupancy grid.
 
@@ -132,16 +133,19 @@ def _astar_path(
     if start_cell == goal_cell:
         return [start_cell]
 
-    directions = (
+    cardinal_directions = (
         (-1, 0, 1.0),
         (1, 0, 1.0),
         (0, -1, 1.0),
         (0, 1, 1.0),
+    )
+    diagonal_directions = (
         (-1, -1, 2**0.5),
         (1, -1, 2**0.5),
         (-1, 1, 2**0.5),
         (1, 1, 2**0.5),
     )
+    directions = cardinal_directions + (diagonal_directions if allow_diagonal else ())
     preference = vertical_preference.lower() if vertical_preference else None
 
     def heuristic(cell: tuple[int, int]) -> float:
@@ -417,7 +421,13 @@ def _wall_aware_route_candidates(
     seen: set[tuple[int, ...]] = set()
     preferences = (route_preference,) if route_preference in ("top", "bottom") else ("top", "bottom")
     for preference in preferences:
-        path = _astar_path(occupied, tuple(start_position), goal, vertical_preference=preference)
+        path = _astar_path(
+            occupied,
+            tuple(start_position),
+            goal,
+            vertical_preference=preference,
+            allow_diagonal=False,
+        )
         if not path:
             continue
         # Keep only bends and endpoints.  Dense grid waypoints make the
@@ -507,6 +517,48 @@ def estimate_agent_velocity(
     if speed > max_speed:
         velocity *= max_speed / speed
     return velocity.astype(np.float32)
+
+
+def route_following_action(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    observation_history: Sequence[np.ndarray] | None = None,
+    clearance_radius: int = 4,
+    damping: float = 1.0,
+) -> tuple[int, float]:
+    """Choose one safe cardinal action from the visible wall route.
+
+    The learned planner is still responsible for free-space prediction and
+    scoring.  This small hybrid controller is used when a visible wall layout
+    makes a route constraint more reliable than a short open-loop action
+    sequence.  It follows a 4-connected A* route because the environment has
+    four actions; recent RGB frames provide the velocity term needed to brake
+    before a bend or a goal.
+    """
+    position = extract_agent_position(observation).astype(np.float32)
+    wall_mask = extract_wall_mask(observation)
+    occupied = _dilate(wall_mask, radius=max(3, int(clearance_radius)))
+    path = _astar_path(occupied, tuple(position), goal, allow_diagonal=False)
+    if not path:
+        # A one-pixel tighter route is a recoverable emergency path.  The
+        # environment still performs the final collision check.
+        path = _astar_path(_dilate(wall_mask, radius=3), tuple(position), goal, allow_diagonal=False)
+    if not path:
+        delta = np.asarray(goal, dtype=np.float32) - position
+        action = 3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0 else 2 if abs(delta[0]) >= abs(delta[1]) else 1 if delta[1] >= 0 else 0
+        return action, float(np.linalg.norm(delta))
+
+    points = np.asarray(path, dtype=np.float32)
+    distances = np.linalg.norm(points - position[None], axis=1)
+    farther = np.flatnonzero(distances >= 3.0)
+    target = points[int(farther[0])] if len(farther) else points[-1]
+    velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.5)
+    control = target - position - float(damping) * velocity
+    if abs(control[0]) >= abs(control[1]):
+        action = 3 if control[0] >= 0 else 2
+    else:
+        action = 1 if control[1] >= 0 else 0
+    return action, _path_length(path)
 
 
 def wall_context_shift_score(observation: np.ndarray, mismatch_scale: float = 0.05) -> float:
@@ -837,6 +889,7 @@ def receding_horizon_plan(
     shift_threshold: float | None = None,
     route_execution_horizon: int | None = None,
     alignment_fallback_threshold: float | None = None,
+    wall_aware_route: bool = False,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -868,7 +921,24 @@ def receding_horizon_plan(
     wall_route_regression_count = 0
     wall_route_side_switch_count = 0
     for step in range(max_steps):
-        if pending_plan is None or pending_index >= len(pending_plan.actions):
+        route_override = wall_aware_route and bool(np.any(extract_wall_mask(current_observation)))
+        if route_override:
+            replans += 1
+            route_action, route_remaining = route_following_action(
+                current_observation,
+                goal,
+                observation_history=observation_history if use_history_velocity else None,
+            )
+            current_position = extract_agent_position(current_observation)
+            pending_plan = PlanResult(
+                actions=np.asarray([route_action], dtype=np.int64),
+                imagined_positions=np.asarray([current_position, current_position], dtype=np.float32),
+                imagined_distance=float(np.linalg.norm(current_position - np.asarray(goal, dtype=np.float32))),
+                route_endpoint_distance=float(np.linalg.norm(current_position - np.asarray(goal, dtype=np.float32))),
+                wall_route_remaining_px=route_remaining,
+            )
+            pending_index = 0
+        elif pending_plan is None or pending_index >= len(pending_plan.actions):
             replans += 1
             pending_plan = random_shooting(
                 model,
@@ -935,7 +1005,7 @@ def receding_horizon_plan(
             if np.isfinite(actual_position).all() and np.isfinite(expected_position).all():
                 alignment_error = float(np.linalg.norm(actual_position - expected_position))
                 alignment_errors.append(alignment_error)
-                if (
+                if not route_override and (
                     alignment_fallback_threshold is not None
                     and not fallback_active
                     and alignment_error >= alignment_fallback_threshold
@@ -978,7 +1048,7 @@ def receding_horizon_plan(
                     pending_plan = None
             if terminated or truncated:
                 break
-            if preserve_route:
+            if preserve_route and not route_override:
                 deviated = not np.all(np.isfinite(actual_position)) or np.linalg.norm(actual_position - expected_position) > route_tolerance
                 if final_info.get("collision", False) or deviated:
                     pending_plan = None
