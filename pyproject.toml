@@ -23,6 +23,7 @@ pocketworld-train = "pocketworld.train:main"
 pocketworld-export-onnx = "pocketworld.export_onnx:main"
 pocketworld-evaluate = "pocketworld.evaluate:main"
 pocketworld-evaluate-collision = "pocketworld.evaluate_collision:main"
+pocketworld-evaluate-generalization = "pocketworld.evaluate_generalization:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]

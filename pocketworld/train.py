@@ -206,10 +206,11 @@ def train(
     collision_seek_probability: float = 0.0,
     kinematics_only: bool = False,
     temporal_only: bool = False,
+    map_suite: str = "baseline",
 ) -> Path:
     torch.manual_seed(seed)
-    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability)
-    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability)
+    train_batch = collect_random_rollouts(episodes=episodes, horizon=unroll_horizon, seed=seed, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability, map_suite=map_suite)
+    validation_batch = collect_random_rollouts(episodes=validation_episodes, horizon=unroll_horizon, seed=seed + 10000, sticky_probability=sticky_probability, full_state_range=full_state_range, barrier_probability=barrier_probability, collision_seek_probability=collision_seek_probability, map_suite=map_suite)
     train_loader = _make_loader(train_batch, batch_size=batch_size, shuffle=True)
     validation_loader = _make_loader(validation_batch, batch_size=batch_size, shuffle=False)
     model = PocketWorldModel()
@@ -258,7 +259,7 @@ def train(
         print(f"uncertainty calibration: {uncertainty_calibration}")
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_seek_probability": collision_seek_probability, "resume": resume, "agent_only": agent_only, "collision_only": collision_only, "kinematics_only": kinematics_only, "temporal_only": temporal_only, "collision_supervision": True, "agent_rendering": True, "temporal_velocity": True, "probabilistic_uncertainty": True, "uncertainty_calibration": uncertainty_calibration, "dynamics": "learned_structured_kinematics"}, destination)
+    torch.save({"model": model.state_dict(), "seed": seed, "epochs": epochs, "episodes": episodes, "validation_episodes": validation_episodes, "unroll_horizon": unroll_horizon, "sticky_probability": sticky_probability, "full_state_range": full_state_range, "barrier_probability": barrier_probability, "collision_seek_probability": collision_seek_probability, "map_suite": map_suite, "resume": resume, "agent_only": agent_only, "collision_only": collision_only, "kinematics_only": kinematics_only, "temporal_only": temporal_only, "collision_supervision": True, "agent_rendering": True, "temporal_velocity": True, "probabilistic_uncertainty": True, "uncertainty_calibration": uncertainty_calibration, "dynamics": "learned_structured_kinematics"}, destination)
     return destination
 
 
@@ -280,6 +281,7 @@ def main() -> None:
     parser.add_argument("--collision-seek-probability", type=float, default=0.0, help="probability of collision-seeking actions in barrier curriculum episodes")
     parser.add_argument("--kinematics-only", action="store_true", help="identify acceleration, friction, and speed limit from collision-free transitions")
     parser.add_argument("--temporal-only", action="store_true", help="freeze the world model and fine-tune only the learned temporal velocity encoder")
+    parser.add_argument("--map-suite", choices=("baseline", "train", "holdout", "all"), default="baseline", help="named map suite used for rollout collection")
     args = parser.parse_args()
     train(**vars(args))
 

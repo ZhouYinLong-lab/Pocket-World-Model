@@ -44,6 +44,7 @@ class PocketWorldEnv(gym.Env[np.ndarray, int]):
         agent_start: tuple[float, float] = (8.0, 8.0),
         goal: tuple[float, float] = (55.0, 55.0),
         agent_speed_scale: float = 1.0,
+        map_name: str | None = None,
         render_mode: str | None = None,
     ) -> None:
         super().__init__()
@@ -51,6 +52,7 @@ class PocketWorldEnv(gym.Env[np.ndarray, int]):
         self.agent_start = np.asarray(agent_start, dtype=np.float32)
         self.goal = np.asarray(goal, dtype=np.float32)
         self.agent_speed_scale = float(agent_speed_scale)
+        self.map_name = map_name
         self.render_mode = render_mode
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(0, 255, (3, self.size, self.size), dtype=np.uint8)
@@ -92,6 +94,11 @@ class PocketWorldEnv(gym.Env[np.ndarray, int]):
     def render(self) -> np.ndarray:
         return self._observation()
 
+    def set_goal(self, goal: tuple[float, float]) -> None:
+        """Change the active goal for sequential-goal tasks."""
+
+        self.goal = np.asarray(goal, dtype=np.float32)
+
     def _collides(self, point: np.ndarray) -> bool:
         edge = self.agent_radius
         if point[0] < edge or point[0] >= self.size - edge or point[1] < edge or point[1] >= self.size - edge:
@@ -107,6 +114,7 @@ class PocketWorldEnv(gym.Env[np.ndarray, int]):
             "velocity": self.velocity.copy(),
             "goal": self.goal.copy(),
             "distance_to_goal": float(np.linalg.norm(self.position - self.goal)),
+            "map_name": self.map_name,
         }
 
     def _observation(self) -> np.ndarray:

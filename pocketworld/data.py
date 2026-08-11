@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .env import DEFAULT_WALLS, PocketWorldEnv, Rect
+from .maps import get_map, sample_map_name
 
 
 @dataclass
@@ -28,13 +29,20 @@ def collect_random_transitions(
     horizon: int = 80,
     seed: int = 7,
     map_variant: bool = False,
+    map_suite: str = "baseline",
 ) -> TransitionBatch:
     rng = np.random.default_rng(seed)
     observations: list[np.ndarray] = []
     actions: list[int] = []
     next_observations: list[np.ndarray] = []
     for _ in range(episodes):
-        walls = _variant_walls(rng) if map_variant else None
+        walls = (
+            get_map(sample_map_name(rng, map_suite)).walls
+            if map_suite != "baseline"
+            else _variant_walls(rng)
+            if map_variant
+            else None
+        )
         start = (float(rng.integers(6, 15)), float(rng.integers(6, 15)))
         goal = (float(rng.integers(49, 58)), float(rng.integers(49, 58)))
         env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal, agent_speed_scale=1.0)
@@ -65,6 +73,7 @@ def collect_random_rollouts(
     barrier_probability: float = 0.0,
     collision_seek_probability: float = 0.0,
     agent_speed_scale: float = 1.0,
+    map_suite: str = "baseline",
 ) -> RolloutBatch:
     """Collect contiguous trajectories for multi-step world-model training."""
     rng = np.random.default_rng(seed)
@@ -80,7 +89,13 @@ def collect_random_rollouts(
             barrier = Rect(29, 10, 5, 44)
             walls = (barrier,)
         else:
-            walls = _variant_walls(rng) if map_variant else None
+            walls = (
+                get_map(sample_map_name(rng, map_suite)).walls
+                if map_suite != "baseline"
+                else _variant_walls(rng)
+                if map_variant
+                else None
+            )
         if barrier_episode and collision_seek_probability > 0:
             start, goal, preferred_collision_action = _sample_barrier_approach(rng, barrier)
         else:
