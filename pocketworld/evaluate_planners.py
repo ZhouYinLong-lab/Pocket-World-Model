@@ -25,6 +25,7 @@ DEFAULT_PLANNERS = (
     "cem_collision",
     "route_aware_hybrid",
 )
+SUPPORTED_PLANNERS = DEFAULT_PLANNERS + ("ensemble_collision", "conformal_collision")
 
 
 def _nominal_queries(planner: str, horizon: int, candidates: int) -> int:
@@ -62,7 +63,9 @@ def _planner_result(
     goal: tuple[float, float],
     horizon: int,
     candidates: int,
+    collision_models: dict[str, object] | None = None,
 ) -> object:
+    collision_model = None if collision_models is None else collision_models.get(planner)
     if planner == "random_shooting":
         return random_shooting(model, observation, goal, horizon=horizon, candidates=candidates)
     if planner == "cem":
@@ -95,6 +98,19 @@ def _planner_result(
             collision_risk_budget=COLLISION_RISK_BUDGET,
             observation_history=[observation],
         )
+    if planner in {"ensemble_collision", "conformal_collision"}:
+        return random_shooting(
+            model,
+            observation,
+            goal,
+            horizon=horizon,
+            candidates=candidates,
+            collision_aware=True,
+            learned_collision=True,
+            collision_model=collision_model,
+            collision_risk_budget=COLLISION_RISK_BUDGET,
+            observation_history=[observation],
+        )
     if planner == "route_aware_hybrid":
         return random_shooting(
             model,
@@ -120,6 +136,9 @@ def evaluate_planner_tournament(
     candidates: int = 256,
     scenario: str = "open",
     planners: tuple[str, ...] = DEFAULT_PLANNERS,
+    collision_models: dict[str, object] | None = None,
+    risk_model_metadata: dict[str, object] | None = None,
+    include_rows: bool = False,
 ) -> dict[str, object]:
     """Compare planners on paired tasks under one rollout-query budget.
 
@@ -128,10 +147,11 @@ def evaluate_planner_tournament(
     The output keeps per-seed values so improvements cannot be attributed to a
     lucky task sample.
     """
-    unknown = set(planners) - set(DEFAULT_PLANNERS)
+    unknown = set(planners) - set(SUPPORTED_PLANNERS)
     if unknown:
         raise ValueError(f"unsupported planners: {sorted(unknown)}")
     runs = []
+    retained_rows: dict[str, dict[str, list[dict[str, float | None]]]] = {}
     for seed in seeds:
         rows = {planner: [] for planner in planners}
         for episode, (start, goal) in enumerate(_episode_cases(episodes, seed, scenario)):
@@ -182,7 +202,15 @@ def evaluate_planner_tournament(
                         }
                     )
                     continue
-                result = _planner_result(model, planner, observation, goal, horizon, candidates)
+                result = _planner_result(
+                    model,
+                    planner,
+                    observation,
+                    goal,
+                    horizon,
+                    candidates,
+                    collision_models=collision_models,
+                )
                 collision_count = 0
                 for action in result.actions:
                     _, _, terminated, truncated, info = env.step(int(action))
@@ -219,8 +247,10 @@ def evaluate_planner_tournament(
                 },
             }
         )
+        if include_rows:
+            retained_rows[str(seed)] = rows
     summary = _summarize([run["planners"] for run in runs])
-    return {
+    report = {
         "config": {
             "seeds": list(seeds),
             "episodes": episodes,
@@ -233,10 +263,14 @@ def evaluate_planner_tournament(
             "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
             "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
             "collision_risk_budget": COLLISION_RISK_BUDGET,
+            "risk_model_metadata": risk_model_metadata or {},
         },
         "runs": runs,
         "summary": summary,
     }
+    if include_rows:
+        report["rows"] = retained_rows
+    return report
 
 
 def main() -> None:

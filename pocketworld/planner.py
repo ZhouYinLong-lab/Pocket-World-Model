@@ -781,8 +781,11 @@ def random_shooting(
     wall_aware_route: bool = False,
     wall_route_preference: str | None = None,
     wall_route_best_remaining_px: float | None = None,
+    collision_model: object | None = None,
 ) -> PlanResult:
     model.eval()
+    risk_model = model if collision_model is None else collision_model
+    risk_model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
     actions = torch.randint(0, 4, (candidates, horizon), device=device)
     delta = np.asarray(goal, dtype=np.float32) - extract_agent_position(observation)
@@ -877,7 +880,7 @@ def random_shooting(
             positions[:count, 1:] = imagined_positions[:count]
             goal_distances[:count] = np.linalg.norm(positions[:count] - np.asarray(goal), axis=-1)
         if learned_collision or hybrid_collision:
-            collision_probabilities = model.imagine_collision_probabilities(
+            collision_probabilities = risk_model.imagine_collision_probabilities(
                 starts,
                 actions,
                 visual_collision_guard=hybrid_collision,
@@ -910,7 +913,7 @@ def random_shooting(
                 imagined_positions[shortlist] = robust_positions
                 positions[shortlist, 1:] = robust_positions
                 goal_distances[shortlist] = np.linalg.norm(positions[shortlist] - np.asarray(goal), axis=-1)
-                robust_probabilities = model.imagine_collision_probabilities(
+                robust_probabilities = risk_model.imagine_collision_probabilities(
                     starts[shortlist_tensor],
                     actions[shortlist_tensor],
                     initial_position=normalized_start_positions[shortlist_tensor],
@@ -1013,6 +1016,7 @@ def cem_shooting(
     learned_collision: bool = False,
     hybrid_collision: bool = False,
     collision_risk_budget: float | None = None,
+    collision_model: object | None = None,
 ) -> PlanResult:
     """Plan with categorical CEM under an explicit model-query budget.
 
@@ -1028,6 +1032,8 @@ def cem_shooting(
     iterations = min(int(iterations), max(1, candidates // 4))
     population = max(4, candidates // iterations)
     model.eval()
+    risk_model = model if collision_model is None else collision_model
+    risk_model.eval()
 
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
     start_position = extract_agent_position(observation).astype(np.float32)
@@ -1089,7 +1095,7 @@ def cem_shooting(
         else:
             collision_prefix = np.zeros_like(distances, dtype=np.float32)
         if learned_collision:
-            collision_probability = model.imagine_collision_probabilities(
+            collision_probability = risk_model.imagine_collision_probabilities(
                 starts,
                 actions,
                 visual_collision_guard=hybrid_collision,
@@ -1147,6 +1153,7 @@ def beam_search(
     learned_collision: bool = False,
     hybrid_collision: bool = False,
     collision_risk_budget: float | None = None,
+    collision_model: object | None = None,
 ) -> PlanResult:
     """Search discrete action prefixes with a query-budgeted beam.
 
@@ -1157,6 +1164,8 @@ def beam_search(
     if horizon < 1 or candidates < 4:
         raise ValueError("horizon must be positive and candidates must be at least 4")
     model.eval()
+    risk_model = model if collision_model is None else collision_model
+    risk_model.eval()
     width = max(1, candidates // (4 * horizon)) if beam_width is None else int(beam_width)
     width = max(1, width)
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
@@ -1192,7 +1201,7 @@ def beam_search(
         else:
             collision_prefix = np.zeros_like(distances, dtype=np.float32)
         if learned_collision:
-            collision_probability = model.imagine_collision_probabilities(
+            collision_probability = risk_model.imagine_collision_probabilities(
                 starts,
                 expanded,
                 visual_collision_guard=hybrid_collision,
