@@ -1,0 +1,39 @@
+{
+  "config": {
+    "checkpoint": "artifacts/pocketworld-temporal-probability-v8.pt",
+    "episodes": 3,
+    "horizon": 20,
+    "candidates": 16,
+    "seed": 101,
+    "train_suite": ["default", "single_barrier", "double_barrier"],
+    "holdout_suite": ["cross", "zigzag"],
+    "waypoint_count": 2
+  },
+  "prediction_summary": {
+    "train": {
+      "mean_position_error_px": {"1": 6.294645958476597, "5": 5.673200647036235, "10": 5.730557004610698, "20": 7.583954685264164},
+      "mean_image_mae": {"1": 0.05262101027700636, "5": 0.06108233663770888, "10": 0.06466410184899966, "20": 0.06839457733763589}
+    },
+    "unseen": {
+      "mean_position_error_px": {"1": 4.246628224849701, "5": 4.145130236943563, "10": 3.6220900615056353, "20": 3.980306526025136},
+      "mean_image_mae": {"1": 0.06962278795739014, "5": 0.07774695008993149, "10": 0.08115945880611738, "20": 0.08233296747008959}
+    }
+  },
+  "per_map_position_error_px": {
+    "default": {"1": 9.270700931549072, "5": 9.308740615844727, "10": 9.458179553349813, "20": 13.242322226365408},
+    "single_barrier": {"1": 3.572615385055542, "5": 2.9813756148020425, "10": 2.64183509349823, "20": 2.851731300354004},
+    "double_barrier": {"1": 6.040621558825175, "5": 4.729485710461934, "10": 5.09165636698405, "20": 6.657810529073079},
+    "cross": {"1": 5.461204409599304, "5": 5.206838289896647, "10": 4.129379987716675, "20": 5.0069897174835205},
+    "zigzag": {"1": 3.0320520401000977, "5": 3.0834221839904785, "10": 3.114800135294596, "20": 2.953623334566752}
+  },
+  "waypoint_summary": {
+    "train": {"mean_task_success_rate": 0.0, "mean_waypoint_completion_rate": 0.16666666666666666, "mean_final_distance_px": 25.040591835975647},
+    "unseen": {"mean_task_success_rate": 0.0, "mean_waypoint_completion_rate": 0.25, "mean_final_distance_px": 23.289790391921997}
+  },
+  "interpretation": {
+    "status": "diagnostic_first_pass",
+    "note": "The v8 checkpoint was trained on the baseline regime; this report measures transfer to named layouts and sequential goals rather than claiming a trained multi-map policy.",
+    "unseen_maps": ["cross", "zigzag"],
+    "complex_task": "two ordered waypoints"
+  }
+}
