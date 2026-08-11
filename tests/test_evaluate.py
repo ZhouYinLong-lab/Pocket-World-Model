@@ -8,6 +8,7 @@ from pocketworld.evaluate import (
     evaluate_uncertainty_calibration_matrix,
     evaluate_shift_detection_matrix,
 )
+from pocketworld.evaluate_imagination import evaluate_imagination_gap
 from pocketworld.model import PocketWorldModel
 
 
@@ -34,6 +35,14 @@ def test_evaluation_reports_imagined_and_real_planning():
         "mean_imagined_final_distance_px",
         "mean_real_final_distance_px",
     }
+
+
+def test_imagination_gap_report_has_primary_horizon():
+    report = evaluate_imagination_gap(
+        PocketWorldModel(), seeds=(5,), episodes=1, horizons=(8, 24), candidates=4
+    )
+    assert report["config"]["primary_horizon"] == 24
+    assert "mean" in report["primary_absolute_gap"]
 
 
 def test_action_effect_diagnostic_covers_all_actions():
