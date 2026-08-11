@@ -274,6 +274,19 @@ Learned imagined collisions now freeze the compact state and zero velocity after
 
 The learned planner proposes map-agnostic two-bend waypoint routes and lets the wall-relative collision head rank them. It does not inspect wall boxes when running in pure learned mode; the explicit pixel planner remains a separately reported baseline.
 
+### Risk-estimator comparison
+
+To test whether the remaining barrier gap is caused by an underpowered risk estimator, the project now compares the single learned collision head with a three-checkpoint ensemble and a split-conformal upper-risk wrapper. The comparison keeps the v3-final dynamics model, 48-step horizon, 256-candidate budget, and paired three-seed barrier tasks fixed. The ensemble reaches **20.0% real success** and the conformal wrapper reaches **0.0%**, versus **61.7%** for the single learned collision planner. Conformal coverage is **100%**, but its calibration quantile is **0.9984** because every selected calibration route collided; it therefore stops almost immediately. This is an intentional negative result: stronger uncertainty guarantees can become unusable when the calibration unit is mismatched to route-level failure. See the [uncertainty-method comparison](docs/plans/uncertainty-methods.md) and [machine-readable report](docs/results/evaluation-uncertainty-barrier-v1.json).
+
+Reproduce the risk-method study with:
+
+```bash
+python -m pocketworld.evaluate_uncertainty artifacts/pocketworld-map-suite-v3-final.pt \
+  --ensemble-checkpoints artifacts/pocketworld-map-suite-v3.pt,artifacts/pocketworld-map-suite-v3-calibrated.pt,artifacts/pocketworld-map-suite-v3-kinematics.pt \
+  --calibration-seeds 101,103 --evaluation-seeds 11,23,41 --calibration-episodes 12 --evaluation-episodes 20 \
+  --horizon 48 --candidates 256 --output artifacts/evaluation-uncertainty-barrier-v1.json
+```
+
 Recent RGB frames can initialize velocity either with the legacy finite-difference estimator or with the learned temporal encoder. The calibrated probabilistic planner re-scores a shortlist by sampling future landing states; the older 64-point neighborhood and horizon-growing radius remain available as explicit robust baselines.
 
 The route-aware planner adds `route_objective=True` and reports `route_alignment_error_px` / `max_route_alignment_error_px`. If alignment exceeds a configured threshold, it switches from learned route proposals to an explicit wall-aware hybrid fallback. To enable both alarms with the v8 thresholds:

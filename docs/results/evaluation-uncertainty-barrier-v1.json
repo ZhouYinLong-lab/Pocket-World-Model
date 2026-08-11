@@ -1,0 +1,2502 @@
+{
+  "config": {
+    "seeds": [
+      11,
+      23,
+      41
+    ],
+    "episodes": 20,
+    "horizon": 48,
+    "candidates": 256,
+    "scenario": "single_barrier",
+    "planners": [
+      "learned_collision",
+      "ensemble_collision",
+      "conformal_collision"
+    ],
+    "paired_tasks": true,
+    "budget_scope": "nominal candidate budget per planning call; closed-loop totals are reported separately",
+    "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
+    "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
+    "collision_risk_budget": 0.15,
+    "risk_model_metadata": {
+      "ensemble_checkpoints": [
+        "artifacts/pocketworld-map-suite-v3.pt",
+        "artifacts/pocketworld-map-suite-v3-calibrated.pt",
+        "artifacts/pocketworld-map-suite-v3-kinematics.pt"
+      ],
+      "ensemble_members": 3,
+      "aggregation": "mean + disagreement_weight * member_std",
+      "disagreement_weight": 1.0,
+      "conformal_alpha": 0.1,
+      "conformal_quantile": 0.9984296857146546,
+      "conformal_samples": 24,
+      "calibration_collision_rate": 1.0,
+      "calibration_seeds": [
+        101,
+        103
+      ]
+    }
+  },
+  "runs": [
+    {
+      "seed": 11,
+      "planners": {
+        "learned_collision": {
+          "imagined_success": 0.95,
+          "real_success": 0.5,
+          "imagined_final_distance_px": 1.5503924467097707,
+          "real_final_distance_px": 10.090474164485931,
+          "collision_count": 2.75,
+          "planning_score": 7.815642321897644,
+          "executed_actions": 47.6,
+          "imagined_collision_risk": 0.09789452929981053,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "ensemble_collision": {
+          "imagined_success": 0.3,
+          "real_success": 0.2,
+          "imagined_final_distance_px": 17.547957054029503,
+          "real_final_distance_px": 22.06760835647583,
+          "collision_count": 2.5,
+          "planning_score": 17.547957054029503,
+          "executed_actions": 35.35,
+          "imagined_collision_risk": 0.08186998944729566,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "conformal_collision": {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.664346051073416,
+          "real_final_distance_px": 44.54509963989258,
+          "collision_count": 0.0,
+          "planning_score": 44.602014292524174,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984569638967514,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      }
+    },
+    {
+      "seed": 23,
+      "planners": {
+        "learned_collision": {
+          "imagined_success": 0.95,
+          "real_success": 0.65,
+          "imagined_final_distance_px": 1.6637879804685298,
+          "real_final_distance_px": 7.782538861036301,
+          "collision_count": 2.3,
+          "planning_score": 9.018494285733956,
+          "executed_actions": 47.45,
+          "imagined_collision_risk": 0.11491728601977229,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "ensemble_collision": {
+          "imagined_success": 0.25,
+          "real_success": 0.2,
+          "imagined_final_distance_px": 18.231897470416175,
+          "real_final_distance_px": 22.92363222837448,
+          "collision_count": 3.05,
+          "planning_score": 18.231897470416175,
+          "executed_actions": 34.65,
+          "imagined_collision_risk": 0.07953177080489696,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "conformal_collision": {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.413046922625945,
+          "real_final_distance_px": 45.21415328979492,
+          "collision_count": 0.0,
+          "planning_score": 45.202906168892625,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998444190621376,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      }
+    },
+    {
+      "seed": 41,
+      "planners": {
+        "learned_collision": {
+          "imagined_success": 1.0,
+          "real_success": 0.7,
+          "imagined_final_distance_px": 1.3300294787447937,
+          "real_final_distance_px": 9.350526237487793,
+          "collision_count": 2.35,
+          "planning_score": 7.613469037489224,
+          "executed_actions": 47.8,
+          "imagined_collision_risk": 0.09817874310538173,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "ensemble_collision": {
+          "imagined_success": 0.25,
+          "real_success": 0.2,
+          "imagined_final_distance_px": 19.096694772991395,
+          "real_final_distance_px": 23.986632895469665,
+          "collision_count": 2.7,
+          "planning_score": 19.096694772991395,
+          "executed_actions": 32.15,
+          "imagined_collision_risk": 0.08908921601250767,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "conformal_collision": {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.64410704089873,
+          "real_final_distance_px": 44.53841667175293,
+          "collision_count": 0.0,
+          "planning_score": 44.54995963510357,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984540700912475,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "learned_collision": {
+      "imagined_success": {
+        "mean": 0.9666666666666667,
+        "std": 0.023570226039551605
+      },
+      "real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "imagined_final_distance_px": {
+        "mean": 1.514736635307698,
+        "std": 0.13856932569000355
+      },
+      "real_final_distance_px": {
+        "mean": 9.074513087670008,
+        "std": 0.962212306919679
+      },
+      "collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      },
+      "planning_score": {
+        "mean": 8.149201881706942,
+        "std": 0.620199146514742
+      },
+      "executed_actions": {
+        "mean": 47.616666666666674,
+        "std": 0.14337208778404142
+      },
+      "imagined_collision_risk": {
+        "mean": 0.10366351947498818,
+        "std": 0.00795846050670588
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "ensemble_collision": {
+      "imagined_success": {
+        "mean": 0.26666666666666666,
+        "std": 0.02357022603955158
+      },
+      "real_success": {
+        "mean": 0.20000000000000004,
+        "std": 2.7755575615628914e-17
+      },
+      "imagined_final_distance_px": {
+        "mean": 18.292183099145692,
+        "std": 0.6337049251859027
+      },
+      "real_final_distance_px": {
+        "mean": 22.99262449343999,
+        "std": 0.7849559413513931
+      },
+      "collision_count": {
+        "mean": 2.75,
+        "std": 0.2273030282830975
+      },
+      "planning_score": {
+        "mean": 18.292183099145692,
+        "std": 0.6337049251859027
+      },
+      "executed_actions": {
+        "mean": 34.050000000000004,
+        "std": 1.373559851869102
+      },
+      "imagined_collision_risk": {
+        "mean": 0.08349699208823343,
+        "std": 0.004067885848884662
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "conformal_collision": {
+      "imagined_success": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "real_success": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "imagined_final_distance_px": {
+        "mean": 44.9071666715327,
+        "std": 0.35780676881788037
+      },
+      "real_final_distance_px": {
+        "mean": 44.765889867146804,
+        "std": 0.31698184761795617
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 44.78496003217345,
+        "std": 0.2962956313533863
+      },
+      "executed_actions": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "imagined_collision_risk": {
+        "mean": 0.9984517415364583,
+        "std": 5.468440759411165e-06
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    }
+  },
+  "rows": {
+    "11": {
+      "learned_collision": [
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.3609549717650051,
+          "real_final_distance_px": 4.866466999053955,
+          "collision_count": 1.0,
+          "planning_score": 8.345076294396842,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.10912689566612244,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.399846585560897,
+          "real_final_distance_px": 3.1698856353759766,
+          "collision_count": 1.0,
+          "planning_score": 2.6593253930102376,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.01967935636639595,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.9492228950662752,
+          "real_final_distance_px": 3.22183895111084,
+          "collision_count": 1.0,
+          "planning_score": 7.7297414268655915,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.10594560205936432,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.5130703547333929,
+          "real_final_distance_px": 3.4858694076538086,
+          "collision_count": 1.0,
+          "planning_score": 0.8423864343499395,
+          "executed_actions": 44.0,
+          "imagined_collision_risk": 0.005145563744008541,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.18189019128688427,
+          "real_final_distance_px": 3.673248052597046,
+          "collision_count": 1.0,
+          "planning_score": 10.833245934695087,
+          "executed_actions": 46.0,
+          "imagined_collision_risk": 0.16642743349075317,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.5950222873300359,
+          "real_final_distance_px": 29.64286994934082,
+          "collision_count": 9.0,
+          "planning_score": 7.702763643226032,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11105845868587494,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 4.470872988737126,
+          "real_final_distance_px": 31.296607971191406,
+          "collision_count": 9.0,
+          "planning_score": 12.266413798368474,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.12180532515048981,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.9498869861908448,
+          "real_final_distance_px": 3.576550245285034,
+          "collision_count": 1.0,
+          "planning_score": 4.690742203170825,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.042825862765312195,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.6116494225515792,
+          "real_final_distance_px": 7.189765453338623,
+          "collision_count": 0.0,
+          "planning_score": 8.434426693822331,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1222308948636055,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.974325618046652,
+          "real_final_distance_px": 2.775397777557373,
+          "collision_count": 1.0,
+          "planning_score": 9.425830325383078,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.13205476105213165,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 2.1902323997780724,
+          "real_final_distance_px": 16.11448097229004,
+          "collision_count": 4.0,
+          "planning_score": 15.122068528012935,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.20205993950366974,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.7269230394590227,
+          "real_final_distance_px": 5.47063684463501,
+          "collision_count": 1.0,
+          "planning_score": 4.98916535665873,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.05097253620624542,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.3146404835378906,
+          "real_final_distance_px": 1.7999682426452637,
+          "collision_count": 1.0,
+          "planning_score": 3.8543340775167723,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.03968271240592003,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.5394597052298253,
+          "real_final_distance_px": 28.83123207092285,
+          "collision_count": 8.0,
+          "planning_score": 5.733661174651212,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.06553439795970917,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.9859786334164704,
+          "real_final_distance_px": 32.3062629699707,
+          "collision_count": 9.0,
+          "planning_score": 11.963437587273893,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.15589779615402222,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.4367570225695345,
+          "real_final_distance_px": 3.3431241512298584,
+          "collision_count": 1.0,
+          "planning_score": 2.6795645300844884,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.01941886730492115,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.8326221090407477,
+          "real_final_distance_px": 9.06016731262207,
+          "collision_count": 2.0,
+          "planning_score": 11.010866699800026,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1434100717306137,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.3021564845985871,
+          "real_final_distance_px": 3.50592303276062,
+          "collision_count": 1.0,
+          "planning_score": 9.606332815164993,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1297527551651001,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.1667787952950177,
+          "real_final_distance_px": 5.763404369354248,
+          "collision_count": 2.0,
+          "planning_score": 5.790494672827977,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.07224556058645248,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 3.505557960001553,
+          "real_final_distance_px": 2.715782880783081,
+          "collision_count": 1.0,
+          "planning_score": 12.632968848673428,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.14261579513549805,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "ensemble_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 19.356268736175505,
+          "real_final_distance_px": 17.284313201904297,
+          "collision_count": 2.0,
+          "planning_score": 19.356268736175505,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.05198304355144501,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.328048875681077,
+          "real_final_distance_px": 30.194381713867188,
+          "collision_count": 2.0,
+          "planning_score": 26.328048875681077,
+          "executed_actions": 26.0,
+          "imagined_collision_risk": 0.13911490142345428,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.4140542811470118,
+          "real_final_distance_px": 3.26035475730896,
+          "collision_count": 1.0,
+          "planning_score": 1.4140542811470118,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.009655458852648735,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.5130703547333929,
+          "real_final_distance_px": 3.4858694076538086,
+          "collision_count": 1.0,
+          "planning_score": 0.5130703547333929,
+          "executed_actions": 44.0,
+          "imagined_collision_risk": 0.006932022050023079,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 28.06935509202718,
+          "real_final_distance_px": 30.34882354736328,
+          "collision_count": 1.0,
+          "planning_score": 28.06935509202718,
+          "executed_actions": 25.0,
+          "imagined_collision_risk": 0.1394774615764618,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 22.229136564675596,
+          "real_final_distance_px": 25.87314224243164,
+          "collision_count": 1.0,
+          "planning_score": 22.229136564675596,
+          "executed_actions": 12.0,
+          "imagined_collision_risk": 0.1396780163049698,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.78086314751025,
+          "real_final_distance_px": 30.597089767456055,
+          "collision_count": 1.0,
+          "planning_score": 27.78086314751025,
+          "executed_actions": 14.0,
+          "imagined_collision_risk": 0.11753587424755096,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.987171927009502,
+          "real_final_distance_px": 28.693815231323242,
+          "collision_count": 8.0,
+          "planning_score": 1.987171927009502,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.06306599080562592,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.96360077878909,
+          "real_final_distance_px": 28.69208335876465,
+          "collision_count": 1.0,
+          "planning_score": 24.96360077878909,
+          "executed_actions": 34.0,
+          "imagined_collision_risk": 0.1376613825559616,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.68542493079347,
+          "real_final_distance_px": 30.208398818969727,
+          "collision_count": 2.0,
+          "planning_score": 27.68542493079347,
+          "executed_actions": 20.0,
+          "imagined_collision_risk": 0.12113875895738602,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 18.350324022649982,
+          "real_final_distance_px": 25.582412719726562,
+          "collision_count": 3.0,
+          "planning_score": 18.350324022649982,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.04067179560661316,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.97299732903571,
+          "real_final_distance_px": 29.152366638183594,
+          "collision_count": 2.0,
+          "planning_score": 26.97299732903571,
+          "executed_actions": 26.0,
+          "imagined_collision_risk": 0.130719393491745,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.3146404835378906,
+          "real_final_distance_px": 1.7999682426452637,
+          "collision_count": 1.0,
+          "planning_score": 1.3146404835378906,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.036077406257390976,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.8477558325420838,
+          "real_final_distance_px": 2.397634267807007,
+          "collision_count": 1.0,
+          "planning_score": 0.8477558325420838,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0391598716378212,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.735546457129225,
+          "real_final_distance_px": 21.431148529052734,
+          "collision_count": 1.0,
+          "planning_score": 24.735546457129225,
+          "executed_actions": 45.0,
+          "imagined_collision_risk": 0.06604282557964325,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.315831424479224,
+          "real_final_distance_px": 29.565509796142578,
+          "collision_count": 2.0,
+          "planning_score": 26.315831424479224,
+          "executed_actions": 14.0,
+          "imagined_collision_risk": 0.13783356547355652,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 2.301348526185471,
+          "real_final_distance_px": 31.798786163330078,
+          "collision_count": 11.0,
+          "planning_score": 2.301348526185471,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.018199844285845757,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 20.74293800505053,
+          "real_final_distance_px": 18.90579605102539,
+          "collision_count": 3.0,
+          "planning_score": 20.74293800505053,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11425279080867767,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 22.602743320825667,
+          "real_final_distance_px": 25.569543838500977,
+          "collision_count": 1.0,
+          "planning_score": 22.602743320825667,
+          "executed_actions": 15.0,
+          "imagined_collision_risk": 0.10945010185241699,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.448020990612278,
+          "real_final_distance_px": 26.51072883605957,
+          "collision_count": 5.0,
+          "planning_score": 26.448020990612278,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.018749283626675606,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "conformal_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 48.615954770903805,
+          "real_final_distance_px": 48.34317398071289,
+          "collision_count": 0.0,
+          "planning_score": 48.25971404805462,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984446167945862,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.71694756682077,
+          "real_final_distance_px": 45.58028793334961,
+          "collision_count": 0.0,
+          "planning_score": 45.70557952810576,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984332323074341,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.454655580315624,
+          "real_final_distance_px": 45.2941780090332,
+          "collision_count": 0.0,
+          "planning_score": 45.12205669071391,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984318614006042,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.159785334434204,
+          "real_final_distance_px": 44.034786224365234,
+          "collision_count": 0.0,
+          "planning_score": 44.01136216933077,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984307289123535,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.13849594113404,
+          "real_final_distance_px": 45.20024871826172,
+          "collision_count": 0.0,
+          "planning_score": 45.27692569068709,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9985288381576538,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 39.221798933358926,
+          "real_final_distance_px": 39.09683609008789,
+          "collision_count": 0.0,
+          "planning_score": 39.05124837953327,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984338283538818,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.47962476246226,
+          "real_final_distance_px": 47.29230880737305,
+          "collision_count": 0.0,
+          "planning_score": 47.38143096192854,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984381198883057,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 42.50961119530213,
+          "real_final_distance_px": 42.3858757019043,
+          "collision_count": 0.0,
+          "planning_score": 42.20189569201838,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984310269355774,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.22585506271511,
+          "real_final_distance_px": 45.017356872558594,
+          "collision_count": 0.0,
+          "planning_score": 45.044422518220834,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984418153762817,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.12889797782403,
+          "real_final_distance_px": 44.11986541748047,
+          "collision_count": 0.0,
+          "planning_score": 44.181444068749045,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.99844890832901,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 40.28266797388045,
+          "real_final_distance_px": 40.324466705322266,
+          "collision_count": 0.0,
+          "planning_score": 40.52159917870962,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9985510110855103,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.217986031366294,
+          "real_final_distance_px": 47.00066375732422,
+          "collision_count": 0.0,
+          "planning_score": 47.01063709417264,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984473586082458,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.37466337033646,
+          "real_final_distance_px": 44.25564956665039,
+          "collision_count": 0.0,
+          "planning_score": 44.181444068749045,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984328746795654,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 43.99806397783081,
+          "real_final_distance_px": 43.88123321533203,
+          "collision_count": 0.0,
+          "planning_score": 43.73785545725808,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984309077262878,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.158359536184015,
+          "real_final_distance_px": 45.17811965942383,
+          "collision_count": 0.0,
+          "planning_score": 45.35416188179427,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984962344169617,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.203958628897496,
+          "real_final_distance_px": 44.057491302490234,
+          "collision_count": 0.0,
+          "planning_score": 44.10215414239989,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998432457447052,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 49.750835578574794,
+          "real_final_distance_px": 49.48800277709961,
+          "collision_count": 0.0,
+          "planning_score": 50.21951811795888,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9985247254371643,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.362318032528684,
+          "real_final_distance_px": 44.11986541748047,
+          "collision_count": 0.0,
+          "planning_score": 44.181444068749045,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984421730041504,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 39.57098925531269,
+          "real_final_distance_px": 39.49762725830078,
+          "collision_count": 0.0,
+          "planning_score": 39.6232255123179,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.99843430519104,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 46.71545151128568,
+          "real_final_distance_px": 46.73395538330078,
+          "collision_count": 0.0,
+          "planning_score": 46.87216658103186,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984842538833618,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ]
+    },
+    "23": {
+      "learned_collision": [
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.9748326685618981,
+          "real_final_distance_px": 7.05838680267334,
+          "collision_count": 0.0,
+          "planning_score": 11.167673244733773,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.15926313400268555,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.2039065201908512,
+          "real_final_distance_px": 3.952733278274536,
+          "collision_count": 1.0,
+          "planning_score": 2.236150129619257,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.01612880639731884,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 6.412591573316094,
+          "real_final_distance_px": 26.42458152770996,
+          "collision_count": 10.0,
+          "planning_score": 14.185596105176446,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.121453195810318,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.0791393334709252,
+          "real_final_distance_px": 2.3702585697174072,
+          "collision_count": 1.0,
+          "planning_score": 3.489579301580056,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.03766312450170517,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.4518820440565283,
+          "real_final_distance_px": 3.44254469871521,
+          "collision_count": 1.0,
+          "planning_score": 8.937668958881968,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11696542054414749,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.7717139191490306,
+          "real_final_distance_px": 31.099319458007812,
+          "collision_count": 9.0,
+          "planning_score": 8.107585615621199,
+          "executed_actions": 43.0,
+          "imagined_collision_risk": 0.11462299525737762,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 2.444252321900816,
+          "real_final_distance_px": 2.5873944759368896,
+          "collision_count": 1.0,
+          "planning_score": 5.844751188935728,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0531327947974205,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 2.38250786879152,
+          "real_final_distance_px": 3.6721150875091553,
+          "collision_count": 1.0,
+          "planning_score": 9.358251639390886,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.10899599641561508,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.3446512994928619,
+          "real_final_distance_px": 1.709659218788147,
+          "collision_count": 1.0,
+          "planning_score": 10.185319024102236,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.13813543319702148,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.403852915836439,
+          "real_final_distance_px": 3.3780710697174072,
+          "collision_count": 1.0,
+          "planning_score": 13.408501124454602,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.1875726282596588,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.4839356522042546,
+          "real_final_distance_px": 3.070671319961548,
+          "collision_count": 1.0,
+          "planning_score": 9.19991093678067,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1205621138215065,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.479404092949866,
+          "real_final_distance_px": 2.5201950073242188,
+          "collision_count": 1.0,
+          "planning_score": 6.8281198751153935,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.08357368409633636,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.9761336600092536,
+          "real_final_distance_px": 2.4101455211639404,
+          "collision_count": 1.0,
+          "planning_score": 14.06181748264109,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.18883880972862244,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 2.12100495691403,
+          "real_final_distance_px": 32.31379318237305,
+          "collision_count": 11.0,
+          "planning_score": 12.315896886540495,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1592951864004135,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.1766816760163672,
+          "real_final_distance_px": 3.995957136154175,
+          "collision_count": 1.0,
+          "planning_score": 9.780825772390878,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.13443975150585175,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.9470568083036773,
+          "real_final_distance_px": 6.804755687713623,
+          "collision_count": 1.0,
+          "planning_score": 8.106169261764371,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11186113208532333,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.6105143113590966,
+          "real_final_distance_px": 7.335447311401367,
+          "collision_count": 2.0,
+          "planning_score": 8.241915373370816,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1192406415939331,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.4944645770210192,
+          "real_final_distance_px": 5.606808185577393,
+          "collision_count": 0.0,
+          "planning_score": 6.725660026850121,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.08173742890357971,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.1702128337700228,
+          "real_final_distance_px": 2.952730894088745,
+          "collision_count": 1.0,
+          "planning_score": 5.9193921970207555,
+          "executed_actions": 45.0,
+          "imagined_collision_risk": 0.0742059275507927,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.3470205760560399,
+          "real_final_distance_px": 2.945208787918091,
+          "collision_count": 1.0,
+          "planning_score": 12.269101569708383,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.17065751552581787,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "ensemble_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 25.060676600474288,
+          "real_final_distance_px": 27.616758346557617,
+          "collision_count": 2.0,
+          "planning_score": 25.060676600474288,
+          "executed_actions": 33.0,
+          "imagined_collision_risk": 0.12952852249145508,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 18.99203845710226,
+          "real_final_distance_px": 30.842567443847656,
+          "collision_count": 8.0,
+          "planning_score": 18.99203845710226,
+          "executed_actions": 46.0,
+          "imagined_collision_risk": 0.015306553803384304,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 25.412769494051844,
+          "real_final_distance_px": 31.59827423095703,
+          "collision_count": 7.0,
+          "planning_score": 25.412769494051844,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.09684816002845764,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.0791435564252985,
+          "real_final_distance_px": 2.3702585697174072,
+          "collision_count": 1.0,
+          "planning_score": 1.0791435564252985,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.051173850893974304,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.178583851292085,
+          "real_final_distance_px": 30.559162139892578,
+          "collision_count": 2.0,
+          "planning_score": 27.178583851292085,
+          "executed_actions": 28.0,
+          "imagined_collision_risk": 0.13449299335479736,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.41092825510713,
+          "real_final_distance_px": 29.49245262145996,
+          "collision_count": 2.0,
+          "planning_score": 26.41092825510713,
+          "executed_actions": 19.0,
+          "imagined_collision_risk": 0.09730717539787292,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.6412376783747407,
+          "real_final_distance_px": 2.8784561157226562,
+          "collision_count": 1.0,
+          "planning_score": 0.6412376783747407,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.01480451412498951,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 23.458318190844228,
+          "real_final_distance_px": 25.187532424926758,
+          "collision_count": 2.0,
+          "planning_score": 23.458318190844228,
+          "executed_actions": 18.0,
+          "imagined_collision_risk": 0.0733126625418663,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.432242819361715,
+          "real_final_distance_px": 26.357187271118164,
+          "collision_count": 2.0,
+          "planning_score": 24.432242819361715,
+          "executed_actions": 21.0,
+          "imagined_collision_risk": 0.11890120059251785,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 23.272861120557877,
+          "real_final_distance_px": 25.239933013916016,
+          "collision_count": 2.0,
+          "planning_score": 23.272861120557877,
+          "executed_actions": 25.0,
+          "imagined_collision_risk": 0.10202839225530624,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.33573950094945104,
+          "real_final_distance_px": 26.082393646240234,
+          "collision_count": 7.0,
+          "planning_score": 0.33573950094945104,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0706888735294342,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.961836793087286,
+          "real_final_distance_px": 30.26812171936035,
+          "collision_count": 2.0,
+          "planning_score": 27.961836793087286,
+          "executed_actions": 13.0,
+          "imagined_collision_risk": 0.14653246104717255,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 25.395295968648412,
+          "real_final_distance_px": 27.38918113708496,
+          "collision_count": 2.0,
+          "planning_score": 25.395295968648412,
+          "executed_actions": 25.0,
+          "imagined_collision_risk": 0.10988561064004898,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 25.04067175166215,
+          "real_final_distance_px": 30.254600524902344,
+          "collision_count": 4.0,
+          "planning_score": 25.04067175166215,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.02714071050286293,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.963666849470773,
+          "real_final_distance_px": 27.35460090637207,
+          "collision_count": 1.0,
+          "planning_score": 24.963666849470773,
+          "executed_actions": 16.0,
+          "imagined_collision_risk": 0.11506149172782898,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 16.223614087317173,
+          "real_final_distance_px": 25.817541122436523,
+          "collision_count": 7.0,
+          "planning_score": 16.223614087317173,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.010575088672339916,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 23.326045829928606,
+          "real_final_distance_px": 25.318002700805664,
+          "collision_count": 3.0,
+          "planning_score": 23.326045829928606,
+          "executed_actions": 23.0,
+          "imagined_collision_risk": 0.14491108059883118,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.3716359949120477,
+          "real_final_distance_px": 3.9142708778381348,
+          "collision_count": 1.0,
+          "planning_score": 0.3716359949120477,
+          "executed_actions": 46.0,
+          "imagined_collision_risk": 0.1224747747182846,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.0620308940762235,
+          "real_final_distance_px": 2.7319936752319336,
+          "collision_count": 1.0,
+          "planning_score": 1.0620308940762235,
+          "executed_actions": 45.0,
+          "imagined_collision_risk": 0.004353809170424938,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.018611714679963,
+          "real_final_distance_px": 27.199356079101562,
+          "collision_count": 4.0,
+          "planning_score": 24.018611714679963,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0053074900060892105,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "conformal_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 46.261441328769095,
+          "real_final_distance_px": 46.00067901611328,
+          "collision_count": 0.0,
+          "planning_score": 46.010868281309364,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984450340270996,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 46.23391964962285,
+          "real_final_distance_px": 46.0061149597168,
+          "collision_count": 0.0,
+          "planning_score": 46.0,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984341859817505,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.32452971105572,
+          "real_final_distance_px": 47.08038330078125,
+          "collision_count": 0.0,
+          "planning_score": 47.042533945356304,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984450340270996,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 43.20884573860321,
+          "real_final_distance_px": 43.03559494018555,
+          "collision_count": 0.0,
+          "planning_score": 43.01162633521314,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984318614006042,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 48.38260507487884,
+          "real_final_distance_px": 48.109901428222656,
+          "collision_count": 0.0,
+          "planning_score": 48.16637831516918,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984492063522339,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.13919751278216,
+          "real_final_distance_px": 44.000709533691406,
+          "collision_count": 0.0,
+          "planning_score": 44.01136216933077,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984316825866699,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 43.69735579141118,
+          "real_final_distance_px": 43.526573181152344,
+          "collision_count": 0.0,
+          "planning_score": 43.41658669218482,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984314441680908,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.2817293343147,
+          "real_final_distance_px": 44.034786224365234,
+          "collision_count": 0.0,
+          "planning_score": 44.01136216933077,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984499216079712,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.32630434853517,
+          "real_final_distance_px": 45.08395004272461,
+          "collision_count": 0.0,
+          "planning_score": 45.044422518220834,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984648823738098,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.325600899491775,
+          "real_final_distance_px": 44.085853576660156,
+          "collision_count": 0.0,
+          "planning_score": 44.04543109109048,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984546303749084,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.27646559216341,
+          "real_final_distance_px": 45.06731033325195,
+          "collision_count": 0.0,
+          "planning_score": 44.91102314577124,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984349012374878,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 48.425201723003575,
+          "real_final_distance_px": 48.23445510864258,
+          "collision_count": 0.0,
+          "planning_score": 48.16637831516918,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984474182128906,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.813339224147235,
+          "real_final_distance_px": 47.60317611694336,
+          "collision_count": 0.0,
+          "planning_score": 47.80167361086848,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984660744667053,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.74488754386536,
+          "real_final_distance_px": 47.55588912963867,
+          "collision_count": 0.0,
+          "planning_score": 47.67598976424087,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984490275382996,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.279195013054526,
+          "real_final_distance_px": 45.08395004272461,
+          "collision_count": 0.0,
+          "planning_score": 45.044422518220834,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984430074691772,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.29912734922023,
+          "real_final_distance_px": 47.08038330078125,
+          "collision_count": 0.0,
+          "planning_score": 47.042533945356304,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984505772590637,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.48128879384728,
+          "real_final_distance_px": 44.25564956665039,
+          "collision_count": 0.0,
+          "planning_score": 44.181444068749045,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984546899795532,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 39.19256248180675,
+          "real_final_distance_px": 39.064849853515625,
+          "collision_count": 0.0,
+          "planning_score": 39.11521443121589,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998433530330658,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.38710342193923,
+          "real_final_distance_px": 44.25564956665039,
+          "collision_count": 0.0,
+          "planning_score": 44.181444068749045,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984309077262878,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.18023792000657,
+          "real_final_distance_px": 45.11720657348633,
+          "collision_count": 0.0,
+          "planning_score": 45.17742799230607,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984357953071594,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ]
+    },
+    "41": {
+      "learned_collision": [
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.0840454660123213,
+          "real_final_distance_px": 5.407753944396973,
+          "collision_count": 0.0,
+          "planning_score": 9.719679888314568,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1349317878484726,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.0013171855987926,
+          "real_final_distance_px": 28.411128997802734,
+          "collision_count": 9.0,
+          "planning_score": 1.1574834410728831,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0024400977417826653,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.9212470463628109,
+          "real_final_distance_px": 31.335302352905273,
+          "collision_count": 8.0,
+          "planning_score": 11.369730513464862,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.14763255417346954,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.2523303867839368,
+          "real_final_distance_px": 2.365506410598755,
+          "collision_count": 1.0,
+          "planning_score": 7.545857513096193,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.098336361348629,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 2.413451184211362,
+          "real_final_distance_px": 3.210937738418579,
+          "collision_count": 1.0,
+          "planning_score": 6.222744215903867,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.05952020362019539,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.0560970208273088,
+          "real_final_distance_px": 2.2460827827453613,
+          "collision_count": 1.0,
+          "planning_score": 5.138965596877114,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0637948215007782,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.676604828857108,
+          "real_final_distance_px": 3.8862950801849365,
+          "collision_count": 1.0,
+          "planning_score": 4.58732851507537,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.06110505759716034,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.631604977100629,
+          "real_final_distance_px": 3.887587070465088,
+          "collision_count": 1.0,
+          "planning_score": 6.2424481587107365,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.07204442471265793,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.36595617918635165,
+          "real_final_distance_px": 34.456424713134766,
+          "collision_count": 8.0,
+          "planning_score": 14.99524771361018,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.22858268022537231,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.6049654151791106,
+          "real_final_distance_px": 3.029599189758301,
+          "collision_count": 1.0,
+          "planning_score": 7.63235970991788,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.09417803585529327,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 2.9785353258846436,
+          "real_final_distance_px": 3.174372673034668,
+          "collision_count": 1.0,
+          "planning_score": 8.393887193560424,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.08461487293243408,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.5075857596283686,
+          "real_final_distance_px": 3.8191440105438232,
+          "collision_count": 1.0,
+          "planning_score": 8.671202893722606,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11193151772022247,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.341317976501571,
+          "real_final_distance_px": 2.658230781555176,
+          "collision_count": 1.0,
+          "planning_score": 6.6734250436097255,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.08331417292356491,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.159799040426795,
+          "real_final_distance_px": 7.408369541168213,
+          "collision_count": 0.0,
+          "planning_score": 8.68537181722123,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11758707463741302,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.784614723668862,
+          "real_final_distance_px": 2.741218090057373,
+          "collision_count": 1.0,
+          "planning_score": 8.482057255254555,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.12027253955602646,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 0.5169801646653798,
+          "real_final_distance_px": 34.586124420166016,
+          "collision_count": 8.0,
+          "planning_score": 10.700453751701513,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.15911677479743958,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.6383970563808933,
+          "real_final_distance_px": 3.990302801132202,
+          "collision_count": 1.0,
+          "planning_score": 3.768650371352817,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.04891020804643631,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.503404018688689,
+          "real_final_distance_px": 3.858909845352173,
+          "collision_count": 1.0,
+          "planning_score": 1.0439441774373157,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.008445939980447292,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.2878389220013553,
+          "real_final_distance_px": 2.9826724529266357,
+          "collision_count": 1.0,
+          "planning_score": 9.123423562504286,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.12243101000785828,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 2.8744968969295877,
+          "real_final_distance_px": 3.5545618534088135,
+          "collision_count": 1.0,
+          "planning_score": 12.115119417376365,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.1443847268819809,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "ensemble_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.23910690804803,
+          "real_final_distance_px": 30.436134338378906,
+          "collision_count": 1.0,
+          "planning_score": 27.23910690804803,
+          "executed_actions": 22.0,
+          "imagined_collision_risk": 0.1328943967819214,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 1.0013171855987926,
+          "real_final_distance_px": 28.411128997802734,
+          "collision_count": 9.0,
+          "planning_score": 1.0013171855987926,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.0011052342597395182,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 23.803434783681734,
+          "real_final_distance_px": 26.036026000976562,
+          "collision_count": 2.0,
+          "planning_score": 23.803434783681734,
+          "executed_actions": 19.0,
+          "imagined_collision_risk": 0.13760800659656525,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 27.428054328259034,
+          "real_final_distance_px": 30.97112274169922,
+          "collision_count": 1.0,
+          "planning_score": 27.428054328259034,
+          "executed_actions": 26.0,
+          "imagined_collision_risk": 0.11277072131633759,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.930302549273367,
+          "real_final_distance_px": 27.643156051635742,
+          "collision_count": 4.0,
+          "planning_score": 24.930302549273367,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.009707609191536903,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.303491949298778,
+          "real_final_distance_px": 28.205833435058594,
+          "collision_count": 1.0,
+          "planning_score": 24.303491949298778,
+          "executed_actions": 10.0,
+          "imagined_collision_risk": 0.13350392878055573,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 22.51330596084243,
+          "real_final_distance_px": 25.189817428588867,
+          "collision_count": 2.0,
+          "planning_score": 22.51330596084243,
+          "executed_actions": 14.0,
+          "imagined_collision_risk": 0.09043312817811966,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.858885282392826,
+          "real_final_distance_px": 29.43687629699707,
+          "collision_count": 2.0,
+          "planning_score": 26.858885282392826,
+          "executed_actions": 30.0,
+          "imagined_collision_risk": 0.14100459218025208,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.529374795540612,
+          "real_final_distance_px": 37.414398193359375,
+          "collision_count": 8.0,
+          "planning_score": 26.529374795540612,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.015024704858660698,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.541771105674172,
+          "real_final_distance_px": 29.095836639404297,
+          "collision_count": 1.0,
+          "planning_score": 26.541771105674172,
+          "executed_actions": 18.0,
+          "imagined_collision_risk": 0.0878308117389679,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.0019579222982686,
+          "real_final_distance_px": 2.1648898124694824,
+          "collision_count": 1.0,
+          "planning_score": 1.0019579222982686,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.11690504848957062,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.45057901721416,
+          "real_final_distance_px": 29.266374588012695,
+          "collision_count": 1.0,
+          "planning_score": 26.45057901721416,
+          "executed_actions": 18.0,
+          "imagined_collision_risk": 0.13078168034553528,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.341317976501571,
+          "real_final_distance_px": 2.658230781555176,
+          "collision_count": 1.0,
+          "planning_score": 1.341317976501571,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.04901183769106865,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 23.265986386831816,
+          "real_final_distance_px": 25.02321434020996,
+          "collision_count": 2.0,
+          "planning_score": 23.265986386831816,
+          "executed_actions": 16.0,
+          "imagined_collision_risk": 0.10631842911243439,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 22.38095552185151,
+          "real_final_distance_px": 32.43279266357422,
+          "collision_count": 8.0,
+          "planning_score": 22.38095552185151,
+          "executed_actions": 44.0,
+          "imagined_collision_risk": 0.08446662127971649,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 26.284024704319165,
+          "real_final_distance_px": 30.95574188232422,
+          "collision_count": 1.0,
+          "planning_score": 26.284024704319165,
+          "executed_actions": 23.0,
+          "imagined_collision_risk": 0.12467092275619507,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.083776178383687,
+          "real_final_distance_px": 31.232450485229492,
+          "collision_count": 6.0,
+          "planning_score": 24.083776178383687,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.052183061838150024,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.503404018688689,
+          "real_final_distance_px": 3.858909845352173,
+          "collision_count": 1.0,
+          "planning_score": 0.503404018688689,
+          "executed_actions": 47.0,
+          "imagined_collision_risk": 0.0016339549329131842,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.2878389220013553,
+          "real_final_distance_px": 2.9826724529266357,
+          "collision_count": 1.0,
+          "planning_score": 1.2878389220013553,
+          "executed_actions": 48.0,
+          "imagined_collision_risk": 0.12465079128742218,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 24.185009963127897,
+          "real_final_distance_px": 26.31705093383789,
+          "collision_count": 1.0,
+          "planning_score": 24.185009963127897,
+          "executed_actions": 21.0,
+          "imagined_collision_risk": 0.12927883863449097,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ],
+      "conformal_collision": [
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.001873680536676,
+          "real_final_distance_px": 45.05621337890625,
+          "collision_count": 0.0,
+          "planning_score": 45.09988913511872,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998558521270752,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 42.500630303432736,
+          "real_final_distance_px": 42.3858757019043,
+          "collision_count": 0.0,
+          "planning_score": 42.20189569201838,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984304904937744,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 43.5651371253896,
+          "real_final_distance_px": 43.451839447021484,
+          "collision_count": 0.0,
+          "planning_score": 43.56604182158393,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984484910964966,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.13860983551314,
+          "real_final_distance_px": 44.034786224365234,
+          "collision_count": 0.0,
+          "planning_score": 44.01136216933077,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984339475631714,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.47222311456067,
+          "real_final_distance_px": 47.239418029785156,
+          "collision_count": 0.0,
+          "planning_score": 47.16990566028302,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984506368637085,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 41.12430746785531,
+          "real_final_distance_px": 41.09212112426758,
+          "collision_count": 0.0,
+          "planning_score": 41.048751503547585,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984366297721863,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 42.2719903730218,
+          "real_final_distance_px": 42.089935302734375,
+          "collision_count": 0.0,
+          "planning_score": 42.04759208325728,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984322786331177,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.53124524157554,
+          "real_final_distance_px": 47.35042190551758,
+          "collision_count": 0.0,
+          "planning_score": 47.265209192385896,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984422922134399,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.34519120875777,
+          "real_final_distance_px": 47.3557014465332,
+          "collision_count": 0.0,
+          "planning_score": 47.53945729601885,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984840750694275,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.665443936153395,
+          "real_final_distance_px": 44.593299865722656,
+          "collision_count": 0.0,
+          "planning_score": 44.721359549995796,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998435914516449,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.51951386180098,
+          "real_final_distance_px": 47.35042190551758,
+          "collision_count": 0.0,
+          "planning_score": 47.265209192385896,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984320402145386,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.665443936153395,
+          "real_final_distance_px": 44.593299865722656,
+          "collision_count": 0.0,
+          "planning_score": 44.721359549995796,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998435914516449,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 47.78179661757887,
+          "real_final_distance_px": 47.55588912963867,
+          "collision_count": 0.0,
+          "planning_score": 47.67598976424087,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984610080718994,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.258561160386286,
+          "real_final_distance_px": 44.034786224365234,
+          "collision_count": 0.0,
+          "planning_score": 44.01136216933077,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984503984451294,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 41.12528213330808,
+          "real_final_distance_px": 41.000762939453125,
+          "collision_count": 0.0,
+          "planning_score": 41.012193308819754,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984318017959595,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 44.94667846304891,
+          "real_final_distance_px": 44.961788177490234,
+          "collision_count": 0.0,
+          "planning_score": 45.12205669071391,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984848499298096,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 45.11432409784448,
+          "real_final_distance_px": 45.08395004272461,
+          "collision_count": 0.0,
+          "planning_score": 45.044422518220834,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984468817710876,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 40.68866306195473,
+          "real_final_distance_px": 40.56553268432617,
+          "collision_count": 0.0,
+          "planning_score": 40.44749683231337,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984310269355774,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 49.564424513146555,
+          "real_final_distance_px": 49.336219787597656,
+          "collision_count": 0.0,
+          "planning_score": 49.25444142409901,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.9984501004219055,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        {
+          "imagined_success": 0.0,
+          "real_success": 0.0,
+          "imagined_final_distance_px": 41.60080068595588,
+          "real_final_distance_px": 41.636070251464844,
+          "collision_count": 0.0,
+          "planning_score": 41.773197148410844,
+          "executed_actions": 1.0,
+          "imagined_collision_risk": 0.998504102230072,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        }
+      ]
+    }
+  },
+  "risk_calibration": {
+    "predicted_risk_mean": 0.08431296802397507,
+    "collision_rate": 1.0,
+    "conformal": {
+      "alpha": 0.1,
+      "quantile": 0.9984296857146546,
+      "samples": 24,
+      "coverage_target": 0.9
+    },
+    "held_out_coverage": {
+      "empirical_upper_coverage": 1.0,
+      "mean_upper_risk": 0.9984517415364583,
+      "real_collision_rate": 0.0,
+      "routes": 60.0
+    },
+    "held_out_ensemble": {
+      "empirical_upper_coverage": 0.0,
+      "mean_upper_risk": 0.08349699208823343,
+      "real_collision_rate": 1.0,
+      "routes": 60.0
+    }
+  }
+}

@@ -2,6 +2,20 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.7.0] - 2026-08-12
+
+### Added
+
+- Three-checkpoint ensemble collision-risk aggregation using mean plus member disagreement.
+- Split-conformal upper collision-risk calibration with held-out coverage reporting.
+- A paired three-seed barrier study comparing single-model, ensemble, and conformal risk methods.
+- Explicit negative-result documentation showing that route-level conformal coverage can be safe but unusable when calibration routes are all failures.
+
+### Changed
+
+- Planners can inject a collision-risk model independently from the primary dynamics model, keeping method comparisons controlled.
+- Full verification now covers 69 tests.
+
 ## [0.6.0] - 2026-08-11
 
 ### Added
