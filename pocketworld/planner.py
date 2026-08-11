@@ -519,6 +519,43 @@ def estimate_agent_velocity(
     return velocity.astype(np.float32)
 
 
+def estimate_speed_response(
+    observation_history: Sequence[np.ndarray],
+    action_history: Sequence[int],
+    friction: float = 0.72,
+) -> float:
+    """Estimate robust action-response magnitude from observable RGB history.
+
+    Only transitions with positive motion along the issued action and without
+    a high incoming speed are retained.  This removes sticky-action and
+    saturation-heavy samples while remaining entirely image/action based.
+    """
+    if len(observation_history) < 3 or len(action_history) < 2:
+        return float("nan")
+    positions = np.asarray(
+        [extract_agent_position(frame) for frame in observation_history],
+        dtype=np.float32,
+    )
+    if not np.isfinite(positions).all():
+        return float("nan")
+    velocities = np.vstack((np.zeros((1, 2), dtype=np.float32), np.diff(positions, axis=0)))
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    actions = np.asarray(action_history, dtype=np.int64)[-len(velocities) + 1:]
+    responses = []
+    for index, action in enumerate(actions):
+        if index + 1 >= len(velocities):
+            break
+        direction = directions[int(action)]
+        incoming = velocities[index]
+        outgoing = velocities[index + 1]
+        if float(np.dot(outgoing, direction)) <= 0.15 or float(np.linalg.norm(incoming)) >= 2.0:
+            continue
+        responses.append(float(np.dot(outgoing - friction * incoming, direction)))
+    if len(responses) < 2:
+        return float("nan")
+    return float(np.median(np.asarray(responses, dtype=np.float32)))
+
+
 def route_following_action(
     observation: np.ndarray,
     goal: tuple[float, float],
@@ -636,6 +673,7 @@ def predictive_shift_score(
     action: int,
     next_observation: np.ndarray,
     observation_history: Sequence[np.ndarray] | None = None,
+    action_history: Sequence[int] | None = None,
 ) -> float:
     """Score an observed transition by its calibrated standardized innovation.
 
@@ -671,7 +709,27 @@ def predictive_shift_score(
     )[None]
     standardized = (target - mean) / std.clamp_min(1e-6)
     transition_score = float(torch.sqrt(standardized.square().mean()).item())
+    speed_score = 0.0
+    # A short history cannot distinguish slow dynamics from sticky actions;
+    # wait for a compact response window before adding the speed-shift term.
+    if action_history is not None and len(action_history) >= 8 and len(history) >= 8:
+        speed_history = list(history) + [next_observation]
+        response = estimate_speed_response(
+            speed_history,
+            action_history,
+            friction=float((0.50 + 0.49 * torch.sigmoid(model.friction_logit)).item()),
+        )
+        center = float(model.speed_response_center.item())
+        scale = max(1e-3, float(model.speed_response_scale.item()))
+        if np.isfinite(response) and np.isfinite(center):
+            speed_score = abs(response - center) / scale
     context_score = wall_context_shift_score(previous_observation)
+    if speed_score > 0.0:
+        # Once a response window exists, let the robust speed statistic lead;
+        # raw one-step innovation is considerably noisier under sticky
+        # actions. Keep a reduced innovation term for collision surprises and
+        # the full wall-context term for map shifts.
+        return max(speed_score, 0.25 * transition_score, 1.5 * context_score)
     return max(transition_score, context_score)
 
 
@@ -1045,7 +1103,10 @@ def receding_horizon_plan(
             previous_history = list(observation_history)
             current_observation, _, terminated, truncated, final_info = step_fn(action)
             observation_history.append(current_observation)
-            observation_history = observation_history[-4:]
+            # Keep a longer monitor history for speed-shift detection; the
+            # velocity estimator itself still consumes only its latest four
+            # frames, so route control cost and behavior remain unchanged.
+            observation_history = observation_history[-16:]
             executed_actions.append(action)
             collision_count += int(final_info.get("collision", False))
             pending_index += 1
@@ -1085,12 +1146,14 @@ def receding_horizon_plan(
                             else min(fallback_route_best_remaining_px, current_remaining_px)
                         )
             if shift_threshold is not None:
+                shift_history_actions = executed_actions[-len(previous_history):]
                 shift_score = predictive_shift_score(
                     model,
                     previous_observation,
                     action,
                     current_observation,
                     previous_history,
+                    shift_history_actions,
                 )
                 shift_scores.append(shift_score)
                 if shift_score >= shift_threshold:

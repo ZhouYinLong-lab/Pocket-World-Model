@@ -16,6 +16,7 @@ from .planner import (
     predictive_shift_score,
     random_shooting,
     receding_horizon_plan,
+    estimate_speed_response,
 )
 
 
@@ -134,7 +135,10 @@ def evaluate_planning(model: PocketWorldModel, episodes: int = 20, horizon: int 
     real_successes = 0
     imagined_distances = []
     real_distances = []
-    for _ in range(episodes):
+    for episode in range(episodes):
+        # Candidate generation is stochastic; seed each episode so a report
+        # can be regenerated exactly from its declared seed.
+        torch.manual_seed(seed * 100_000 + episode)
         env = PocketWorldEnv(
             agent_start=(float(rng.integers(7, 11)), float(rng.integers(7, 11))),
             goal=(float(rng.integers(16, 21)), float(rng.integers(28, 33))),
@@ -428,20 +432,31 @@ def evaluate_uncertainty_calibration_matrix(
 
 
 def _transition_shift_scores(model: PocketWorldModel, batch) -> np.ndarray:
-    """Collect online predictive-innovation scores from observable RGB rollouts."""
+    """Collect one mature-window score per observable RGB rollout.
+
+    Speed changes are not identifiable from a single sticky-action frame. The
+    detector therefore reports the score after the final response window of
+    each episode, matching the minimum history needed by the online monitor.
+    """
     scores = []
     for episode in range(batch.observations.shape[0]):
+        episode_scores = []
         for step in range(batch.actions.shape[1]):
-            history = batch.observations[episode, max(0, step + 1 - 4):step + 1]
-            scores.append(
+            history_start = max(0, step + 1 - 16)
+            history = batch.observations[episode, history_start:step + 1]
+            action_history = batch.actions[episode, history_start:step + 1]
+            episode_scores.append(
                 predictive_shift_score(
                     model,
                     batch.observations[episode, step],
                     int(batch.actions[episode, step]),
                     batch.observations[episode, step + 1],
                     history,
+                    action_history,
                 )
             )
+        if episode_scores:
+            scores.append(episode_scores[-1])
     return np.asarray(scores, dtype=np.float32)
 
 
@@ -462,6 +477,22 @@ def fit_shift_threshold(
         sticky_probability=0.75,
         full_state_range=True,
     )
+    response_values = []
+    friction = float((0.50 + 0.49 * torch.sigmoid(model.friction_logit)).item())
+    for episode in range(batch.observations.shape[0]):
+        response = estimate_speed_response(
+            batch.observations[episode],
+            batch.actions[episode],
+            friction=friction,
+        )
+        if np.isfinite(response):
+            response_values.append(response)
+    if response_values:
+        response_array = np.asarray(response_values, dtype=np.float32)
+        center = float(np.median(response_array))
+        mad = float(np.median(np.abs(response_array - center)))
+        model.speed_response_center.fill_(center)
+        model.speed_response_scale.fill_(max(0.05, 1.4826 * mad))
     scores = _transition_shift_scores(model, batch)
     quantile = 1.0 - false_positive_rate
     return {
@@ -471,6 +502,9 @@ def fit_shift_threshold(
         "calibration_samples": int(scores.size),
         "calibration_mean_score": float(scores.mean()),
         "calibration_p95_score": float(np.quantile(scores, 0.95)),
+        "speed_response_center": float(model.speed_response_center.item()),
+        "speed_response_scale": float(model.speed_response_scale.item()),
+        "speed_response_samples": len(response_values),
     }
 
 

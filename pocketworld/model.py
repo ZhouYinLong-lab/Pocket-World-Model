@@ -87,6 +87,11 @@ class PocketWorldModel(nn.Module):
             nn.Linear(latent_dim + 4 + 4, 64), nn.ReLU(), nn.Linear(64, 4)
         )
         self.register_buffer("uncertainty_scale", torch.ones(4))
+        # Fitted from an in-distribution RGB/action rollout before online
+        # shift monitoring. Older checkpoints keep the neutral defaults and
+        # simply use the transition innovation score until calibration runs.
+        self.register_buffer("speed_response_center", torch.tensor(0.0))
+        self.register_buffer("speed_response_scale", torch.tensor(1.0))
         self.agent_renderer = nn.Sequential(
             nn.Linear(latent_dim, 128), nn.ReLU(), nn.Linear(128, 64 * 64)
         )

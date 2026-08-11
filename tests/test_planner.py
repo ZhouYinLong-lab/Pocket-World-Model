@@ -10,6 +10,7 @@ from pocketworld.planner import (
     _path_waypoints,
     _wall_aware_route_templates,
     estimate_agent_velocity,
+    estimate_speed_response,
     extract_wall_boxes,
     extract_wall_mask,
     predictive_shift_score,
@@ -222,6 +223,17 @@ def test_history_velocity_estimator_tracks_recent_motion_and_reset():
     assert velocity[0] > 0.0
     assert abs(velocity[1]) < 0.1
     assert np.linalg.norm(velocity) <= 2.3
+
+
+def test_speed_response_estimator_uses_rgb_action_history():
+    env = PocketWorldEnv(walls=(), agent_start=(20, 20), goal=(55, 55))
+    frames = [env.reset()[0]]
+    actions = [3, 3, 3, 3]
+    for action in actions:
+        frames.append(env.step(action)[0])
+    response = estimate_speed_response(frames, actions)
+    assert np.isfinite(response)
+    assert response > 0.0
 
 
 def test_random_shooting_accepts_learned_velocity_and_probability_flags():
