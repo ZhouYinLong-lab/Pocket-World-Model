@@ -20,13 +20,15 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - RGB-observed footprint-inflated A* global routes with bend-only inertial tracking for obstacle-crossing fallback.
 - Route-side commitment, remaining-budget penalties, geometric progress tracking, and emergency side-switch diagnostics.
 - Early 4px alignment-triggered fallback configuration to keep route distance compatible with the 48-step execution budget.
+- Named `train`/`holdout`/`all` map suites with double-barrier, cross, zig-zag, and open layouts.
+- Sequential waypoint task generation and `pocketworld-evaluate-generalization` for unseen-layout and multi-goal evaluation.
 
 ### Changed
 
 - The planner can compare learned temporal velocity plus calibrated probabilistic uncertainty against the existing finite-difference and robust-radius baselines.
 - History-aware uncertainty planning reaches 76.7% ± 2.5pp real barrier success across 150 episodes, versus 64% for point-open planning.
 - Mean collisions fall from 1.89 to 0.56 per episode in the three-seed comparison.
-- Python verification now covers 48 tests at 79% line coverage.
+- Python verification now covers 54 tests at 79% line coverage.
 - The A* fallback raises the strict 150-episode barrier result to 30.67% ± 2.49pp real success, with 3.19 ± 0.52 collisions per episode.
 - Locked-budget A* fallback raises the same result to 34.67% ± 6.80pp real success, with 2.03 ± 0.35 collisions and zero emergency side switches per episode.
 - Early alignment fallback raises the same result to 50.67% ± 2.49pp real success, with 6.88 ± 0.14px final distance, 1.14 ± 0.23 collisions, and 7.37px remaining route distance.

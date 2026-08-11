@@ -169,6 +169,22 @@ python -m pocketworld.evaluate_collision artifacts/pocketworld-temporal-probabil
 
 The committed [v8 probabilistic result](docs/results/evaluation-temporal-probability-probabilistic-v8-full.json) contains per-seed metrics and mean/std summaries. The committed [OOD calibration matrix](docs/results/evaluation-temporal-probability-ood-v8.json) records the speed/map stability boundary.
 
+## Map and task generalization
+
+The original staggered-wall map remains the compatibility baseline, but the environment now exposes named layouts: `default`, `single_barrier`, `double_barrier`, `cross`, `zigzag`, and `open`. The `train` suite contains the first three; `cross` and `zigzag` are held out as unseen obstacle layouts. Rollout collection can train on the named suite instead of silently perturbing one map:
+
+```bash
+python -m pocketworld.train --epochs 8 --episodes 500 --validation-episodes 100 --unroll-horizon 8 --full-state-range --map-suite train --output artifacts/pocketworld-map-suite.pt
+```
+
+The generalization evaluator measures per-map multi-step prediction error and sequential two-waypoint tasks:
+
+```bash
+python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite.pt --episodes 20 --horizon 20 --candidates 128 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-generalization.json
+```
+
+The first diagnostic run against the existing v8 baseline is recorded in [evaluation-generalization-v8.json](docs/results/evaluation-generalization-v8.json). It is intentionally reported as a transfer diagnostic: the checkpoint predates multi-map training, so the result measures unseen-layout and multi-goal difficulty rather than claiming a solved generalist agent.
+
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
 ```bash
@@ -266,8 +282,8 @@ python scripts/generate_readme_assets.py
 ## Planned evaluation matrix
 
 1. Compare 1/5/10/20-step image and position error.
-2. Hold out wall, start, goal, and speed variants to measure distribution shift.
-3. Compare imagined versus real planning success across planning horizons.
+2. Train on the named `train` map suite and hold out `cross`/`zigzag` layouts.
+3. Compare single-goal and sequential-waypoint imagined versus real planning.
 4. Improve route-level world-model alignment so low collision risk also produces real barrier crossings.
 
 The first version intentionally avoids VAE, Transformer, diffusion, multi-agent worlds, and complex physics so the relationship between prediction error and planning failure stays visible.
