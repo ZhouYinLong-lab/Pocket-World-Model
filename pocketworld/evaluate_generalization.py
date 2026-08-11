@@ -81,6 +81,7 @@ def evaluate_waypoint_tasks(
     """Evaluate sequential-goal tasks that require multiple route completions."""
 
     rng = np.random.default_rng(seed)
+    torch.manual_seed(seed)
     spec = get_map(map_name)
     completed_tasks = 0
     completed_waypoints = 0
@@ -147,6 +148,7 @@ def evaluate_generalization(
 ) -> dict[str, object]:
     """Return train-map, unseen-map, and sequential-task reports."""
 
+    torch.manual_seed(seed)
     train_maps = map_names(train_suite)
     holdout_maps = map_names(holdout_suite)
     prediction = {
@@ -205,6 +207,83 @@ def evaluate_generalization(
     }
 
 
+def evaluate_generalization_seeds(
+    model: PocketWorldModel,
+    seeds: tuple[int, ...] = (11, 23, 41),
+    episodes: int = 20,
+    horizon: int = 64,
+    candidates: int = 64,
+    train_suite: str = "train",
+    holdout_suite: str = "holdout",
+    waypoint_count: int = 2,
+) -> dict[str, object]:
+    """Run the same map/task protocol over independent evaluation seeds."""
+
+    runs = [
+        evaluate_generalization(
+            model,
+            episodes=episodes,
+            horizon=horizon,
+            candidates=candidates,
+            seed=seed,
+            train_suite=train_suite,
+            holdout_suite=holdout_suite,
+            waypoint_count=waypoint_count,
+        )
+        for seed in seeds
+    ]
+    summary = {
+        "prediction_20_step_position_error_px": {
+            split: {
+                "mean": float(np.mean([
+                    run["prediction_summary"][split]["mean_position_error_px"].get("20", float("nan"))
+                    for run in runs
+                ])),
+                "std": float(np.std([
+                    run["prediction_summary"][split]["mean_position_error_px"].get("20", float("nan"))
+                    for run in runs
+                ])),
+            }
+            for split in ("train", "unseen")
+        },
+        "waypoint_task_success_rate": {
+            split: {
+                "mean": float(np.mean([
+                    run["waypoint_summary"][split]["mean_task_success_rate"] for run in runs
+                ])),
+                "std": float(np.std([
+                    run["waypoint_summary"][split]["mean_task_success_rate"] for run in runs
+                ])),
+            }
+            for split in ("train", "unseen")
+        },
+        "waypoint_completion_rate": {
+            split: {
+                "mean": float(np.mean([
+                    run["waypoint_summary"][split]["mean_waypoint_completion_rate"] for run in runs
+                ])),
+                "std": float(np.std([
+                    run["waypoint_summary"][split]["mean_waypoint_completion_rate"] for run in runs
+                ])),
+            }
+            for split in ("train", "unseen")
+        },
+    }
+    return {
+        "config": {
+            "episodes": episodes,
+            "horizon": horizon,
+            "candidates": candidates,
+            "seeds": list(seeds),
+            "train_suite": train_suite,
+            "holdout_suite": holdout_suite,
+            "waypoint_count": waypoint_count,
+        },
+        "runs": runs,
+        "summary": summary,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate PocketWorld on named maps and sequential-goal tasks")
     parser.add_argument("checkpoint", nargs="?", default="artifacts/pocketworld.pt")
@@ -212,6 +291,7 @@ def main() -> None:
     parser.add_argument("--horizon", type=int, default=20)
     parser.add_argument("--candidates", type=int, default=128)
     parser.add_argument("--seed", type=int, default=101)
+    parser.add_argument("--seeds", default=None, help="comma-separated seeds for a formal multi-seed report")
     parser.add_argument("--train-suite", choices=tuple(MAP_SUITES), default="train")
     parser.add_argument("--holdout-suite", choices=tuple(MAP_SUITES), default="holdout")
     parser.add_argument("--waypoints", type=int, default=2)
@@ -220,16 +300,29 @@ def main() -> None:
     payload = torch.load(args.checkpoint, map_location="cpu")
     model = PocketWorldModel()
     model.load_state_dict(payload["model"], strict=False)
-    report = evaluate_generalization(
-        model,
-        episodes=args.episodes,
-        horizon=args.horizon,
-        candidates=args.candidates,
-        seed=args.seed,
-        train_suite=args.train_suite,
-        holdout_suite=args.holdout_suite,
-        waypoint_count=args.waypoints,
-    )
+    if args.seeds:
+        seeds = tuple(int(value.strip()) for value in args.seeds.split(",") if value.strip())
+        report = evaluate_generalization_seeds(
+            model,
+            seeds=seeds,
+            episodes=args.episodes,
+            horizon=args.horizon,
+            candidates=args.candidates,
+            train_suite=args.train_suite,
+            holdout_suite=args.holdout_suite,
+            waypoint_count=args.waypoints,
+        )
+    else:
+        report = evaluate_generalization(
+            model,
+            episodes=args.episodes,
+            horizon=args.horizon,
+            candidates=args.candidates,
+            seed=args.seed,
+            train_suite=args.train_suite,
+            holdout_suite=args.holdout_suite,
+            waypoint_count=args.waypoints,
+        )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(report, indent=2), encoding="utf-8")

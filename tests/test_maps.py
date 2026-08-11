@@ -2,7 +2,7 @@ import numpy as np
 
 from pocketworld.data import collect_random_rollouts
 from pocketworld.env import PocketWorldEnv
-from pocketworld.evaluate_generalization import evaluate_generalization
+from pocketworld.evaluate_generalization import evaluate_generalization, evaluate_generalization_seeds
 from pocketworld.maps import MAPS, map_names
 from pocketworld.model import PocketWorldModel
 from pocketworld.tasks import sample_navigation_task, sample_task_suite
@@ -45,3 +45,10 @@ def test_generalization_report_separates_unseen_maps_and_waypoint_tasks():
 def test_generalization_preserves_requested_waypoint_execution_budget():
     report = evaluate_generalization(PocketWorldModel(), episodes=1, horizon=48, candidates=2, seed=4)
     assert report["waypoint_tasks"]["train"][0]["mean_actions_per_leg"] <= 48
+
+
+def test_generalization_seed_report_contains_mean_and_std():
+    report = evaluate_generalization_seeds(PocketWorldModel(), seeds=(4, 5), episodes=1, horizon=5, candidates=2)
+    assert report["config"]["seeds"] == [4, 5]
+    assert "mean" in report["summary"]["waypoint_task_success_rate"]["unseen"]
+    assert "std" in report["summary"]["prediction_20_step_position_error_px"]["train"]
