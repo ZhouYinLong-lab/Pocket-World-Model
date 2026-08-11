@@ -10,7 +10,9 @@ This comparison is intentionally separate from model training. Every method rece
 
 - `random_shooting`: existing guided random-shooting baseline.
 - `cem`: categorical Cross-Entropy Method. The total `candidates` budget is divided evenly across four iterations, so CEM does not receive more model rollouts than the baseline.
+- `beam_search`: discrete prefix beam search. Its width is selected from `floor(candidates / (4 * horizon))`; at horizon 48 and budget 256 this is a width-one search with 192 expansions.
 - `learned_collision`: existing learned collision-probability planner with probabilistic shortlist rescoring.
+- `cem_collision`: categorical CEM scored with the learned collision head, without explicit wall geometry.
 - `route_aware_hybrid`: existing closed-loop route-aware planner with RGB wall geometry, learned dynamics, and the 4px alignment-triggered fallback. It is a real-execution controller, not an open-loop imagination baseline.
 
 ## Protocol
@@ -31,7 +33,9 @@ The route-aware hybrid intentionally reports `null` for imagined success and ima
 | --- | ---: | ---: | ---: |
 | Random Shooting | 96.7% | 96.7% | 3.07px |
 | CEM | 100.0% | 100.0% | 3.05px |
-| Learned collision | 98.3% | 100.0% | 3.13px |
+| Beam Search | 100.0% | 100.0% | 3.00px |
+| Learned collision | 98.3% | 100.0% | 3.22px |
+| Collision-aware CEM | 100.0% | 100.0% | 3.15px |
 | Route-aware hybrid | — | 98.3% | 3.18px |
 
 CEM improves the model-side endpoint distance from 1.30px to 0.37px under the same 256-query budget, but the real success improvement is small because the open-space baseline is already near saturation.
@@ -42,14 +46,16 @@ CEM improves the model-side endpoint distance from 1.30px to 0.37px under the sa
 | --- | ---: | ---: | ---: | ---: |
 | Random Shooting | 100.0% | 0.0% | 29.58px | 8.40 |
 | CEM | 100.0% | 0.0% | 29.12px | 8.73 |
-| Learned collision | 95.0% | 63.3% | 8.94px | 2.33 |
+| Beam Search | 100.0% | 0.0% | 28.77px | 11.72 |
+| Learned collision | 100.0% | 60.0% | 9.75px | 2.52 |
+| Collision-aware CEM | 0.0% | 0.0% | 27.99px | 3.18 |
 | Route-aware hybrid | — | 100.0% | 2.95px | 0.65 |
 
-The main finding is negative and useful: better action-sequence search does not fix a misspecified obstacle model. CEM makes the imagined endpoint slightly better while preserving the 100pp imagined–real failure gap. Learned collision modeling reduces the gap but still fails on a substantial fraction of routes. Closed-loop route-aware control transfers best, at the cost of using explicit visible geometry.
+The main finding is negative and useful: better action-sequence search does not fix a misspecified obstacle model. CEM and Beam Search both preserve a 100pp imagined–real failure gap on the barrier. Adding the learned collision score to CEM makes the planner conservative, but it does not produce a successful route: collision-aware CEM reaches 0% imagined and 0% real success. Learned collision modeling reduces the gap to 40pp but still fails on a substantial fraction of routes. Closed-loop route-aware control transfers best, at the cost of using explicit visible geometry.
 
 Machine-readable reports:
 
-- [open-space tournament](../results/evaluation-planner-tournament-open-v3-final.json)
-- [single-barrier tournament](../results/evaluation-planner-tournament-barrier-v3-final.json)
+- [open-space tournament](../results/evaluation-planner-tournament-open-v4.json)
+- [single-barrier tournament](../results/evaluation-planner-tournament-barrier-v4.json)
 
-The next comparison should add a collision-aware CEM variant and a discrete beam-search baseline, while keeping this fixed-budget protocol unchanged.
+The next comparison should replace the learned collision head with an ensemble or conformal risk model and test whether better calibration improves CEM without relying on explicit RGB wall geometry.

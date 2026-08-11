@@ -1,0 +1,503 @@
+{
+  "config": {
+    "seeds": [
+      11,
+      23,
+      41
+    ],
+    "episodes": 20,
+    "horizon": 16,
+    "candidates": 256,
+    "scenario": "open",
+    "planners": [
+      "random_shooting",
+      "cem",
+      "beam_search",
+      "learned_collision",
+      "cem_collision",
+      "route_aware_hybrid"
+    ],
+    "paired_tasks": true,
+    "budget_scope": "nominal candidate budget per planning call; closed-loop totals are reported separately",
+    "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
+    "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets"
+  },
+  "runs": [
+    {
+      "seed": 11,
+      "planners": {
+        "random_shooting": {
+          "imagined_success": 0.95,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.30698203418582,
+          "real_final_distance_px": 3.0009833574295044,
+          "collision_count": 0.0,
+          "planning_score": 1.30698203418582,
+          "executed_actions": 15.8,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.37636828627434404,
+          "real_final_distance_px": 3.0190579891204834,
+          "collision_count": 0.0,
+          "planning_score": 0.37636828627434404,
+          "executed_actions": 14.8,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "beam_search": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.2396655944374912,
+          "real_final_distance_px": 3.229012739658356,
+          "collision_count": 0.0,
+          "planning_score": 0.2396655944374912,
+          "executed_actions": 14.1,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "learned_collision": {
+          "imagined_success": 0.95,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.1767680544388686,
+          "real_final_distance_px": 3.2425568819046022,
+          "collision_count": 0.0,
+          "planning_score": 1.1938946233462748,
+          "executed_actions": 15.5,
+          "imagined_collision_risk": 0.00026760263917822156,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem_collision": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.35615002087207304,
+          "real_final_distance_px": 3.253820514678955,
+          "collision_count": 0.0,
+          "planning_score": 0.3698383483372794,
+          "executed_actions": 14.95,
+          "imagined_collision_risk": 0.00021388011664384975,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "route_aware_hybrid": {
+          "imagined_success": null,
+          "real_success": 1.0,
+          "imagined_final_distance_px": null,
+          "real_final_distance_px": 3.0462806820869446,
+          "collision_count": 0.0,
+          "planning_score": 1.3810453091080221,
+          "executed_actions": 12.45,
+          "imagined_collision_risk": null,
+          "planning_calls": 1.55,
+          "estimated_model_queries": 396.8
+        }
+      }
+    },
+    {
+      "seed": 23,
+      "planners": {
+        "random_shooting": {
+          "imagined_success": 0.95,
+          "real_success": 0.9,
+          "imagined_final_distance_px": 1.3550146496581363,
+          "real_final_distance_px": 3.112083113193512,
+          "collision_count": 0.0,
+          "planning_score": 1.3550146496581363,
+          "executed_actions": 15.65,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.36048719288996933,
+          "real_final_distance_px": 2.9773319005966186,
+          "collision_count": 0.0,
+          "planning_score": 0.36048719288996933,
+          "executed_actions": 15.1,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "beam_search": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.24513058318589726,
+          "real_final_distance_px": 2.992791450023651,
+          "collision_count": 0.0,
+          "planning_score": 0.24513058318589726,
+          "executed_actions": 14.4,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "learned_collision": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.4165429505421945,
+          "real_final_distance_px": 3.25309978723526,
+          "collision_count": 0.0,
+          "planning_score": 1.4692429467472414,
+          "executed_actions": 15.65,
+          "imagined_collision_risk": 0.0008234374407038558,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem_collision": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.4665306956422908,
+          "real_final_distance_px": 3.1894832611083985,
+          "collision_count": 0.0,
+          "planning_score": 0.5062337077836899,
+          "executed_actions": 15.0,
+          "imagined_collision_risk": 0.0006203595647093607,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "route_aware_hybrid": {
+          "imagined_success": null,
+          "real_success": 1.0,
+          "imagined_final_distance_px": null,
+          "real_final_distance_px": 2.99652783870697,
+          "collision_count": 0.0,
+          "planning_score": 1.9609709568596596,
+          "executed_actions": 12.95,
+          "imagined_collision_risk": null,
+          "planning_calls": 1.75,
+          "estimated_model_queries": 448.0
+        }
+      }
+    },
+    {
+      "seed": 41,
+      "planners": {
+        "random_shooting": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.2510071303810069,
+          "real_final_distance_px": 3.090298092365265,
+          "collision_count": 0.0,
+          "planning_score": 1.2510071303810069,
+          "executed_actions": 15.5,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.35909657088325503,
+          "real_final_distance_px": 3.153896117210388,
+          "collision_count": 0.0,
+          "planning_score": 0.35909657088325503,
+          "executed_actions": 15.4,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "beam_search": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.2273820480102667,
+          "real_final_distance_px": 2.7928089141845702,
+          "collision_count": 0.0,
+          "planning_score": 0.2273820480102667,
+          "executed_actions": 14.35,
+          "imagined_collision_risk": 0.0,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "learned_collision": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 1.1421913594923279,
+          "real_final_distance_px": 3.176576280593872,
+          "collision_count": 0.0,
+          "planning_score": 1.1733137781599834,
+          "executed_actions": 15.55,
+          "imagined_collision_risk": 0.0004862877916821162,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "cem_collision": {
+          "imagined_success": 1.0,
+          "real_success": 1.0,
+          "imagined_final_distance_px": 0.3039369511066941,
+          "real_final_distance_px": 2.992373472452164,
+          "collision_count": 0.0,
+          "planning_score": 0.32461518330946615,
+          "executed_actions": 15.35,
+          "imagined_collision_risk": 0.0003230973781683133,
+          "planning_calls": 1.0,
+          "estimated_model_queries": 256.0
+        },
+        "route_aware_hybrid": {
+          "imagined_success": null,
+          "real_success": 0.95,
+          "imagined_final_distance_px": null,
+          "real_final_distance_px": 3.1671616196632386,
+          "collision_count": 0.0,
+          "planning_score": 1.459844406044457,
+          "executed_actions": 12.5,
+          "imagined_collision_risk": null,
+          "planning_calls": 1.5,
+          "estimated_model_queries": 384.0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "random_shooting": {
+      "imagined_success": {
+        "mean": 0.9666666666666667,
+        "std": 0.023570226039551605
+      },
+      "real_success": {
+        "mean": 0.9666666666666667,
+        "std": 0.04714045207910316
+      },
+      "imagined_final_distance_px": {
+        "mean": 1.3043346047416544,
+        "std": 0.04250213860142406
+      },
+      "real_final_distance_px": {
+        "mean": 3.06778818766276,
+        "std": 0.04806808220286732
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 1.3043346047416544,
+        "std": 0.04250213860142406
+      },
+      "executed_actions": {
+        "mean": 15.65,
+        "std": 0.12247448713915919
+      },
+      "imagined_collision_risk": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "cem": {
+      "imagined_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "real_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "imagined_final_distance_px": {
+        "mean": 0.36531735001585613,
+        "std": 0.007834787873463735
+      },
+      "real_final_distance_px": {
+        "mean": 3.050095335642497,
+        "std": 0.07534904691480479
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 0.36531735001585613,
+        "std": 0.007834787873463735
+      },
+      "executed_actions": {
+        "mean": 15.1,
+        "std": 0.24494897427831766
+      },
+      "imagined_collision_risk": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "beam_search": {
+      "imagined_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "real_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "imagined_final_distance_px": {
+        "mean": 0.23739274187788506,
+        "std": 0.007421905383769043
+      },
+      "real_final_distance_px": {
+        "mean": 3.0048710346221927,
+        "std": 0.17828419562138462
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 0.23739274187788506,
+        "std": 0.007421905383769043
+      },
+      "executed_actions": {
+        "mean": 14.283333333333333,
+        "std": 0.13123346456686372
+      },
+      "imagined_collision_risk": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "learned_collision": {
+      "imagined_success": {
+        "mean": 0.9833333333333334,
+        "std": 0.023570226039551608
+      },
+      "real_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "imagined_final_distance_px": {
+        "mean": 1.2451674548244636,
+        "std": 0.12200015671500869
+      },
+      "real_final_distance_px": {
+        "mean": 3.2240776499112447,
+        "std": 0.033863188257771196
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 1.2788171160844999,
+        "std": 0.1349132821107491
+      },
+      "executed_actions": {
+        "mean": 15.566666666666668,
+        "std": 0.06236095644623245
+      },
+      "imagined_collision_risk": {
+        "mean": 0.0005257759571880645,
+        "std": 0.00022863007684617112
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "cem_collision": {
+      "imagined_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "real_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "imagined_final_distance_px": {
+        "mean": 0.37553922254035266,
+        "std": 0.06777972802407632
+      },
+      "real_final_distance_px": {
+        "mean": 3.145225749413173,
+        "std": 0.11122854693040576
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 0.40022907981014516,
+        "std": 0.0771968027301668
+      },
+      "executed_actions": {
+        "mean": 15.1,
+        "std": 0.17795130420052188
+      },
+      "imagined_collision_risk": {
+        "mean": 0.0003857790198405079,
+        "std": 0.00017176170814426142
+      },
+      "planning_calls": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      }
+    },
+    "route_aware_hybrid": {
+      "imagined_success": null,
+      "real_success": {
+        "mean": 0.9833333333333334,
+        "std": 0.023570226039551605
+      },
+      "imagined_final_distance_px": null,
+      "real_final_distance_px": {
+        "mean": 3.069990046819051,
+        "std": 0.07164994665202946
+      },
+      "collision_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "planning_score": {
+        "mean": 1.6006202240040464,
+        "std": 0.25682914219597774
+      },
+      "executed_actions": {
+        "mean": 12.633333333333333,
+        "std": 0.2248456260538672
+      },
+      "imagined_collision_risk": null,
+      "planning_calls": {
+        "mean": 1.5999999999999999,
+        "std": 0.10801234497346433
+      },
+      "estimated_model_queries": {
+        "mean": 409.59999999999997,
+        "std": 27.65116031320687
+      }
+    }
+  }
+}

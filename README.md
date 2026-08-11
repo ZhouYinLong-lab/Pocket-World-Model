@@ -150,6 +150,11 @@ The `v0.5.0` planner-comparison milestone publishes the fixed-budget tournament 
 - [`evaluation-planner-tournament-open-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.5.0/evaluation-planner-tournament-open-v3-final.json) — paired open-space comparison.
 - [`evaluation-planner-tournament-barrier-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.5.0/evaluation-planner-tournament-barrier-v3-final.json) — paired single-barrier comparison.
 
+The `v0.6.0` expansion publishes the six-method tournament with Beam Search and collision-aware CEM:
+
+- [`evaluation-planner-tournament-open-v4.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.6.0/evaluation-planner-tournament-open-v4.json)
+- [`evaluation-planner-tournament-barrier-v4.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.6.0/evaluation-planner-tournament-barrier-v4.json)
+
 Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
 ## Run the research core
@@ -220,7 +225,7 @@ The [formal result](docs/results/evaluation-imagination-gap-v3-final.json) repor
 
 ## Planner method comparison
 
-The project now includes a fixed-budget-per-call planner tournament. It compares Random Shooting, categorical CEM, learned collision planning, and the closed-loop route-aware hybrid on paired tasks using the same v3-final checkpoint and 256 candidate budget per planning call. In open space, CEM reaches **100% imagined / 100% real success**, versus **96.7% / 96.7%** for Random Shooting. On the single-barrier benchmark, CEM remains **100% imagined / 0% real**, while learned collision reaches **63.3% real** and the route-aware hybrid reaches **100% real with 0.65 collisions per episode**. Closed-loop query totals are reported separately because route-aware planning replans repeatedly. The result separates search quality from model adequacy: CEM improves action search, but cannot repair an obstacle model that predicts the wrong world. See the [planner tournament protocol and analysis](docs/plans/planner-tournament.md), [open-space result](docs/results/evaluation-planner-tournament-open-v3-final.json), and [barrier result](docs/results/evaluation-planner-tournament-barrier-v3-final.json).
+The project now includes a fixed-budget-per-call planner tournament. It compares Random Shooting, categorical CEM, Beam Search, learned collision planning, collision-aware CEM, and the closed-loop route-aware hybrid on paired tasks using the same v3-final checkpoint and 256 candidate budget per planning call. In open space, CEM and Beam Search reach **100% imagined / 100% real success**, versus **96.7% / 96.7%** for Random Shooting. On the single-barrier benchmark, CEM and Beam Search remain **100% imagined / 0% real**, collision-aware CEM reaches **0% imagined / 0% real**, learned collision reaches **60.0% real**, and route-aware hybrid reaches **100% real with 0.65 collisions per episode**. Closed-loop query totals are reported separately because route-aware planning replans repeatedly. The result separates search quality from model adequacy: better search cannot repair an obstacle model that predicts the wrong world. See the [planner tournament protocol and analysis](docs/plans/planner-tournament.md), [open-space result](docs/results/evaluation-planner-tournament-open-v4.json), and [barrier result](docs/results/evaluation-planner-tournament-barrier-v4.json).
 
 Reproduce the comparison with:
 

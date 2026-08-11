@@ -148,3 +148,11 @@ The fixed-budget planner comparison keeps the v3-final checkpoint, paired task c
 On 20 episodes per seed across the single-barrier task, Random Shooting and CEM both produce **100.0% imagined / 0.0% real success**. CEM reduces imagined final distance from **0.24px** to **0.21px**, yet real final distance remains about **29px** and collisions remain above **8 per episode**. The learned collision planner reaches **63.3% real success** with **2.33 collisions**, while the route-aware hybrid reaches **100.0% real success** with **0.65 collisions**. The route-aware hybrid is closed-loop and therefore reports no open-loop imagined success; its null fields are deliberate.
 
 This is a controlled negative result: search optimization alone does not solve a model error at the wall. It motivates the next method comparison—collision-aware CEM versus learned collision risk versus explicit route fallback—rather than treating CEM as a universal replacement for the current planner. See [planner tournament plan](plans/planner-tournament.md).
+
+## Six-method planner expansion
+
+The v0.6 expansion adds Beam Search and collision-aware CEM while preserving the paired three-seed protocol. In open space, Beam Search reaches **100.0% imagined / 100.0% real success** with 3.00px real final distance. Collision-aware CEM also reaches **100.0% / 100.0%** with 3.15px real final distance.
+
+On the single-barrier task, Beam Search reaches **100.0% imagined / 0.0% real success** and 11.72 collisions per episode. Collision-aware CEM is more conservative, reducing collisions to 3.18, but reaches **0.0% imagined / 0.0% real success**. The learned collision planner reaches **60.0% real success** with 2.52 collisions. The route-aware hybrid remains **100.0% real success** with 0.65 collisions, while consuming repeated closed-loop planning calls.
+
+The expanded matrix strengthens the central conclusion: planner optimization improves search over the learned model, but obstacle transfer is limited by the model's wall-relative dynamics and collision calibration. The next scientifically meaningful axis is therefore uncertainty quality—ensemble or conformal risk calibration—not another search algorithm in isolation.

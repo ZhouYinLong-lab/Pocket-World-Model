@@ -2,6 +2,18 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.6.0] - 2026-08-11
+
+### Added
+
+- Discrete Beam Search and collision-aware CEM planner variants.
+- Six-method, three-seed planner tournament covering open-space and single-barrier tasks.
+- Explicit negative result showing that search improvements do not repair a misspecified obstacle model.
+
+### Changed
+
+- Planner reports now expose the beam expansion budget and separate one-shot model queries from repeated closed-loop route-control queries.
+
 ## [0.5.0] - 2026-08-11
 
 ### Added
@@ -114,7 +126,8 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Pure learned collision planning still fails the real single-barrier benchmark.
 - The learned agent-mask head has low shape IoU and remains an ablation.
 
-[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
