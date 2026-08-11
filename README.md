@@ -174,7 +174,7 @@ The committed [v8 probabilistic result](docs/results/evaluation-temporal-probabi
 The original staggered-wall map remains the compatibility baseline, but the environment now exposes named layouts: `default`, `single_barrier`, `double_barrier`, `cross`, `zigzag`, and `open`. The `train` suite contains the first three; `cross` and `zigzag` are held out as unseen obstacle layouts. Rollout collection can train on the named suite instead of silently perturbing one map:
 
 ```bash
-python -m pocketworld.train --epochs 8 --episodes 500 --validation-episodes 100 --unroll-horizon 8 --full-state-range --map-suite train --output artifacts/pocketworld-map-suite.pt
+python -m pocketworld.train --resume artifacts/pocketworld-temporal-probability-v8.pt --epochs 12 --episodes 1000 --validation-episodes 200 --batch-size 32 --unroll-horizon 16 --sticky-probability 0.75 --full-state-range --map-suite train --output artifacts/pocketworld-map-suite-v1.pt
 ```
 
 The generalization evaluator measures per-map multi-step prediction error and sequential two-waypoint tasks:
@@ -183,7 +183,7 @@ The generalization evaluator measures per-map multi-step prediction error and se
 python -m pocketworld.evaluate_generalization artifacts/pocketworld-map-suite.pt --episodes 20 --horizon 20 --candidates 128 --train-suite train --holdout-suite holdout --waypoints 2 --output artifacts/evaluation-generalization.json
 ```
 
-The first diagnostic run against the existing v8 baseline is recorded in [evaluation-generalization-v8.json](docs/results/evaluation-generalization-v8.json). It is intentionally reported as a transfer diagnostic: the checkpoint predates multi-map training, so the result measures unseen-layout and multi-goal difficulty rather than claiming a solved generalist agent.
+The first diagnostic run against the existing v8 baseline is recorded in [evaluation-generalization-v8.json](docs/results/evaluation-generalization-v8.json). The formal multi-map checkpoint is trained from v8 for 12 epochs on 1,000 train and 200 validation episodes and is evaluated in [evaluation-map-suite-v1-full.json](docs/results/evaluation-map-suite-v1-full.json): 20 episodes per map, 20-step prediction, 64 planning candidates, and two ordered waypoints. It reaches **4.85px train / 4.84px unseen 20-step position error**, but only **6.67% train / 5.00% unseen two-waypoint task success**. The prediction transfer is encouraging; sequential planning remains the next research bottleneck.
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
