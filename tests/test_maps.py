@@ -40,3 +40,8 @@ def test_generalization_report_separates_unseen_maps_and_waypoint_tasks():
     assert [item["map_name"] for item in report["prediction"]["unseen"]] == ["cross", "zigzag"]
     assert set(report["prediction_summary"]) == {"train", "unseen"}
     assert report["waypoint_tasks"]["unseen"][0]["waypoint_count"] == 2
+
+
+def test_generalization_preserves_requested_waypoint_execution_budget():
+    report = evaluate_generalization(PocketWorldModel(), episodes=1, horizon=48, candidates=2, seed=4)
+    assert report["waypoint_tasks"]["train"][0]["mean_actions_per_leg"] <= 48

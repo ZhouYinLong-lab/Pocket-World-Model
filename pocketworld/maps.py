@@ -42,8 +42,12 @@ MAPS: dict[str, MapSpec] = {
     ),
     "zigzag": MapSpec(
         "zigzag",
-        (Rect(18, 7, 5, 29), Rect(41, 28, 5, 29), Rect(18, 42, 28, 5)),
-        "zig-zag corridor held out from the training suite",
+        # Keep a > 2 * agent_radius opening between the first and third
+        # segments.  The previous 6px gap was closed by the environment's
+        # inclusive collision rule and made this holdout physically
+        # disconnected for a 6px-diameter agent.
+        (Rect(18, 7, 5, 24), Rect(41, 28, 5, 29), Rect(18, 43, 28, 5)),
+        "zig-zag corridor with a physically traversable holdout passage",
     ),
     "open": MapSpec("open", (), "no interior walls; dynamics-only control reference"),
 }
