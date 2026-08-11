@@ -2,6 +2,18 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.5.0] - 2026-08-11
+
+### Added
+
+- Discrete categorical CEM planner with explicit candidate-budget accounting.
+- Paired open-space and single-barrier planner tournament covering Random Shooting, CEM, learned collision planning, and route-aware hybrid control.
+- Machine-readable per-seed planner comparisons with estimated planning calls and model queries.
+
+### Changed
+
+- The planner comparison documents a controlled negative result: CEM improves imagined search quality but does not repair obstacle-model error; route-aware closed-loop geometry remains the strongest barrier controller.
+
 ## [0.4.0] - 2026-08-11
 
 ### Added
@@ -19,6 +31,7 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 ### Added
 
+- Fixed-budget planner tournament with categorical CEM, paired task generation, open-space and single-barrier protocols, and machine-readable comparisons.
 - Learnable RGB/latent temporal velocity representation with motion encoder, latent deltas, auxiliary position supervision, and `--temporal-only` fine-tuning.
 - Diagonal probabilistic transition uncertainty with held-out residual-quantile calibration and shortlist Monte Carlo collision risk.
 - Temporal velocity and empirical uncertainty-coverage metrics in the evaluation report.
@@ -101,7 +114,8 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Pure learned collision planning still fails the real single-barrier benchmark.
 - The learned agent-mask head has low shape IoU and remains an ablation.
 
-[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0

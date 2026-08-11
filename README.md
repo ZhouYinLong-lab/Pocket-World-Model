@@ -145,6 +145,11 @@ The `v0.4.0` maturity milestone publishes the calibrated v3-final checkpoint and
 - [`pocketworld-map-suite-v3-final.onnx`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.4.0/pocketworld-map-suite-v3-final.onnx) — browser-compatible one-step RGB/position graph.
 - [`evaluation-imagination-gap-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.4.0/evaluation-imagination-gap-v3-final.json) — deterministic 16/24/32-step imagined-versus-real sweep.
 
+The `v0.5.0` planner-comparison milestone publishes the fixed-budget tournament evidence:
+
+- [`evaluation-planner-tournament-open-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.5.0/evaluation-planner-tournament-open-v3-final.json) — paired open-space comparison.
+- [`evaluation-planner-tournament-barrier-v3-final.json`](https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/v0.5.0/evaluation-planner-tournament-barrier-v3-final.json) — paired single-barrier comparison.
+
 Only load checkpoints from the official release; PyTorch checkpoint files must be treated as trusted executable artifacts.
 
 ## Run the research core
@@ -212,6 +217,17 @@ python -m pocketworld.evaluate_imagination artifacts/pocketworld-map-suite-v3-fi
 ```
 
 The [formal result](docs/results/evaluation-imagination-gap-v3-final.json) reports a **4.7pp** gap at 24 steps and **6.7pp** at 32 steps. The evaluator fixes candidate sampling per seed, so the imagined and real rates refer to the same selected action sequences.
+
+## Planner method comparison
+
+The project now includes a fixed-budget-per-call planner tournament. It compares Random Shooting, categorical CEM, learned collision planning, and the closed-loop route-aware hybrid on paired tasks using the same v3-final checkpoint and 256 candidate budget per planning call. In open space, CEM reaches **100% imagined / 100% real success**, versus **96.7% / 96.7%** for Random Shooting. On the single-barrier benchmark, CEM remains **100% imagined / 0% real**, while learned collision reaches **63.3% real** and the route-aware hybrid reaches **100% real with 0.65 collisions per episode**. Closed-loop query totals are reported separately because route-aware planning replans repeatedly. The result separates search quality from model adequacy: CEM improves action search, but cannot repair an obstacle model that predicts the wrong world. See the [planner tournament protocol and analysis](docs/plans/planner-tournament.md), [open-space result](docs/results/evaluation-planner-tournament-open-v3-final.json), and [barrier result](docs/results/evaluation-planner-tournament-barrier-v3-final.json).
+
+Reproduce the comparison with:
+
+```bash
+python -m pocketworld.evaluate_planners artifacts/pocketworld-map-suite-v3-final.pt --episodes 20 --horizon 16 --candidates 256 --seeds 11,23,41 --scenario open --output artifacts/evaluation-planner-tournament-open-v3-final.json
+python -m pocketworld.evaluate_planners artifacts/pocketworld-map-suite-v3-final.pt --episodes 20 --horizon 48 --candidates 256 --seeds 11,23,41 --scenario single_barrier --output artifacts/evaluation-planner-tournament-barrier-v3-final.json
+```
 
 For a larger run, use 1,000 training trajectories and three evaluation seeds:
 
