@@ -196,6 +196,44 @@ obstacle crossing: the paired raw ablation is the key distinction.
 
 Machine-readable artifact: [v17 honest report](../results/evaluation-gap-route-policy-v17-honest-full.json).
 
+## General obstacle representation study (v18)
+
+The v17 gap policy is intentionally specialized to vertical barriers. To test
+whether the route representation itself generalizes, v18 adds four procedural
+families: staggered blocks, multi-channel walls, staircases, and offset
+L-shaped obstacles. The student trains on only the first two families; all four
+appear in the held-out report. Each generated task is checked for a reachable
+footprint-inflated route before it enters either training or evaluation.
+
+### Representation and execution comparison
+
+| Method | Student representation | Evaluation A* | Real success | Collisions / episode |
+| --- | --- | ---: | ---: | ---: |
+| Route sketch | 13 continuous points | No | 6.7% | 15.35 |
+| Route sketch + RGB projection | 13 points + local line check | No | 1.7% | 8.15 |
+| Distance field | 16×16 scalar route cost | No | 50.0% | 6.20 |
+| Distance field + RGB guard | scalar field + edge guard | No | 75.0% | 5.50 |
+| Distance field + beam + RGB guard | field + beam width 4 | No | **88.3%** | **2.20** |
+| Learned route + A* fallback | route sketch + RGB-triggered A* | Fallback | 100.0% | 0.217 |
+| RGB/A* reference | current RGB route | Yes | 100.0% | 0.067 |
+
+The report contains 600 training tasks and 60 held-out tasks (`11,23,41`, 20
+per seed). The best pure learned method improves substantially over fixed
+coordinate regression, but its multi-channel slice is only 78.6% success with
+5.93 collisions/episode. A conservative one-step shield was tested as a
+negative ablation and reached 63.3% with 40.62 collisions/episode; the failure
+comes from discrete inertial corners where no action is safe and the fallback
+action repeats a collision.
+
+The key interpretation is therefore layered: distance-field structure solves
+part of the representation problem, RGB edge guards contain some geometry
+errors, and beam search handles local field noise. Reliable 100% performance
+still comes from repeated observable-geometry A* planning. The v18 artifact is
+evidence of a measurable generalization improvement, not a claim of pure
+learned navigation.
+
+Machine-readable artifact: [v18 current final report](../results/evaluation-general-routes-v18-current-final.json).
+
 ## Map-aware route-feature comparison
 
 The next method comparison asks whether the route predictor is failing because

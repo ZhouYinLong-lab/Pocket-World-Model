@@ -2,6 +2,34 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.16.0] - 2026-08-12
+
+### Added
+
+- General procedural obstacle families: staggered blocks, multi-channel walls,
+  staircases, and offset L-shaped obstacles.
+- A learned coarse 16×16 route-distance field and fixed-width beam executor.
+- Same-protocol comparisons for route sketch, RGB projection, distance field,
+  RGB guard, learned-to-A* fallback, and pure RGB/A* reference methods.
+- Edge-level RGB collision checks for coarse-grid transitions and separate
+  route-sketch/distance-field checkpoints.
+
+### Results
+
+- On 600 training tasks and 60 held-out tasks across three seeds, continuous
+  route sketch reaches 6.7% real success; the learned distance field reaches
+  50.0%; and distance field + beam + RGB guard reaches 88.3%.
+- The learned-to-A* fallback reaches 100.0% with 0.217 collisions/episode;
+  pure RGB/A* reaches 100.0% with 0.067 collisions/episode.
+- The multi-channel holdout remains difficult for the best pure learned method:
+  78.6% success and 5.93 collisions/episode.
+- A conservative one-step shield is published as a negative ablation: 63.3%
+  success and 40.62 collisions/episode due to no-action-safe corners under the
+  discrete inertial dynamics.
+
+These numbers establish a broader representation study, not a claim that pure
+learned general obstacle navigation is solved.
+
 ## [0.15.0] - 2026-08-12
 
 ### Added

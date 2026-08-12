@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-105%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-83%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-112%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -148,6 +148,47 @@ python -m pocketworld.evaluate_gap_route_policy \
   --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
   --train-episodes 200 --evaluation-episodes 20 --max-steps 140 \
   --epochs 360 --output artifacts/evaluation-gap-route-policy-v17.json
+```
+
+### v18 general obstacle representation study
+
+v18 broadens the benchmark beyond vertical barriers to staggered blocks,
+multi-channel walls, staircases, and offset L-shaped obstacles. Training uses
+only `staggered_blocks` and `multi_channel`; the 60-task holdout uses all four
+families across seeds `11,23,41`. The study compares route representations and
+execution layers under one fixed protocol:
+
+| Method | A* during evaluation | Real success | Collisions / episode |
+| --- | ---: | ---: | ---: |
+| Continuous route sketch | No | 6.7% | 15.35 |
+| Route sketch + RGB projection | No | 1.7% | 8.15 |
+| Coarse distance field | No | 50.0% | 6.20 |
+| Distance field + RGB guard | No | 75.0% | 5.50 |
+| Distance field + beam + RGB guard | No | **88.3%** | **2.20** |
+| Learned route + A* fallback | Fallback only | 100.0% | 0.217 |
+| RGB/A* reference | Yes | 100.0% | 0.067 |
+
+The distance field is a learned 16×16 estimate of normalized route cost. A
+fixed beam of four candidate grid paths is then followed using RGB edge checks;
+the beam does not call A*. This improves generalization substantially over
+fixed coordinate regression, but multi-channel maps remain the hard slice
+(78.6% success, 5.93 collisions/episode). A conservative one-step action
+shield was also tested and failed (63.3%, 40.62 collisions/episode), so it is
+kept as a negative ablation rather than hidden from the comparison.
+
+The reliable 100% methods still use observable RGB geometry plus repeated A*
+planning. Thus v18 improves the learned route representation and quantifies
+the remaining gap; it does not claim that pure learned obstacle navigation is
+solved. See the [v18 machine-readable report](docs/results/evaluation-general-routes-v18-current-final.json).
+
+Reproduce the full comparison with:
+
+```bash
+python -m pocketworld.evaluate_general_routes \
+  --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
+  --train-episodes 200 --evaluation-episodes 20 --max-steps 160 \
+  --points 13 --epochs 360 \
+  --output artifacts/evaluation-general-routes-v18.json
 ```
 
 <p align="center">
