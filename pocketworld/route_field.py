@@ -697,16 +697,28 @@ def adaptive_mpc_decision(
     """Choose ordinary versus robust MPC from an online risk score.
 
     The lower exit threshold creates hysteresis, preventing robust MPC from
-    flickering on and off when local risk is close to the entry boundary.
+    flickering on and off when local risk is close to the entry boundary.  The
+    risk score is computed from the ordinary MPC candidate, so the action being
+    assessed matches the controller that would otherwise be executed.
     """
     if not 0.0 <= risk_exit_threshold <= risk_threshold <= 1.0:
         raise ValueError(
             "risk_exit_threshold must be between 0 and risk_threshold, and risk_threshold <= 1"
         )
+    ordinary_action = local_mpc_action(
+        observation,
+        target,
+        observation_history,
+        horizon=horizon,
+        beam_width=beam_width,
+        robust=False,
+        action_history=action_history,
+        velocity_source=velocity_source,
+    )
     risk_score = adaptive_mpc_risk_score(
         observation,
         target,
-        baseline_action,
+        ordinary_action,
         observation_history,
         action_history,
     )
@@ -715,14 +727,18 @@ def adaptive_mpc_decision(
         if robust_active
         else risk_score >= risk_threshold
     )
-    action = local_mpc_action(
-        observation,
-        target,
-        observation_history,
-        horizon=horizon,
-        beam_width=beam_width,
-        robust=use_robust,
-        action_history=action_history,
-        velocity_source=velocity_source,
+    action = (
+        local_mpc_action(
+            observation,
+            target,
+            observation_history,
+            horizon=horizon,
+            beam_width=beam_width,
+            robust=True,
+            action_history=action_history,
+            velocity_source=velocity_source,
+        )
+        if use_robust
+        else ordinary_action
     )
     return int(action), bool(use_robust), float(risk_score)

@@ -43,7 +43,11 @@ GENERAL_METHODS = (
     "distance_field_beam_guarded_mpc",
     "distance_field_mpc_shift_fallback",
 )
-GENERAL_DEFAULT_METHODS = GENERAL_METHODS[:-1]
+GENERAL_DEFAULT_METHODS = tuple(
+    method
+    for method in GENERAL_METHODS[:-1]
+    if method != "distance_field_beam_adaptive_mpc"
+)
 
 
 def _segment_hits_wall(
@@ -337,6 +341,11 @@ def evaluate_general_policy(
                     )
                     adaptive_risk_sum += risk_score
                     adaptive_risk_max = max(adaptive_risk_max, risk_score)
+                    if use_robust:
+                        # The decision first evaluates an ordinary MPC
+                        # candidate, then runs robust MPC when the risk gate is
+                        # active. Count both actual planner calls.
+                        mpc_calls += 1
                     if use_robust != adaptive_robust_active:
                         adaptive_switches += 1
                     adaptive_robust_active = use_robust
