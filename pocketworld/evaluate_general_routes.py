@@ -298,6 +298,8 @@ def evaluate_general_policy(
             for _ in range(max_steps):
                 step_index = env.steps
                 position = extract_agent_position(observation).astype(np.float32)
+                if method == "distance_field_budgeted_hybrid_mpc" and step_index < route_lock_until_step:
+                    route_lock_steps += 1
                 route_progress = route_progress_metrics(position, route_points)
                 progress_delta = float(route_progress["progress_px"] - last_route_progress)
                 if method == "distance_field_budgeted_hybrid_mpc":
@@ -333,7 +335,6 @@ def evaluate_general_policy(
                     target_dirty or step_index - last_route_check >= 4
                 ):
                     route_check_due = True
-                    route_lock_steps += int(step_index < route_lock_until_step)
                     route_is_blocked = (
                         step_index >= route_lock_until_step
                         and _segment_hits_wall(observation, position, target)
@@ -804,6 +805,8 @@ def main() -> None:
     parser.add_argument("--mpc-horizon", type=int, default=6)
     parser.add_argument("--mpc-beam-width", type=int, default=24)
     parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
+    parser.add_argument("--route-budget-margin", type=float, default=1.05)
+    parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
     parser.add_argument(
         "--methods",
@@ -824,6 +827,8 @@ def main() -> None:
         mpc_beam_width=args.mpc_beam_width,
         mpc_velocity_source=args.mpc_velocity_source,
         methods=tuple(value.strip() for value in args.methods.split(",") if value.strip()),
+        route_budget_margin=args.route_budget_margin,
+        route_progress_tolerance=args.route_progress_tolerance,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)

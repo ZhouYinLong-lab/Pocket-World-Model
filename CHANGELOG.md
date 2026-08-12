@@ -2,6 +2,29 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.24.0] - 2026-08-12
+
+### Added
+
+- Route-progress and remaining-budget metrics for learned-field planning.
+- A locked `distance_field_budgeted_hybrid_mpc` ablation with explicit RGB/A*
+  fallback, cooldown, and trigger diagnostics.
+- OOD speed/map-shift evaluation for the route-budgeted hybrid method.
+
+### Results
+
+- On the medium three-seed obstacle holdout, locked hybrid planning reached
+  100.0% real success and 0.067 collisions/episode versus 66.7% and 0.600 for
+  learned-field MPC, with 1.33 A* calls/episode.
+- The improvement has a substantial latency cost (about 5.01 s versus 0.74 s
+  per episode in the same run), so this is reported as a reliability/latency
+  trade-off rather than a pure learned-planner win.
+- In the focused OOD matrix covering nominal/±2 px wall shifts and speed
+  0.75/1.25, the hybrid reached 100% success in all six conditions; the
+  baseline ranged from 33.3% to 77.8%.
+
+See [the v28 OOD report](artifacts/evaluation-general-ood-v28-budgeted.json).
+
 ## [0.20.0] - 2026-08-12
 
 ### Added

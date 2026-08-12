@@ -442,6 +442,52 @@ python -m pocketworld.evaluate_general_ood \
   --output artifacts/evaluation-general-ood-v21.json
 ```
 
+### v28 route-progress budget and locked hybrid fallback
+
+v28 addresses a route-level failure mode that local collision risk cannot see:
+an action can be locally safe while the current route has become blocked, or
+the remaining polyline cannot be completed within the remaining action budget.
+The new `distance_field_budgeted_hybrid_mpc` method projects the observed RGB
+agent position onto the learned route, tracks route progress and remaining
+distance, and invokes a wall-aware A* fallback only after persistent blocking,
+progress regression, or budget infeasibility. After a fallback, the new route
+is locked for a short window to prevent immediately switching sides again.
+
+On an independent three-seed holdout (`11,23,41`), 30 training episodes per
+seed, 15 evaluation episodes per seed, the locked hybrid reaches **100.0%
+real success** and **0.067 collisions/episode**, compared with **66.7%** and
+**0.600** for learned-field MPC in the same medium-scale run. A* calls fall to
+**1.33/episode** after cooldown and route locking, but mean planning time is
+still about **5.01 s** versus **0.74 s** for baseline. This is therefore a
+reliability improvement with an explicit latency cost, not a claim of a pure
+learned planner.
+
+The focused OOD smoke matrix keeps the checkpoint fixed and changes only wall
+translation (`nominal`, `−2 px`, `+2 px`) and speed (`0.75`, `1.25`). The
+budgeted hybrid reaches 100% success in all six conditions; the baseline ranges
+from 33.3% to 77.8%. OOD fallback counts, route-lock steps, budget slack and
+family-level rows are recorded in
+[`evaluation-general-ood-v28-budgeted.json`](artifacts/evaluation-general-ood-v28-budgeted.json).
+
+Reproduce the comparison with:
+
+```bash
+python -m pocketworld.evaluate_general_routes \
+  --methods distance_field_beam_mpc,distance_field_budgeted_hybrid_mpc \
+  --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
+  --route-budget-margin 1.05 --route-progress-tolerance 1.5
+```
+
+Run the paired OOD protocol with:
+
+```bash
+python -m pocketworld.evaluate_general_ood \
+  --methods distance_field_beam_mpc,distance_field_budgeted_hybrid_mpc \
+  --map-shifts nominal,walls_x_minus2,walls_x_plus2 \
+  --speed-scales 0.75,1.25 \
+  --route-budget-margin 1.05 --route-progress-tolerance 1.5
+```
+
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
 </p>
