@@ -1,0 +1,1925 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/coverage-study-v23-four_family_600-distance-field.pt",
+    "calibration_seeds": [
+      53,
+      67
+    ],
+    "calibration_episodes_per_seed": 12,
+    "max_steps": 160,
+    "route_points": 13,
+    "threshold_grid": [
+      0.25,
+      0.35,
+      0.45,
+      0.55,
+      0.65
+    ],
+    "exit_ratio": 0.6666666667,
+    "minimum_success": 0.9,
+    "mpc_horizon": 4,
+    "mpc_beam_width": 8,
+    "mpc_velocity_source": "rgb",
+    "selection_split_is_disjoint_from_final_holdout": true,
+    "selection_rule": "success floor, then collision mean, then planning time",
+    "student_evaluation_uses_astar": false
+  },
+  "candidates": [
+    {
+      "entry_threshold": 0.25,
+      "exit_threshold": 0.166666666675,
+      "summary": {
+        "real_success": {
+          "mean": 0.9583333333333334,
+          "std": 0.19982631347136331
+        },
+        "final_distance_px": {
+          "mean": 5.879484673341115,
+          "std": 12.656209429011522
+        },
+        "collision_count": {
+          "mean": 0.375,
+          "std": 0.6332785063987777
+        },
+        "executed_actions": {
+          "mean": 79.04166666666667,
+          "std": 35.982031588311166
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 84.20833333333333,
+          "std": 40.05306809582618
+        },
+        "robust_mpc_calls": {
+          "mean": 5.166666666666667,
+          "std": 6.612278141625791
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.1666666666666665,
+          "std": 3.9965262694272665
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13907259072182895,
+          "std": 0.024220607277085002
+        },
+        "adaptive_risk_max": {
+          "mean": 0.4700357089533161,
+          "std": 0.24338123630098477
+        },
+        "planning_time_ms": {
+          "mean": 323.78261249383894,
+          "std": 188.3142030868973
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "by_family": {
+        "l_shapes": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.2619285583496094,
+            "std": 0.2842937580264182
+          },
+          "collision_count": {
+            "mean": 0.5,
+            "std": 0.5
+          },
+          "executed_actions": {
+            "mean": 86.75,
+            "std": 40.965686861079234
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 92.75,
+            "std": 45.04650374890375
+          },
+          "robust_mpc_calls": {
+            "mean": 6.0,
+            "std": 4.242640687119285
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 5.0,
+            "std": 4.358898943540674
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14052811462738232,
+            "std": 0.01273999841821046
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5463971492275597,
+            "std": 0.20173282321346325
+          },
+          "planning_time_ms": {
+            "mean": 381.39179998324835,
+            "std": 204.2507432475177
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "multi_channel": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.092473936080933,
+            "std": 0.5267856005207806
+          },
+          "collision_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "executed_actions": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 55.0,
+            "std": 17.504285189632853
+          },
+          "robust_mpc_calls": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13617682179004237,
+            "std": 0.009170435765114133
+          },
+          "adaptive_risk_max": {
+            "mean": 0.303022030800581,
+            "std": 0.17259554487562126
+          },
+          "planning_time_ms": {
+            "mean": 166.44613999815192,
+            "std": 50.735579582090786
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staggered_blocks": {
+          "real_success": {
+            "mean": 0.8,
+            "std": 0.4
+          },
+          "final_distance_px": {
+            "mean": 16.031216382980347,
+            "std": 25.25856833765153
+          },
+          "collision_count": {
+            "mean": 0.8,
+            "std": 0.9797958971132713
+          },
+          "executed_actions": {
+            "mean": 100.2,
+            "std": 38.18062335792856
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 107.0,
+            "std": 42.03807797699605
+          },
+          "robust_mpc_calls": {
+            "mean": 6.8,
+            "std": 10.851727973000429
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.2,
+            "std": 4.664761515876241
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14231132749301664,
+            "std": 0.04003379213673057
+          },
+          "adaptive_risk_max": {
+            "mean": 0.3984366474449635,
+            "std": 0.2537914539570858
+          },
+          "planning_time_ms": {
+            "mean": 381.5971200092463,
+            "std": 188.69617366297004
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staircase": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.2322920163472495,
+            "std": 0.4684758589582309
+          },
+          "collision_count": {
+            "mean": 0.16666666666666666,
+            "std": 0.372677996249965
+          },
+          "executed_actions": {
+            "mean": 71.5,
+            "std": 21.406774628607646
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 78.16666666666667,
+            "std": 26.567001252598224
+          },
+          "robust_mpc_calls": {
+            "mean": 6.666666666666667,
+            "std": 5.280993172584953
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.0,
+            "std": 3.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13684608564825695,
+            "std": 0.026475691010232734
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5670644049718977,
+            "std": 0.24386629415792532
+          },
+          "planning_time_ms": {
+            "mean": 329.9053333248594,
+            "std": 162.88195916109754
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        }
+      }
+    },
+    {
+      "entry_threshold": 0.35,
+      "exit_threshold": 0.23333333334499998,
+      "summary": {
+        "real_success": {
+          "mean": 0.9583333333333334,
+          "std": 0.19982631347136331
+        },
+        "final_distance_px": {
+          "mean": 5.860140373309453,
+          "std": 12.65915737217263
+        },
+        "collision_count": {
+          "mean": 0.5,
+          "std": 0.6454972243679028
+        },
+        "executed_actions": {
+          "mean": 79.375,
+          "std": 36.05067324845219
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 83.75,
+          "std": 39.79557136164777
+        },
+        "robust_mpc_calls": {
+          "mean": 4.375,
+          "std": 6.047123972049302
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.1666666666666665,
+          "std": 3.9965262694272665
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13853051790048168,
+          "std": 0.02475787783735985
+        },
+        "adaptive_risk_max": {
+          "mean": 0.4646571194473655,
+          "std": 0.23785007088935559
+        },
+        "planning_time_ms": {
+          "mean": 307.32659583069716,
+          "std": 176.9368892543389
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "by_family": {
+        "l_shapes": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.2619285583496094,
+            "std": 0.2842937580264182
+          },
+          "collision_count": {
+            "mean": 0.5,
+            "std": 0.5
+          },
+          "executed_actions": {
+            "mean": 86.75,
+            "std": 40.965686861079234
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 92.75,
+            "std": 45.04650374890375
+          },
+          "robust_mpc_calls": {
+            "mean": 6.0,
+            "std": 4.242640687119285
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 5.0,
+            "std": 4.358898943540674
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14052811462738232,
+            "std": 0.01273999841821046
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5463971492275597,
+            "std": 0.20173282321346325
+          },
+          "planning_time_ms": {
+            "mean": 379.0053125048871,
+            "std": 201.60202714487076
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "multi_channel": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.092473936080933,
+            "std": 0.5267856005207806
+          },
+          "collision_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "executed_actions": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 55.0,
+            "std": 17.504285189632853
+          },
+          "robust_mpc_calls": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13617682179004237,
+            "std": 0.009170435765114133
+          },
+          "adaptive_risk_max": {
+            "mean": 0.303022030800581,
+            "std": 0.17259554487562126
+          },
+          "planning_time_ms": {
+            "mean": 165.18734002602287,
+            "std": 50.5853644790929
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staggered_blocks": {
+          "real_success": {
+            "mean": 0.8,
+            "std": 0.4
+          },
+          "final_distance_px": {
+            "mean": 16.031216382980347,
+            "std": 25.25856833765153
+          },
+          "collision_count": {
+            "mean": 0.8,
+            "std": 0.9797958971132713
+          },
+          "executed_actions": {
+            "mean": 100.2,
+            "std": 38.18062335792856
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 106.6,
+            "std": 41.61538177164785
+          },
+          "robust_mpc_calls": {
+            "mean": 6.4,
+            "std": 10.07174264961134
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.2,
+            "std": 4.664761515876241
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14231132749301664,
+            "std": 0.04003379213673057
+          },
+          "adaptive_risk_max": {
+            "mean": 0.3984366474449635,
+            "std": 0.2537914539570858
+          },
+          "planning_time_ms": {
+            "mean": 369.47048000001814,
+            "std": 170.29617893538105
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staircase": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.1549148162206015,
+            "std": 0.32222281862695323
+          },
+          "collision_count": {
+            "mean": 0.6666666666666666,
+            "std": 0.4714045207910317
+          },
+          "executed_actions": {
+            "mean": 72.83333333333333,
+            "std": 22.28913537029993
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 76.66666666666667,
+            "std": 25.466753926552077
+          },
+          "robust_mpc_calls": {
+            "mean": 3.8333333333333335,
+            "std": 4.099457958749614
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.0,
+            "std": 3.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13467779436286778,
+            "std": 0.028160956457570812
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5455500469480953,
+            "std": 0.22945927544902855
+          },
+          "planning_time_ms": {
+            "mean": 278.41778329457156,
+            "std": 130.36511142400946
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        }
+      }
+    },
+    {
+      "entry_threshold": 0.45,
+      "exit_threshold": 0.300000000015,
+      "summary": {
+        "real_success": {
+          "mean": 0.9583333333333334,
+          "std": 0.19982631347136331
+        },
+        "final_distance_px": {
+          "mean": 5.860140373309453,
+          "std": 12.65915737217263
+        },
+        "collision_count": {
+          "mean": 0.5,
+          "std": 0.6454972243679028
+        },
+        "executed_actions": {
+          "mean": 79.375,
+          "std": 36.05067324845219
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 83.75,
+          "std": 39.79557136164777
+        },
+        "robust_mpc_calls": {
+          "mean": 4.375,
+          "std": 6.047123972049302
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.1666666666666665,
+          "std": 3.9965262694272665
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13853051790048168,
+          "std": 0.02475787783735985
+        },
+        "adaptive_risk_max": {
+          "mean": 0.4646571194473655,
+          "std": 0.23785007088935559
+        },
+        "planning_time_ms": {
+          "mean": 307.8832708555031,
+          "std": 177.74562308346967
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "by_family": {
+        "l_shapes": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.2619285583496094,
+            "std": 0.2842937580264182
+          },
+          "collision_count": {
+            "mean": 0.5,
+            "std": 0.5
+          },
+          "executed_actions": {
+            "mean": 86.75,
+            "std": 40.965686861079234
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 92.75,
+            "std": 45.04650374890375
+          },
+          "robust_mpc_calls": {
+            "mean": 6.0,
+            "std": 4.242640687119285
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 5.0,
+            "std": 4.358898943540674
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14052811462738232,
+            "std": 0.01273999841821046
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5463971492275597,
+            "std": 0.20173282321346325
+          },
+          "planning_time_ms": {
+            "mean": 379.68157501927635,
+            "std": 202.21844684720458
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "multi_channel": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.092473936080933,
+            "std": 0.5267856005207806
+          },
+          "collision_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "executed_actions": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 55.0,
+            "std": 17.504285189632853
+          },
+          "robust_mpc_calls": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13617682179004237,
+            "std": 0.009170435765114133
+          },
+          "adaptive_risk_max": {
+            "mean": 0.303022030800581,
+            "std": 0.17259554487562126
+          },
+          "planning_time_ms": {
+            "mean": 165.5403400422074,
+            "std": 51.84826242697911
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staggered_blocks": {
+          "real_success": {
+            "mean": 0.8,
+            "std": 0.4
+          },
+          "final_distance_px": {
+            "mean": 16.031216382980347,
+            "std": 25.25856833765153
+          },
+          "collision_count": {
+            "mean": 0.8,
+            "std": 0.9797958971132713
+          },
+          "executed_actions": {
+            "mean": 100.2,
+            "std": 38.18062335792856
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 106.6,
+            "std": 41.61538177164785
+          },
+          "robust_mpc_calls": {
+            "mean": 6.4,
+            "std": 10.07174264961134
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.2,
+            "std": 4.664761515876241
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14231132749301664,
+            "std": 0.04003379213673057
+          },
+          "adaptive_risk_max": {
+            "mean": 0.3984366474449635,
+            "std": 0.2537914539570858
+          },
+          "planning_time_ms": {
+            "mean": 370.9726600063732,
+            "std": 172.6623281679524
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staircase": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.1549148162206015,
+            "std": 0.32222281862695323
+          },
+          "collision_count": {
+            "mean": 0.6666666666666666,
+            "std": 0.4714045207910317
+          },
+          "executed_actions": {
+            "mean": 72.83333333333333,
+            "std": 22.28913537029993
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 76.66666666666667,
+            "std": 25.466753926552077
+          },
+          "robust_mpc_calls": {
+            "mean": 3.8333333333333335,
+            "std": 4.099457958749614
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.0,
+            "std": 3.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13467779436286778,
+            "std": 0.028160956457570812
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5455500469480953,
+            "std": 0.22945927544902855
+          },
+          "planning_time_ms": {
+            "mean": 278.1968166891602,
+            "std": 129.6575972374207
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        }
+      }
+    },
+    {
+      "entry_threshold": 0.55,
+      "exit_threshold": 0.36666666668500003,
+      "summary": {
+        "real_success": {
+          "mean": 0.9583333333333334,
+          "std": 0.19982631347136331
+        },
+        "final_distance_px": {
+          "mean": 5.860140373309453,
+          "std": 12.65915737217263
+        },
+        "collision_count": {
+          "mean": 0.5,
+          "std": 0.6454972243679028
+        },
+        "executed_actions": {
+          "mean": 79.375,
+          "std": 36.05067324845219
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 83.75,
+          "std": 39.79557136164777
+        },
+        "robust_mpc_calls": {
+          "mean": 4.375,
+          "std": 6.047123972049302
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.1666666666666665,
+          "std": 3.9965262694272665
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13853051790048168,
+          "std": 0.02475787783735985
+        },
+        "adaptive_risk_max": {
+          "mean": 0.4646571194473655,
+          "std": 0.23785007088935559
+        },
+        "planning_time_ms": {
+          "mean": 308.65265417378396,
+          "std": 178.36475792449673
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "by_family": {
+        "l_shapes": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.2619285583496094,
+            "std": 0.2842937580264182
+          },
+          "collision_count": {
+            "mean": 0.5,
+            "std": 0.5
+          },
+          "executed_actions": {
+            "mean": 86.75,
+            "std": 40.965686861079234
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 92.75,
+            "std": 45.04650374890375
+          },
+          "robust_mpc_calls": {
+            "mean": 6.0,
+            "std": 4.242640687119285
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 5.0,
+            "std": 4.358898943540674
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14052811462738232,
+            "std": 0.01273999841821046
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5463971492275597,
+            "std": 0.20173282321346325
+          },
+          "planning_time_ms": {
+            "mean": 380.6502875086153,
+            "std": 204.35548019691822
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "multi_channel": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.092473936080933,
+            "std": 0.5267856005207806
+          },
+          "collision_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "executed_actions": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 55.0,
+            "std": 17.504285189632853
+          },
+          "robust_mpc_calls": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 0.4,
+            "std": 0.8000000000000002
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13617682179004237,
+            "std": 0.009170435765114133
+          },
+          "adaptive_risk_max": {
+            "mean": 0.303022030800581,
+            "std": 0.17259554487562126
+          },
+          "planning_time_ms": {
+            "mean": 166.1677799827885,
+            "std": 51.03768787448573
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staggered_blocks": {
+          "real_success": {
+            "mean": 0.8,
+            "std": 0.4
+          },
+          "final_distance_px": {
+            "mean": 16.031216382980347,
+            "std": 25.25856833765153
+          },
+          "collision_count": {
+            "mean": 0.8,
+            "std": 0.9797958971132713
+          },
+          "executed_actions": {
+            "mean": 100.2,
+            "std": 38.18062335792856
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 106.6,
+            "std": 41.61538177164785
+          },
+          "robust_mpc_calls": {
+            "mean": 6.4,
+            "std": 10.07174264961134
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.2,
+            "std": 4.664761515876241
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14231132749301664,
+            "std": 0.04003379213673057
+          },
+          "adaptive_risk_max": {
+            "mean": 0.3984366474449635,
+            "std": 0.2537914539570858
+          },
+          "planning_time_ms": {
+            "mean": 370.95158001757227,
+            "std": 172.03276942995703
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staircase": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.1549148162206015,
+            "std": 0.32222281862695323
+          },
+          "collision_count": {
+            "mean": 0.6666666666666666,
+            "std": 0.4714045207910317
+          },
+          "executed_actions": {
+            "mean": 72.83333333333333,
+            "std": 22.28913537029993
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 76.66666666666667,
+            "std": 25.466753926552077
+          },
+          "robust_mpc_calls": {
+            "mean": 3.8333333333333335,
+            "std": 4.099457958749614
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 3.0,
+            "std": 3.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13467779436286778,
+            "std": 0.028160956457570812
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5455500469480953,
+            "std": 0.22945927544902855
+          },
+          "planning_time_ms": {
+            "mean": 279.4774333500148,
+            "std": 129.71370879021208
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        }
+      }
+    },
+    {
+      "entry_threshold": 0.65,
+      "exit_threshold": 0.433333333355,
+      "summary": {
+        "real_success": {
+          "mean": 0.9583333333333334,
+          "std": 0.19982631347136331
+        },
+        "final_distance_px": {
+          "mean": 5.8117555975914,
+          "std": 12.66869071138948
+        },
+        "collision_count": {
+          "mean": 0.5,
+          "std": 0.6454972243679028
+        },
+        "executed_actions": {
+          "mean": 78.95833333333333,
+          "std": 35.61890786116585
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 81.83333333333333,
+          "std": 37.81276974192125
+        },
+        "robust_mpc_calls": {
+          "mean": 2.875,
+          "std": 5.317522135982761
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 1.5,
+          "std": 2.327373340628157
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.14041859136238977,
+          "std": 0.025756800401394338
+        },
+        "adaptive_risk_max": {
+          "mean": 0.46598766214524706,
+          "std": 0.23921850823830265
+        },
+        "planning_time_ms": {
+          "mean": 276.9823791519836,
+          "std": 143.54573391756253
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "by_family": {
+        "l_shapes": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.131264328956604,
+            "std": 0.19845958714625006
+          },
+          "collision_count": {
+            "mean": 0.5,
+            "std": 0.5
+          },
+          "executed_actions": {
+            "mean": 86.0,
+            "std": 39.736632972611055
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 89.0,
+            "std": 39.91866731242415
+          },
+          "robust_mpc_calls": {
+            "mean": 3.0,
+            "std": 2.1213203435596424
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 1.5,
+            "std": 0.8660254037844386
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14461745814283872,
+            "std": 0.01266925649734252
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5469999576359987,
+            "std": 0.20204366207297955
+          },
+          "planning_time_ms": {
+            "mean": 317.2749749992363,
+            "std": 127.98476701421696
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "multi_channel": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.092473936080933,
+            "std": 0.5267856005207806
+          },
+          "collision_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "executed_actions": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 54.6,
+            "std": 17.704236781064584
+          },
+          "robust_mpc_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13617682179004237,
+            "std": 0.009170435765114133
+          },
+          "adaptive_risk_max": {
+            "mean": 0.303022030800581,
+            "std": 0.17259554487562126
+          },
+          "planning_time_ms": {
+            "mean": 159.04483999765944,
+            "std": 53.35176504176908
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staggered_blocks": {
+          "real_success": {
+            "mean": 0.8,
+            "std": 0.4
+          },
+          "final_distance_px": {
+            "mean": 16.031216382980347,
+            "std": 25.25856833765153
+          },
+          "collision_count": {
+            "mean": 0.8,
+            "std": 0.9797958971132713
+          },
+          "executed_actions": {
+            "mean": 100.2,
+            "std": 38.18062335792856
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 105.2,
+            "std": 42.37640853116271
+          },
+          "robust_mpc_calls": {
+            "mean": 5.0,
+            "std": 10.0
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 2.0,
+            "std": 4.0
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.14231132749301664,
+            "std": 0.04003379213673057
+          },
+          "adaptive_risk_max": {
+            "mean": 0.3984366474449635,
+            "std": 0.2537914539570858
+          },
+          "planning_time_ms": {
+            "mean": 345.57001997018233,
+            "std": 178.15410353505234
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        },
+        "staircase": {
+          "real_success": {
+            "mean": 1.0,
+            "std": 0.0
+          },
+          "final_distance_px": {
+            "mean": 3.135594685872396,
+            "std": 0.3182657324938349
+          },
+          "collision_count": {
+            "mean": 0.6666666666666666,
+            "std": 0.4714045207910317
+          },
+          "executed_actions": {
+            "mean": 72.16666666666667,
+            "std": 22.60100784380103
+          },
+          "astar_calls": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "fallback_triggered": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "mpc_calls": {
+            "mean": 75.5,
+            "std": 25.59785147234041
+          },
+          "robust_mpc_calls": {
+            "mean": 3.3333333333333335,
+            "std": 3.5901098714230026
+          },
+          "mpc_override_count": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "adaptive_switches": {
+            "mean": 2.3333333333333335,
+            "std": 2.1343747458109497
+          },
+          "adaptive_risk_mean": {
+            "mean": 0.13677763018989159,
+            "std": 0.0312925980499722
+          },
+          "adaptive_risk_max": {
+            "mean": 0.5500684731950364,
+            "std": 0.23285045431825346
+          },
+          "planning_time_ms": {
+            "mean": 264.38383330241777,
+            "std": 118.00696241020358
+          },
+          "layout_shift_score": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "shift_detected": {
+            "mean": 0.0,
+            "std": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "selected": {
+    "entry_threshold": 0.25,
+    "exit_threshold": 0.166666666675,
+    "summary": {
+      "real_success": {
+        "mean": 0.9583333333333334,
+        "std": 0.19982631347136331
+      },
+      "final_distance_px": {
+        "mean": 5.879484673341115,
+        "std": 12.656209429011522
+      },
+      "collision_count": {
+        "mean": 0.375,
+        "std": 0.6332785063987777
+      },
+      "executed_actions": {
+        "mean": 79.04166666666667,
+        "std": 35.982031588311166
+      },
+      "astar_calls": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "fallback_triggered": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mpc_calls": {
+        "mean": 84.20833333333333,
+        "std": 40.05306809582618
+      },
+      "robust_mpc_calls": {
+        "mean": 5.166666666666667,
+        "std": 6.612278141625791
+      },
+      "mpc_override_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "adaptive_switches": {
+        "mean": 3.1666666666666665,
+        "std": 3.9965262694272665
+      },
+      "adaptive_risk_mean": {
+        "mean": 0.13907259072182895,
+        "std": 0.024220607277085002
+      },
+      "adaptive_risk_max": {
+        "mean": 0.4700357089533161,
+        "std": 0.24338123630098477
+      },
+      "planning_time_ms": {
+        "mean": 323.78261249383894,
+        "std": 188.3142030868973
+      },
+      "layout_shift_score": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "shift_detected": {
+        "mean": 0.0,
+        "std": 0.0
+      }
+    },
+    "by_family": {
+      "l_shapes": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 3.2619285583496094,
+          "std": 0.2842937580264182
+        },
+        "collision_count": {
+          "mean": 0.5,
+          "std": 0.5
+        },
+        "executed_actions": {
+          "mean": 86.75,
+          "std": 40.965686861079234
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 92.75,
+          "std": 45.04650374890375
+        },
+        "robust_mpc_calls": {
+          "mean": 6.0,
+          "std": 4.242640687119285
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 5.0,
+          "std": 4.358898943540674
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.14052811462738232,
+          "std": 0.01273999841821046
+        },
+        "adaptive_risk_max": {
+          "mean": 0.5463971492275597,
+          "std": 0.20173282321346325
+        },
+        "planning_time_ms": {
+          "mean": 381.39179998324835,
+          "std": 204.2507432475177
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "multi_channel": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 3.092473936080933,
+          "std": 0.5267856005207806
+        },
+        "collision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "executed_actions": {
+          "mean": 54.6,
+          "std": 17.704236781064584
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 55.0,
+          "std": 17.504285189632853
+        },
+        "robust_mpc_calls": {
+          "mean": 0.4,
+          "std": 0.8000000000000002
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 0.4,
+          "std": 0.8000000000000002
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13617682179004237,
+          "std": 0.009170435765114133
+        },
+        "adaptive_risk_max": {
+          "mean": 0.303022030800581,
+          "std": 0.17259554487562126
+        },
+        "planning_time_ms": {
+          "mean": 166.44613999815192,
+          "std": 50.735579582090786
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "staggered_blocks": {
+        "real_success": {
+          "mean": 0.8,
+          "std": 0.4
+        },
+        "final_distance_px": {
+          "mean": 16.031216382980347,
+          "std": 25.25856833765153
+        },
+        "collision_count": {
+          "mean": 0.8,
+          "std": 0.9797958971132713
+        },
+        "executed_actions": {
+          "mean": 100.2,
+          "std": 38.18062335792856
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 107.0,
+          "std": 42.03807797699605
+        },
+        "robust_mpc_calls": {
+          "mean": 6.8,
+          "std": 10.851727973000429
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.2,
+          "std": 4.664761515876241
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.14231132749301664,
+          "std": 0.04003379213673057
+        },
+        "adaptive_risk_max": {
+          "mean": 0.3984366474449635,
+          "std": 0.2537914539570858
+        },
+        "planning_time_ms": {
+          "mean": 381.5971200092463,
+          "std": 188.69617366297004
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "staircase": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 3.2322920163472495,
+          "std": 0.4684758589582309
+        },
+        "collision_count": {
+          "mean": 0.16666666666666666,
+          "std": 0.372677996249965
+        },
+        "executed_actions": {
+          "mean": 71.5,
+          "std": 21.406774628607646
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 78.16666666666667,
+          "std": 26.567001252598224
+        },
+        "robust_mpc_calls": {
+          "mean": 6.666666666666667,
+          "std": 5.280993172584953
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 3.0,
+          "std": 3.0
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.13684608564825695,
+          "std": 0.026475691010232734
+        },
+        "adaptive_risk_max": {
+          "mean": 0.5670644049718977,
+          "std": 0.24386629415792532
+        },
+        "planning_time_ms": {
+          "mean": 329.9053333248594,
+          "std": 162.88195916109754
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      }
+    }
+  }
+}

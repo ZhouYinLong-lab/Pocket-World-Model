@@ -29,11 +29,24 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
   trade-off, not a uniformly stronger planner.
 - The guarded-MPC ablation falls to 66.7% success, while clearance training is
   indistinguishable from the base field on this holdout.
+- v25 adds a calibration-split adaptive MPC gate. It selects entry 0.25 and
+  exit 0.1667 on disjoint seeds `53,67`; on the final holdout it reaches 95.0%
+  success with 0.450 collisions and 304 ms planning, versus ordinary MPC's
+  0.367 collisions / 178 ms and fixed robust MPC's 0.150 / 1.98 s.
+- The adaptive gate is therefore an efficiency result, not a safety win: it
+  reduces robust calls by over 90% but does not reliably lower collisions under
+  map/speed shifts. This negative result is retained as the current research
+  boundary for risk calibration.
 
 See the [v23 coverage report](docs/results/evaluation-coverage-study-v23.json)
 and [v23 planner comparison](docs/results/evaluation-planner-comparison-v23.json).
 The paired OOD matrix is in
 [evaluation-coverage-study-v23-ood.json](docs/results/evaluation-coverage-study-v23-ood.json).
+
+The adaptive-gate calibration and v25 paired reports are in
+[evaluation-adaptive-calibration-v25.json](docs/results/evaluation-adaptive-calibration-v25.json),
+[evaluation-planner-comparison-v25.json](docs/results/evaluation-planner-comparison-v25.json),
+and [evaluation-planner-comparison-v25-ood.json](docs/results/evaluation-planner-comparison-v25-ood.json).
 
 ## [0.17.0] - 2026-08-12
 

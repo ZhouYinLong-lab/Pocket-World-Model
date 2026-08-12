@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-115%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-116%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
 </p>
 
@@ -226,6 +226,34 @@ roughly 2.5–3.4 seconds of planning time per episode. This motivates the next
 research step: a calibrated risk budget that can choose ordinary versus robust
 MPC based on predicted uncertainty, instead of always enabling the expensive
 envelope. See the [paired OOD report](docs/results/evaluation-coverage-study-v23-ood.json).
+
+### v25 adaptive risk-gate study
+
+The next experiment asked whether robust MPC should run on every step. An
+adaptive gate computes an RGB/history-only risk score, enters robust MPC at a
+calibrated threshold, and exits with hysteresis. Threshold selection uses
+disjoint calibration seeds (`53,67`) and a fixed success-floor/collision/time
+rule; the final holdout remains `11,23,41`.
+
+| Method | Final success | Collisions / episode | Planning time | Robust calls / episode |
+| --- | ---: | ---: | ---: | ---: |
+| Ordinary MPC | **95.0%** | **0.367** | **178 ms** | 0 |
+| Fixed robust MPC | 95.0% | **0.150** | 1.98 s | 77.7 |
+| Calibrated adaptive MPC | 95.0% | 0.450 | 304 ms | 4.5 |
+
+The calibrated gate reduces expensive robust calls by over 90% and is roughly
+6.5× faster than fixed robust MPC, but it does not match ordinary MPC's
+collision rate. Under the paired OOD matrix, adaptive MPC remains a mixed
+result: it preserves 78.9% success on walls+1/speed1.25 with 1.035 collisions,
+while ordinary MPC has 0.877 and fixed robust MPC has 1.053. The correct current
+claim is therefore “compute-budget adaptation,” not calibrated safety.
+
+This negative result is useful: the current risk score correlates with nominal
+collisions but loses predictive value under joint map/speed shift. The next
+research target is route-conditioned collision supervision or a calibrated
+short-horizon collision probability head. See the [calibration report](docs/results/evaluation-adaptive-calibration-v25.json),
+[v25 nominal comparison](docs/results/evaluation-planner-comparison-v25.json),
+and [v25 OOD matrix](docs/results/evaluation-planner-comparison-v25-ood.json).
 
 Reproduce the full comparison with:
 
