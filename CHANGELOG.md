@@ -2,6 +2,19 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.13.0] - 2026-08-12
+
+### Added
+
+- Backward-compatible 9D baseline and 17D RGB map-aware route feature contracts.
+- A resumable `pocketworld-evaluate-route-variants` experiment runner.
+- Three-seed comparison across shifted barriers, narrow/wide gaps, and speed shifts.
+
+### Results
+
+- Map context raises mean imagined route success by 7.5pp and lowers collisions by 0.36 per episode in the published eight-condition matrix.
+- Mean real route success changes by 0.0pp, so map-aware route classification is a diagnostic/safety improvement, not a solved obstacle-crossing planner.
+
 ## [0.12.1] - 2026-08-12
 
 ### Fixed

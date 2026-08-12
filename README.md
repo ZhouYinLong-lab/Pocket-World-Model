@@ -373,6 +373,22 @@ python -m pocketworld.evaluate_safety_sweep \
 See the [selection report](docs/results/evaluation-safety-sweep-selection-v11.json)
 and [OOD holdout report](docs/results/evaluation-safety-sweep-ood-v12.json).
 
+### Map-aware route features: better risk signals, not yet better traversal
+
+To broaden the method comparison, v0.13 trains two otherwise identical route
+predictors. The 9D baseline sees only imagined trajectory statistics; the 17D
+variant additionally reads geometry extracted from the current RGB wall mask
+(direct blockage, clearances, and top/bottom detour lengths). Both use the same
+training maps, seeds, planner random streams, and 48-step/64-candidate budget.
+
+Across three seeds, four map layouts, and 0.8x/1.2x speed shifts, map-aware
+features raise mean imagined route success from **63.3% to 70.8%** and reduce
+collisions from **4.23 to 3.88 per episode**, but mean real route success is
+unchanged at **15.0%**. This is a useful negative result: observable geometry
+improves route-risk recognition, while the learned dynamics still fails to
+generate reliably executable gap-crossing detours. The full protocol and
+machine-readable result are in the [route-feature comparison](docs/plans/route-completion.md#map-aware-route-feature-comparison).
+
 Reproduce the complete route-method comparison with:
 
 ```bash

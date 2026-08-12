@@ -161,6 +161,53 @@ Machine-readable reports:
 - [penalty selection](../results/evaluation-safety-sweep-selection-v11.json)
 - [OOD holdout](../results/evaluation-safety-sweep-ood-v12.json)
 
+## Map-aware route-feature comparison
+
+The next method comparison asks whether the route predictor is failing because
+it sees only imagined trajectory statistics, or because the planner cannot
+execute the selected route. The baseline keeps the original nine route
+features. The map-aware variant appends eight quantities extracted from the
+current RGB wall mask: occupied-wall fraction, component count, start/goal
+clearance, direct-line blockage, and top/bottom visible-grid detour lengths.
+Both predictors use the same two training maps (`single_barrier` and
+`barrier_shifted`), the same two training seeds, and the same planner seed
+offsets. Evaluation uses three seeds, 10 episodes per condition, a 48-step
+horizon, 64 candidates, four map layouts, and 0.8x/1.2x speed shifts.
+
+The result is diagnostic rather than a new success claim:
+
+| Variant | Mean imagined route success | Mean real route success | Mean collisions/episode |
+| --- | ---: | ---: | ---: |
+| 9D baseline | 63.3% | 15.0% | 4.23 |
+| 17D map-aware | 70.8% | 15.0% | 3.88 |
+
+Across the eight paired conditions, map context raises imagined route
+selection by **7.5pp** and lowers collisions by **0.36/episode**, but changes
+mean real success by **0.0pp**. It improves single-barrier 1.2x success by
+3.3pp and lowers collision counts on the gap tasks, yet does not produce a
+stable real-success gain. This separates two failure modes: visible geometry
+helps identify risky routes, while the learned dynamics still does not produce
+a reliably executable detour through a narrow or wide opening.
+
+The result and checkpoints are machine-readable:
+
+- [variant comparison](../results/evaluation-route-variants-v9.json)
+- [baseline 9D predictor](../../artifacts/route-completion-v9-baseline.pt)
+- [map-aware 17D predictor](../../artifacts/route-completion-v9-map-aware.pt)
+
+Reproduce with a resumable run:
+
+```bash
+python -m pocketworld.evaluate_route_variants \
+  artifacts/pocketworld-map-suite-v3-final.pt \
+  --train-seeds 101,103 --train-scenarios single_barrier,barrier_shifted \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 10 \
+  --evaluation-scenarios single_barrier,barrier_shifted,barrier_narrow_gap,barrier_wide_gap \
+  --speed-scales 0.8,1.2 --candidates 64 --horizon 48 \
+  --progress-output artifacts/evaluation-route-variants-v9-progress.json \
+  --output artifacts/evaluation-route-variants-v9.json
+```
+
 ## Reproduction
 
 ```bash
