@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 2 seconds
-Output:
 """Compare learned route sketches with RGB projection and A* fallback methods."""
 
 from __future__ import annotations
