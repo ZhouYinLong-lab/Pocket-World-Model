@@ -742,3 +742,59 @@ def adaptive_mpc_decision(
         else ordinary_action
     )
     return int(action), bool(use_robust), float(risk_score)
+
+
+def collision_head_mpc_decision(
+    collision_head: Any,
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    target: tuple[float, float],
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    horizon: int = 6,
+    beam_width: int = 24,
+    velocity_source: str = "rgb",
+    risk_threshold: float = 0.35,
+    risk_exit_threshold: float = 0.25,
+    robust_active: bool = False,
+    probability_horizon_index: int = 1,
+) -> tuple[int, bool, float]:
+    """Gate robust MPC with a learned, calibrated short-horizon risk head."""
+    if not 0.0 <= risk_exit_threshold <= risk_threshold <= 1.0:
+        raise ValueError("risk thresholds must satisfy 0 <= exit <= entry <= 1")
+    from .collision_head import collision_head_features
+
+    history = observation_history or [observation]
+    velocity = estimate_action_velocity(history, action_history, max_speed=2.3)
+    ordinary_action = local_mpc_action(
+        observation,
+        target,
+        history,
+        horizon=horizon,
+        beam_width=beam_width,
+        action_history=action_history,
+        velocity_source=velocity_source,
+    )
+    features = collision_head_features(
+        observation, goal, target, velocity, ordinary_action
+    )
+    probabilities = np.asarray(collision_head.predict_proba(features[None])[0], dtype=np.float32)
+    if not 0 <= probability_horizon_index < len(probabilities):
+        raise ValueError("probability_horizon_index is outside the head output")
+    risk = float(probabilities[probability_horizon_index])
+    use_robust = (
+        risk >= risk_exit_threshold if robust_active else risk >= risk_threshold
+    )
+    if not use_robust:
+        return int(ordinary_action), False, risk
+    robust_action = local_mpc_action(
+        observation,
+        target,
+        history,
+        horizon=horizon,
+        beam_width=beam_width,
+        robust=True,
+        action_history=action_history,
+        velocity_source=velocity_source,
+    )
+    return int(robust_action), True, risk

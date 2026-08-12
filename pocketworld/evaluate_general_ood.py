@@ -126,6 +126,10 @@ def run_general_ood(
     shift_threshold_quantile: float = 0.99,
     adaptive_risk_threshold: float = 0.45,
     adaptive_risk_exit_threshold: float = 0.30,
+    collision_head: object | None = None,
+    collision_head_risk_threshold: float = 0.35,
+    collision_head_risk_exit_threshold: float = 0.25,
+    collision_head_horizon_index: int = 1,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -169,6 +173,10 @@ def run_general_ood(
                     shift_threshold=shift_threshold,
                     adaptive_risk_threshold=adaptive_risk_threshold,
                     adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
+                    collision_head=collision_head,
+                    collision_head_risk_threshold=collision_head_risk_threshold,
+                    collision_head_risk_exit_threshold=collision_head_risk_exit_threshold,
+                    collision_head_horizon_index=collision_head_horizon_index,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -196,6 +204,9 @@ def run_general_ood(
             "shift_threshold": shift_threshold,
             "adaptive_risk_threshold": adaptive_risk_threshold,
             "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
+            "collision_head_risk_threshold": collision_head_risk_threshold,
+            "collision_head_risk_exit_threshold": collision_head_risk_exit_threshold,
+            "collision_head_horizon_index": collision_head_horizon_index,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
@@ -226,9 +237,20 @@ def main() -> None:
     parser.add_argument("--train-episodes", type=int, default=20)
     parser.add_argument("--adaptive-risk-threshold", type=float, default=0.45)
     parser.add_argument("--adaptive-risk-exit-threshold", type=float, default=0.30)
+    parser.add_argument("--collision-head-checkpoint", default="")
+    parser.add_argument("--collision-head-risk-threshold", type=float, default=0.35)
+    parser.add_argument("--collision-head-risk-exit-threshold", type=float, default=0.25)
+    parser.add_argument("--collision-head-horizon-index", type=int, default=1)
     parser.add_argument("--shift-threshold-quantile", type=float, default=0.99)
     parser.add_argument("--output", default="artifacts/evaluation-general-ood-v21.json")
     args = parser.parse_args()
+    from .collision_head import CollisionProbabilityHead
+
+    collision_head = (
+        CollisionProbabilityHead.load(args.collision_head_checkpoint)
+        if args.collision_head_checkpoint
+        else None
+    )
     report = run_general_ood(
         checkpoint=args.checkpoint,
         evaluation_seeds=tuple(int(item) for item in args.evaluation_seeds.split(",") if item.strip()),
@@ -245,6 +267,10 @@ def main() -> None:
         train_episodes=args.train_episodes,
         adaptive_risk_threshold=args.adaptive_risk_threshold,
         adaptive_risk_exit_threshold=args.adaptive_risk_exit_threshold,
+        collision_head=collision_head,
+        collision_head_risk_threshold=args.collision_head_risk_threshold,
+        collision_head_risk_exit_threshold=args.collision_head_risk_exit_threshold,
+        collision_head_horizon_index=args.collision_head_horizon_index,
         shift_threshold_quantile=args.shift_threshold_quantile,
     )
     destination = Path(args.output)
