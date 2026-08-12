@@ -1,0 +1,21 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "evaluation_seeds": [11, 23, 41],
+    "episodes_per_seed": 20,
+    "map_shifts": ["nominal", "walls_x_minus2", "walls_x_plus2"],
+    "speed_scales": [0.75, 1.25],
+    "locked_rgb_shield_margin": 4,
+    "student_evaluation_uses_astar": false,
+    "fallback_method_uses_astar": true
+  },
+  "paired_summary": {
+    "nominal@speed0.75": {"fast_collision": 0.233333, "shielded_collision": 0.183333, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 639.237190},
+    "nominal@speed1.25": {"fast_collision": 0.733333, "shielded_collision": 0.666667, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 487.946467},
+    "walls_x_minus2@speed0.75": {"fast_collision": 0.283333, "shielded_collision": 0.266667, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 596.545402},
+    "walls_x_minus2@speed1.25": {"fast_collision": 0.633333, "shielded_collision": 0.633333, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 508.916171},
+    "walls_x_plus2@speed0.75": {"fast_collision": 0.140351, "shielded_collision": 0.157895, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 712.787748},
+    "walls_x_plus2@speed1.25": {"fast_collision": 0.684211, "shielded_collision": 0.719298, "fast_success": 1.0, "shielded_success": 1.0, "shielded_planning_ms": 548.867815}
+  },
+  "interpretation": "The shield improves 3 of 6 paired OOD conditions, ties 1, and worsens 2; it preserves route completion but is not shift-stable collision control."
+}

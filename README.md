@@ -501,6 +501,28 @@ The fast ablation report is
 and its OOD report is
 [`evaluation-general-ood-v28-fast.json`](docs/results/evaluation-general-ood-v28-fast.json).
 
+#### RGB action-shield ablation
+
+To test whether the remaining collisions can be reduced without robust MPC,
+`distance_field_budgeted_hybrid_shielded_mpc` adds a pure RGB/history-only
+action shield after ordinary MPC. It checks the proposed landing action and,
+only when unsafe, chooses the closest safe one-step action among the four
+discrete actions. It uses no simulator collision labels, learned collision
+head, or additional A* call. The margin is calibrated on disjoint seeds
+`(53,67)` with a success-first rule: margins 2/3/4/5/6 give 100/100/100/95.8/91.7%
+success and 0.292/0.292/0.250/0.167/0.250 collisions per episode. Margin 4 is
+therefore locked before the final comparison.
+
+On the fixed three-seed × 20-episode holdout, the shield keeps **100.0%**
+success and reduces collisions only from **0.500** to **0.467/episode**, while
+planning time rises from **511.4 ms** to **520.9 ms**. In the six-condition
+OOD matrix it improves three conditions, ties one, and worsens two; success
+remains 100% throughout, with a roughly 14–20 ms latency increase. This is a
+small, shift-sensitive safety improvement rather than a replacement for the
+route-level hybrid. The full protocol summary is in
+[`evaluation-general-routes-v28-shielded.json`](docs/results/evaluation-general-routes-v28-shielded.json)
+and [`evaluation-general-ood-v28-shielded.json`](docs/results/evaluation-general-ood-v28-shielded.json).
+
 #### Gated-robust threshold audit
 
 The `distance_field_budgeted_hybrid_gated_mpc` variant first runs ordinary MPC

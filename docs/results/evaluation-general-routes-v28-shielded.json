@@ -1,0 +1,37 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "evaluation_seeds": [11, 23, 41],
+    "episodes_per_seed": 20,
+    "max_steps": 160,
+    "shared_cases": true,
+    "calibration_seeds": [53, 67],
+    "calibration_episodes_per_seed": 12,
+    "locked_rgb_shield_margin": 4,
+    "student_evaluation_uses_astar": false,
+    "fallback_method_uses_astar": true
+  },
+  "calibration": {
+    "margins": [2, 3, 4, 5, 6],
+    "success": [1.0, 1.0, 1.0, 0.958333, 0.916667],
+    "collisions_per_episode": [0.291667, 0.291667, 0.25, 0.166667, 0.25],
+    "selection_rule": "maximize success first, then minimize collisions; margin 4 is the largest margin preserving 100% success"
+  },
+  "holdout": {
+    "distance_field_budgeted_hybrid_fast_mpc": {
+      "real_success": 1.0,
+      "collision_count": 0.5,
+      "astar_calls": 1.466667,
+      "planning_time_ms": 511.358962,
+      "mpc_override_count": 0.0
+    },
+    "distance_field_budgeted_hybrid_shielded_mpc": {
+      "real_success": 1.0,
+      "collision_count": 0.466667,
+      "astar_calls": 1.45,
+      "planning_time_ms": 520.933328,
+      "mpc_override_count": 0.433333
+    }
+  },
+  "interpretation": "The RGB action shield gives a small holdout collision reduction at a small latency cost; it is not a robust replacement for route-level planning."
+}

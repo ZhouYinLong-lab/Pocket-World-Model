@@ -2,6 +2,28 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.28.0] - 2026-08-12
+
+### Added
+
+- A pure RGB/history-only action shield after ordinary route-hybrid MPC.
+- Disjoint shield-margin calibration and fixed-checkpoint holdout/OOD reports.
+
+### Results
+
+- Margin 4 is selected by a success-first rule on calibration seeds `(53,67)`;
+  margins 2/3/4/5/6 produce 100/100/100/95.8/91.7% success and
+  0.292/0.292/0.250/0.167/0.250 collisions per episode.
+- On the scaled three-seed holdout, shielded hybrid remains at 100% success and
+  changes collisions from 0.500 to 0.467 per episode, with planning latency
+  increasing from 511.4 ms to 520.9 ms.
+- Across six OOD speed/map conditions, the shield improves three, ties one, and
+  worsens two conditions. The result is retained as a small, shift-sensitive
+  ablation rather than a universal safety improvement.
+
+See [the holdout summary](docs/results/evaluation-general-routes-v28-shielded.json)
+and [the OOD summary](docs/results/evaluation-general-ood-v28-shielded.json).
+
 ## [0.24.0] - 2026-08-12
 
 ### Added
