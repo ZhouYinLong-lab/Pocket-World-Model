@@ -421,6 +421,7 @@ def local_mpc_action(
     beam_width: int = 24,
     robust: bool = False,
     action_history: list[int] | None = None,
+    velocity_source: str = "rgb",
 ) -> int:
     """Select the first action of a short RGB-only inertial rollout.
 
@@ -434,13 +435,20 @@ def local_mpc_action(
     """
     if horizon < 1 or beam_width < 1:
         raise ValueError("horizon and beam_width must be positive")
+    if velocity_source not in {"rgb", "action_fused"}:
+        raise ValueError("velocity_source must be 'rgb' or 'action_fused'")
     position = extract_agent_position(observation).astype(np.float32)
-    # Match the baseline waypoint controller's observable contract. Action
-    # history is used only inside MPC; otherwise the gate rejects normal
-    # baseline actions due to a different velocity estimate.
-    from .planner import estimate_agent_velocity
+    if velocity_source == "action_fused":
+        velocity = estimate_action_velocity(
+            observation_history or [observation], action_history, max_speed=2.3
+        )
+    else:
+        # Match the baseline waypoint controller's observable contract. This
+        # is the v19 primary condition; action-fused velocity is an explicit
+        # representation ablation, not silently mixed into the main result.
+        from .planner import estimate_agent_velocity
 
-    velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.3)
+        velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.3)
     target_array = np.asarray(target, dtype=np.float32)
     wall_mask = extract_wall_mask(observation)
     directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)

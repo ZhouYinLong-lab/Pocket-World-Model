@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -134,6 +135,7 @@ def evaluate_general_policy(
     method: str,
     mpc_horizon: int = 6,
     mpc_beam_width: int = 24,
+    mpc_velocity_source: str = "rgb",
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -149,6 +151,7 @@ def evaluate_general_policy(
             fallback_triggered = False
             mpc_calls = 0
             mpc_override_count = 0
+            planning_time_ms = 0.0
             if method == "rgb_astar":
                 waypoints = _astar_waypoints(observation, case.goal, position, points)
                 astar_calls += 1
@@ -219,6 +222,7 @@ def evaluate_general_policy(
                     last_route_check = step_index
                 elif method in {"hybrid_astar", "rgb_astar"} and route_check_due:
                     last_route_check = step_index
+                planning_start = time.perf_counter()
                 action = observable_waypoint_action(observation, target, history, damping=1.0)
                 if method == "distance_field_beam_conservative":
                     action = conservative_field_action(observation, target, history)
@@ -231,6 +235,7 @@ def evaluate_general_policy(
                         horizon=mpc_horizon,
                         beam_width=mpc_beam_width,
                         action_history=action_history,
+                        velocity_source=mpc_velocity_source,
                     )
                 if method == "distance_field_beam_robust_mpc":
                     mpc_calls += 1
@@ -242,6 +247,7 @@ def evaluate_general_policy(
                         beam_width=mpc_beam_width,
                         robust=True,
                         action_history=action_history,
+                        velocity_source=mpc_velocity_source,
                     )
                 if method == "distance_field_beam_guarded_mpc":
                     mpc_calls += 1
@@ -257,6 +263,7 @@ def evaluate_general_policy(
                     )
                     if action != baseline_action:
                         mpc_override_count += 1
+                planning_time_ms += (time.perf_counter() - planning_start) * 1000.0
                 observation, _, terminated, truncated, info = env.step(action)
                 action_history.append(int(action))
                 action_history = action_history[-16:]
@@ -281,6 +288,7 @@ def evaluate_general_policy(
                     "fallback_triggered": fallback_triggered,
                     "mpc_calls": mpc_calls,
                     "mpc_override_count": mpc_override_count,
+                    "planning_time_ms": planning_time_ms,
                 }
             )
     metrics = (
@@ -292,14 +300,27 @@ def evaluate_general_policy(
         "fallback_triggered",
         "mpc_calls",
         "mpc_override_count",
+        "planning_time_ms",
     )
     values = {key: np.asarray([row[key] for row in rows], dtype=np.float64) for key in metrics}
+    by_family: dict[str, dict[str, dict[str, float]]] = {}
+    for family in sorted({str(row["family"]) for row in rows}):
+        family_rows = [row for row in rows if row["family"] == family]
+        family_values = {
+            key: np.asarray([row[key] for row in family_rows], dtype=np.float64)
+            for key in metrics
+        }
+        by_family[family] = {
+            key: {"mean": float(value.mean()), "std": float(value.std())}
+            for key, value in family_values.items()
+        }
     return {
         "rows": rows,
         "summary": {
             key: {"mean": float(value.mean()), "std": float(value.std())}
             for key, value in values.items()
         },
+        "by_family": by_family,
     }
 
 
@@ -314,6 +335,7 @@ def train_and_evaluate_general_routes(
     predictor_output: str | Path = "artifacts/general-route-sketch-v18.pt",
     mpc_horizon: int = 6,
     mpc_beam_width: int = 24,
+    mpc_velocity_source: str = "rgb",
     methods: tuple[str, ...] | None = None,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_METHODS if methods is None else methods)
@@ -348,6 +370,7 @@ def train_and_evaluate_general_routes(
             method,
             mpc_horizon,
             mpc_beam_width,
+            mpc_velocity_source,
         )
         for method in selected_methods
     }
@@ -389,6 +412,7 @@ def train_and_evaluate_general_routes(
             "route_points": points,
             "mpc_horizon": mpc_horizon,
             "mpc_beam_width": mpc_beam_width,
+            "mpc_velocity_source": mpc_velocity_source,
             "methods": list(selected_methods),
             "families_train": ["staggered_blocks", "multi_channel"],
             "families_holdout": list(GENERAL_FAMILIES),
@@ -447,6 +471,7 @@ def main() -> None:
     parser.add_argument("--predictor-output", default="artifacts/general-route-sketch-v18.pt")
     parser.add_argument("--mpc-horizon", type=int, default=6)
     parser.add_argument("--mpc-beam-width", type=int, default=24)
+    parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
     parser.add_argument(
         "--methods",
@@ -465,6 +490,7 @@ def main() -> None:
         predictor_output=args.predictor_output,
         mpc_horizon=args.mpc_horizon,
         mpc_beam_width=args.mpc_beam_width,
+        mpc_velocity_source=args.mpc_velocity_source,
         methods=tuple(value.strip() for value in args.methods.split(",") if value.strip()),
     )
     destination = Path(args.output)
