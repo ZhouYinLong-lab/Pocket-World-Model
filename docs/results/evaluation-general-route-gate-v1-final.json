@@ -1,0 +1,25 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "evaluation_seeds": [11, 23, 41],
+    "episodes_per_seed": 20,
+    "shared_cases": true,
+    "route_gate_threshold": 0.25,
+    "student_evaluation_uses_astar": false,
+    "fallback_method_uses_astar": true
+  },
+  "calibration": {
+    "seeds": [53, 67],
+    "episodes_per_seed": 12,
+    "thresholds": [0.25, 0.4, 0.55, 0.7, 0.85],
+    "selected_threshold": 0.25,
+    "all_thresholds": {"real_success": 0.916667, "collision_count": 0.625, "astar_calls": 0.0}
+  },
+  "summary": {
+    "distance_field_beam_mpc": {"real_success": 0.816667, "collision_count": 0.883333, "astar_calls": 0.0, "planning_time_ms": 849.791378},
+    "distance_field_budgeted_hybrid_fast_mpc": {"real_success": 1.0, "collision_count": 0.5, "astar_calls": 1.466667, "planning_time_ms": 510.166082},
+    "distance_field_predicted_gate_hybrid": {"real_success": 1.0, "collision_count": 0.483333, "astar_calls": 1.466667, "planning_time_ms": 507.300860, "route_gate_triggered": 0.05}
+  },
+  "interpretation": "Initial route-completion probability adds a small nominal holdout improvement but does not change A* usage; closed-loop route progress and remaining-budget fallback remain the reliable contributor."
+}
+
