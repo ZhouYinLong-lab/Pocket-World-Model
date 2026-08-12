@@ -1,5 +1,6 @@
 from collections import Counter
 
+import numpy as np
 import pytest
 
 from pocketworld.general_routes import (
@@ -8,6 +9,7 @@ from pocketworld.general_routes import (
     sample_general_route_cases,
 )
 from pocketworld.evaluate_general_routes import GENERAL_METHODS, train_and_evaluate_general_routes
+from pocketworld.evaluate_mpc_ablation import run_mpc_ablation
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
@@ -135,6 +137,34 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
+
+
+def test_mpc_ablation_has_fixed_protocol_and_family_metrics(tmp_path):
+    cases = sample_general_route_cases(101, 8, split="train")
+    frames = []
+    goals = []
+    for case in cases:
+        frame, _ = PocketWorldEnv(
+            walls=case.walls, agent_start=case.start, goal=case.goal
+        ).reset()
+        frames.append(frame)
+        goals.append(case.goal)
+    policy = RouteFieldPolicy()
+    policy.fit(np.asarray(frames), np.asarray(goals, dtype=np.float32), epochs=1)
+    checkpoint = policy.save(tmp_path / "field.pt")
+    report = run_mpc_ablation(
+        checkpoint,
+        evaluation_seeds=(11,),
+        evaluation_episodes=1,
+        max_steps=8,
+        configs=(
+            {"name": "smoke", "horizon": 2, "beam_width": 4, "velocity_source": "rgb", "robust": False},
+        ),
+    )
+    assert report["protocol"]["student_evaluation_uses_astar"] is False
+    evaluation = report["results"]["smoke"]["evaluation"]
+    assert evaluation["by_family"]
+    assert "planning_time_ms" in evaluation["summary"]
 
 
 def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
