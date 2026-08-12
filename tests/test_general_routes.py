@@ -14,7 +14,7 @@ from pocketworld.evaluate_general_ood import run_general_ood
 from pocketworld.evaluate_coverage_study import run_coverage_study
 from pocketworld.evaluate_planner_comparison import run_planner_comparison
 from pocketworld.evaluate_adaptive_calibration import run_adaptive_calibration
-from pocketworld.evaluate_collision_head import _quantile_threshold
+from pocketworld.evaluate_collision_head import _quantile_threshold, probability_calibration_metrics
 from pocketworld.collision_head import (
     CollisionProbabilityHead,
     collect_collision_head_dataset,
@@ -89,6 +89,19 @@ def test_general_sampling_validates_inputs():
         sample_general_route_cases(3, 1, split="test")
     with pytest.raises(ValueError, match="family"):
         general_wall_layout(3, "unknown")
+
+
+def test_collision_probability_calibration_metrics_are_deterministic():
+    probabilities = np.asarray([[0.05, 0.10], [0.90, 0.80], [0.20, 0.30], [0.70, 0.60]])
+    labels = np.asarray([[0.0, 0.0], [1.0, 1.0], [0.0, 1.0], [1.0, 0.0]])
+    report = probability_calibration_metrics(probabilities, labels, threshold=0.5, bins=2)
+    assert report["sample_count"] == 4
+    assert len(report["horizons"]) == 2
+    assert report["horizons"][0]["auroc"] == pytest.approx(1.0)
+    assert report["horizons"][0]["average_precision"] == pytest.approx(1.0)
+    assert report["horizons"][0]["collision_recall"] == pytest.approx(1.0)
+    assert report["horizons"][0]["precision"] == pytest.approx(1.0)
+    assert report["horizons"][0]["ece"] >= 0.0
 
 
 def test_general_evaluation_reports_method_astar_contract(tmp_path):
@@ -184,6 +197,22 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
+
+
+def test_collision_head_temperature_roundtrip_and_calibration(tmp_path):
+    rng = np.random.default_rng(4)
+    features = rng.normal(size=(24, 238)).astype(np.float32)
+    labels = np.zeros((24, 3), dtype=np.float32)
+    labels[:8] = 1.0
+    head = CollisionProbabilityHead()
+    head.fit(features, labels, epochs=2)
+    result = head.fit_temperature(features, labels, epochs=3)
+    assert result["temperature"] > 0.0
+    assert len(result["temperatures"]) == 3
+    assert head.predict_proba(features).shape == (24, 3)
+    restored = CollisionProbabilityHead.load(head.save(tmp_path / "head.pt"))
+    assert restored.temperature == pytest.approx(head.temperature)
+    assert restored.temperatures.shape == (3,)
 
 
 def test_adaptive_mpc_hysteresis_keeps_robust_mode_until_exit(monkeypatch):
@@ -367,3 +396,4 @@ def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
     occupied[28:36, 20:44] = True
     assert not _coarse_transition_is_safe(occupied, (4, 7), (5, 7), 4)
     assert _coarse_transition_is_safe(occupied, (4, 4), (4, 5), 4)
+
