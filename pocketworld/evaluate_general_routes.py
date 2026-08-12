@@ -109,12 +109,20 @@ def collect_general_route_data(
     episodes: int,
     split: str,
     points: int,
+    families: tuple[str, ...] | None = None,
+    balanced_families: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     observations: list[np.ndarray] = []
     goals: list[np.ndarray] = []
     targets: list[np.ndarray] = []
     for seed in seeds:
-        for case in sample_general_route_cases(seed, episodes, split=split):
+        for case in sample_general_route_cases(
+            seed,
+            episodes,
+            split=split,
+            families=families,
+            balanced=balanced_families,
+        ):
             observation, _ = PocketWorldEnv(
                 walls=case.walls, agent_start=case.start, goal=case.goal
             ).reset()
@@ -391,13 +399,20 @@ def train_and_evaluate_general_routes(
     mpc_beam_width: int = 24,
     mpc_velocity_source: str = "rgb",
     methods: tuple[str, ...] | None = None,
+    training_families: tuple[str, ...] | None = None,
+    balanced_training_families: bool = False,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
     if unknown_methods:
         raise ValueError(f"unknown general route methods: {sorted(unknown_methods)}")
     observations, goals, targets = collect_general_route_data(
-        train_seeds, train_episodes, "train", points
+        train_seeds,
+        train_episodes,
+        "train",
+        points,
+        families=training_families,
+        balanced_families=balanced_training_families,
     )
     policy = RouteSketchPolicy(points=points)
     training = {"route_sketch": policy.fit(observations, goals, targets, epochs=epochs)}
@@ -468,6 +483,12 @@ def train_and_evaluate_general_routes(
             "mpc_beam_width": mpc_beam_width,
             "mpc_velocity_source": mpc_velocity_source,
             "methods": list(selected_methods),
+            "training_families": list(
+                training_families
+                if training_families is not None
+                else ("staggered_blocks", "multi_channel")
+            ),
+            "balanced_training_families": balanced_training_families,
             "families_train": ["staggered_blocks", "multi_channel"],
             "families_holdout": list(GENERAL_FAMILIES),
             "teacher_labels_use_astar": True,
