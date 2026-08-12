@@ -46,6 +46,7 @@ GENERAL_METHODS = (
     "distance_field_mpc_shift_fallback",
     "distance_field_budgeted_hybrid_mpc",
     "distance_field_budgeted_hybrid_fast_mpc",
+    "distance_field_budgeted_hybrid_gated_mpc",
 )
 GENERAL_DEFAULT_METHODS = tuple(
     method
@@ -57,12 +58,14 @@ GENERAL_DEFAULT_METHODS = tuple(
         "distance_field_mpc_shift_fallback",
         "distance_field_budgeted_hybrid_mpc",
         "distance_field_budgeted_hybrid_fast_mpc",
+        "distance_field_budgeted_hybrid_gated_mpc",
     }
 )
 BUDGETED_HYBRID_METHODS = frozenset(
     {
         "distance_field_budgeted_hybrid_mpc",
         "distance_field_budgeted_hybrid_fast_mpc",
+        "distance_field_budgeted_hybrid_gated_mpc",
     }
 )
 
@@ -180,6 +183,7 @@ def evaluate_general_policy(
     collision_head_horizon_index: int = 1,
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
+    gated_robust_risk_threshold: float = 0.45,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -190,6 +194,8 @@ def evaluate_general_policy(
         raise ValueError("route_budget_margin must be finite and non-negative")
     if route_progress_tolerance < 0.0 or not np.isfinite(route_progress_tolerance):
         raise ValueError("route_progress_tolerance must be finite and non-negative")
+    if not 0.0 <= gated_robust_risk_threshold <= 1.0 or not np.isfinite(gated_robust_risk_threshold):
+        raise ValueError("gated_robust_risk_threshold must be finite in [0, 1]")
     for seed in seeds:
         cases = (
             cases_by_seed[seed]
@@ -243,6 +249,7 @@ def evaluate_general_policy(
                 "distance_field_mpc_shift_fallback",
                 "distance_field_budgeted_hybrid_mpc",
                 "distance_field_budgeted_hybrid_fast_mpc",
+                "distance_field_budgeted_hybrid_gated_mpc",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -262,6 +269,7 @@ def evaluate_general_policy(
                         "distance_field_mpc_shift_fallback",
                         "distance_field_budgeted_hybrid_mpc",
                         "distance_field_budgeted_hybrid_fast_mpc",
+                        "distance_field_budgeted_hybrid_gated_mpc",
                     }
                     else 1,
                 )
@@ -436,38 +444,7 @@ def evaluate_general_policy(
                     )
                     robust_mpc_calls += 1
                 if method == "distance_field_beam_adaptive_mpc":
-                    from .route_field import adaptive_mpc_decision
-
-                    mpc_calls += 1
-                    action, use_robust, risk_score = adaptive_mpc_decision(
-                        observation,
-                        target,
-                        action,
-                        history,
-                        action_history,
-                        horizon=mpc_horizon,
-                        beam_width=mpc_beam_width,
-                        velocity_source=mpc_velocity_source,
-                        risk_threshold=adaptive_risk_threshold,
-                        risk_exit_threshold=adaptive_risk_exit_threshold,
-                        robust_active=adaptive_robust_active,
-                    )
-                    adaptive_risk_sum += risk_score
-                    adaptive_risk_max = max(adaptive_risk_max, risk_score)
-                    if use_robust:
-                        # The decision first evaluates an ordinary MPC
-                        # candidate, then runs robust MPC when the risk gate is
-                        # active. Count both actual planner calls.
-                        mpc_calls += 1
-                    if use_robust != adaptive_robust_active:
-                        adaptive_switches += 1
-                    adaptive_robust_active = use_robust
-                    if use_robust:
-                        robust_mpc_calls += 1
-                if method == "distance_field_beam_collision_head_mpc":
-                    if collision_head is None:
-                        raise ValueError(
-                            "collision_head method requires a trained collision_head"
+                    from …384 tokens truncated…                       "collision_head method requires a trained collision_head"
                         )
                     from .route_field import collision_head_mpc_decision
 
@@ -482,6 +459,7 @@ def evaluate_general_policy(
                         action_history,
                         horizon=mpc_horizon,
                         beam_width=mpc_beam_width,
+                        robust_threshold=gated_robust_risk_threshold,
                         velocity_source=mpc_velocity_source,
                         risk_threshold=collision_head_risk_threshold,
                         risk_exit_threshold=collision_head_risk_exit_threshold,
@@ -510,7 +488,24 @@ def evaluate_general_policy(
                     )
                     if action != baseline_action:
                         mpc_override_count += 1
-                if method in BUDGETED_HYBRID_METHODS:
+                if method == "distance_field_budgeted_hybrid_gated_mpc":
+                    from .route_field import gated_robust_mpc_action
+
+                    mpc_calls += 1
+                    action, used_robust, gated_risk = gated_robust_mpc_action(
+                        observation,
+                        target,
+                        action,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                    )
+                    mpc_calls += int(used_robust)
+                    robust_mpc_calls += int(used_robust)
+                    adaptive_risk_sum += gated_risk
+                    adaptive_risk_max = max(adaptive_risk_max, gated_risk)
+                elif method in BUDGETED_HYBRID_METHODS:
                     mpc_calls += 1
                     action = local_mpc_action(
                         observation,
@@ -654,6 +649,7 @@ def train_and_evaluate_general_routes(
     adaptive_risk_exit_threshold: float = 0.30,
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
+    gated_robust_risk_threshold: float = 0.45,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
@@ -697,6 +693,7 @@ def train_and_evaluate_general_routes(
                 adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
                 route_budget_margin=route_budget_margin,
                 route_progress_tolerance=route_progress_tolerance,
+                gated_robust_risk_threshold=gated_robust_risk_threshold,
             )
         for method in selected_methods
     }
@@ -743,6 +740,7 @@ def train_and_evaluate_general_routes(
             "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
             "route_budget_margin": route_budget_margin,
             "route_progress_tolerance": route_progress_tolerance,
+            "gated_robust_risk_threshold": gated_robust_risk_threshold,
             "methods": list(selected_methods),
             "training_families": list(
                 training_families
@@ -775,6 +773,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_mpc_shift_fallback": True,
                 "distance_field_budgeted_hybrid_mpc": True,
                 "distance_field_budgeted_hybrid_fast_mpc": True,
+                "distance_field_budgeted_hybrid_gated_mpc": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -798,6 +797,7 @@ def train_and_evaluate_general_routes(
             "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
             "distance_field_budgeted_hybrid_mpc": "learned field with route-progress/remaining-budget gate and explicit RGB/A* hybrid fallback",
             "distance_field_budgeted_hybrid_fast_mpc": "same route-budgeted hybrid gate with ordinary rather than robust RGB MPC after fallback",
+            "distance_field_budgeted_hybrid_gated_mpc": "same route-budgeted hybrid gate with risk-triggered robust RGB MPC escalation",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),
@@ -820,6 +820,7 @@ def main() -> None:
     parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
     parser.add_argument("--route-budget-margin", type=float, default=1.05)
     parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
+    parser.add_argument("--gated-robust-risk-threshold", type=float, default=0.45)
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
     parser.add_argument(
         "--methods",
@@ -842,6 +843,7 @@ def main() -> None:
         methods=tuple(value.strip() for value in args.methods.split(",") if value.strip()),
         route_budget_margin=args.route_budget_margin,
         route_progress_tolerance=args.route_progress_tolerance,
+        gated_robust_risk_threshold=args.gated_robust_risk_threshold,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
