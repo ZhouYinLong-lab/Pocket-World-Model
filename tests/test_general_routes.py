@@ -32,6 +32,7 @@ from pocketworld.route_field import (
     guarded_mpc_action,
     field_waypoints,
     route_field_targets,
+    route_progress_metrics,
 )
 from pocketworld.env import PocketWorldEnv
 from pocketworld.planner import _astar_path, _dilate, extract_wall_mask
@@ -197,6 +198,24 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
+
+
+def test_route_progress_metrics_projects_and_reports_remaining_budget():
+    route = np.asarray(((8.0, 8.0), (8.0, 40.0), (56.0, 40.0)), dtype=np.float32)
+    metrics = route_progress_metrics((8.0, 20.0), route)
+    assert metrics["progress_px"] == pytest.approx(12.0)
+    assert metrics["remaining_px"] == pytest.approx(68.0)
+    assert metrics["total_px"] == pytest.approx(80.0)
+    assert metrics["progress_norm"] == pytest.approx(0.15)
+    with pytest.raises(ValueError, match="route_points"):
+        route_progress_metrics((8.0, 20.0), np.asarray(((8.0, 8.0),)))
+
+
+def test_budgeted_hybrid_method_is_explicit_and_not_default():
+    from pocketworld.evaluate_general_routes import GENERAL_METHODS
+
+    assert "distance_field_budgeted_hybrid_mpc" in GENERAL_METHODS
+    assert "distance_field_budgeted_hybrid_mpc" not in GENERAL_DEFAULT_METHODS
 
 
 def test_collision_head_temperature_roundtrip_and_calibration(tmp_path):
