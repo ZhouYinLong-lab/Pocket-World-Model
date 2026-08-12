@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-116%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-121%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
 </p>
 
@@ -289,6 +289,32 @@ python -m pocketworld.evaluate_collision_head \
 
 See the [v26 nominal report](docs/results/evaluation-collision-head-v26-corrected.json)
 and [v26 OOD report](docs/results/evaluation-collision-head-v26-ood.json).
+
+### v27 probability calibration audit
+
+v27 adds a post-hoc, per-horizon temperature fitted only on calibration maps
+`53,67`. A separate map holdout (`29,31,37`) is used only for the calibration
+audit, while the planner result remains on the untouched final tasks
+`11,23,41`. On that independent calibration holdout, horizon-2 ECE changes
+from **0.0248** to **0.0224** and Brier score from **0.06227** to **0.06227**
+(rounded; exact values are in the JSON); AUROC remains **0.927**, as expected
+for a monotonic temperature transform. The final planner remains **95.0%
+success**, with **0.183 collisions/episode**; raw and calibrated gates are
+identical at this resolution. This is a modest calibration improvement, not
+evidence that probability calibration alone closes the OOD obstacle gap.
+
+The full v27 report includes reliability bins, Brier/ECE/AUROC/AUPRC, threshold
+recall/precision, and raw-vs-calibrated planner rows:
+[`evaluation-collision-head-v27-final.json`](docs/results/evaluation-collision-head-v27-final.json).
+
+Reproduce it with:
+
+```bash
+python -m pocketworld.evaluate_collision_head \
+  --train-seeds 101,103,107 --calibration-seeds 53,67 \
+  --calibration-holdout-seeds 29,31,37 --evaluation-seeds 11,23,41 \
+  --output artifacts/evaluation-collision-head-v27-final.json
+```
 
 Reproduce the full comparison with:
 
