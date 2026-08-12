@@ -10,7 +10,7 @@ import torch
 
 from .env import DEFAULT_WALLS
 from .model import PocketWorldModel, observable_velocity_from_frames
-from .route_completion import extract_route_features
+from .route_completion import extract_map_context_features, extract_route_features
 
 
 @dataclass
@@ -967,11 +967,21 @@ def random_shooting(
     route_completion_probabilities = _route_completion_probabilities(goal_distances, collision_prefix)
     if route_completion_model is not None:
         route_completion_model.eval()
+        map_context = None
+        feature_names = tuple(getattr(route_completion_model, "feature_names", ()))
+        if feature_names and len(feature_names) > 9:
+            # Map-aware predictors still use only the current RGB observation;
+            # keep the contract valid for callers that do not enable the
+            # collision-aware branch.
+            if not collision_aware:
+                wall_mask = extract_wall_mask(observation)
+            map_context = extract_map_context_features(start_position, goal, wall_mask)
         route_features = extract_route_features(
             positions,
             goal,
             collision_prefix,
             actions=actions.detach().cpu().numpy(),
+            map_context=map_context,
         )
         route_completion_probabilities = np.asarray(
             route_completion_model.predict_proba(route_features), dtype=np.float32
