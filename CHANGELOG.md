@@ -48,6 +48,32 @@ The adaptive-gate calibration and v25 paired reports are in
 [evaluation-planner-comparison-v25.json](docs/results/evaluation-planner-comparison-v25.json),
 and [evaluation-planner-comparison-v25-ood.json](docs/results/evaluation-planner-comparison-v25-ood.json).
 
+## [0.22.0] - 2026-08-12
+
+### Added
+
+- Simulator-labelled, route-conditioned short-horizon collision probability
+  head for 1/2/4-step risk prediction.
+- Disjoint train/calibration/final-holdout protocol and calibrated robust-MPC
+  gate; the learned head never receives future state or evaluation labels.
+- Complete nominal and map/speed OOD reports with per-family risk, switch,
+  robust-call, collision, success, and planning-time metrics.
+
+### Results
+
+- On the shared 60-task holdout, corrected v26 reaches 95.0% success, 0.317
+  collisions/episode, and 544 ms planning, versus ordinary MPC's 0.367/178 ms
+  and fixed robust MPC's 0.150/1.98 s.
+- Under walls+1, it reaches 0.404 collisions at speed 1.0 and 0.754 at speed
+  1.25; this improves collision rate over the heuristic adaptive gate and
+  ordinary MPC, but success remains lower than ordinary MPC at speed 1.0.
+- The first v26 run selected threshold 0.0 due to an ascending-threshold bug
+  and is intentionally not reported; the corrected run selects 0.2051 using
+  the highest threshold satisfying 80% calibration recall.
+
+See the [v26 nominal report](docs/results/evaluation-collision-head-v26-corrected.json)
+and [v26 OOD report](docs/results/evaluation-collision-head-v26-ood.json).
+
 ## [0.17.0] - 2026-08-12
 
 ### Added
