@@ -45,6 +45,19 @@ See [the v28 OOD report](artifacts/evaluation-general-ood-v28-budgeted.json).
   The negative result is retained as a boundary of the current observable risk
   score.
 
+## [0.27.0] - 2026-08-12
+
+### Results
+
+- Scaled fixed-checkpoint holdout: 3 seeds × 20 episodes. Learned-field MPC
+  reaches 81.67% success and 0.883 collisions/episode; fast budgeted hybrid
+  reaches 100.0% and 0.500.
+- Scaled OOD replication uses six speed/map conditions and 57–60 paired
+  episodes per condition. Fast hybrid reaches 100.0% in every condition;
+  baseline ranges from 63.16% to 93.33%.
+- The scaled result strengthens the route-completion conclusion while retaining
+  the explicit A* intervention and collision/latency trade-off.
+
 ## [0.25.0] - 2026-08-12
 
 ### Added

@@ -1,0 +1,11 @@
+{
+  "protocol": {"checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt", "evaluation_seeds": [11, 23, 41], "episodes_per_seed": 20, "max_steps": 160, "map_shifts": ["nominal", "walls_x_minus2", "walls_x_plus2"], "speed_scales": [0.75, 1.25], "methods": ["distance_field_beam_mpc", "distance_field_budgeted_hybrid_fast_mpc"], "paired_episode_counts": {"nominal@speed0.75": 60, "nominal@speed1.25": 60, "walls_x_minus2@speed0.75": 60, "walls_x_minus2@speed1.25": 60, "walls_x_plus2@speed0.75": 57, "walls_x_plus2@speed1.25": 57}},
+  "summary": {
+    "distance_field_budgeted_hybrid_fast_mpc_success_all_conditions": 1.0,
+    "baseline_success_range": [0.63158, 0.93333],
+    "fast_hybrid_collision_range": [0.31579, 0.75439],
+    "fast_hybrid_astar_calls_range": [1.21667, 1.75],
+    "fast_hybrid_planning_time_ms_range": [108.29726, 171.14961]
+  },
+  "interpretation": "Scaled OOD replication supports 100% route completion for fast hybrid, with an explicit A* fallback and collision/latency trade-off."
+}

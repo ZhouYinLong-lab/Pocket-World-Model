@@ -487,6 +487,15 @@ The robust variant remains useful when collision minimization matters more than
 latency; neither result is presented as a pure learned planner because both
 use RGB-triggered A* fallback.
 
+The scaled fixed-checkpoint replication uses 3 seeds × 20 episodes (60 paired
+episodes per nominal condition; 57 after reachability exclusions for shifted
+maps). On the nominal four-family holdout, learned-field MPC reaches **81.67%**
+success with **0.883 collisions/episode**, while fast hybrid reaches **100.0%**
+success with **0.500 collisions/episode**. Fast hybrid reaches 100.0% in all six
+OOD speed/map conditions; baseline ranges from **63.16% to 93.33%**. The full
+scaled report is [`evaluation-general-routes-v26-scaled.json`](docs/results/evaluation-general-routes-v26-scaled.json),
+and the paired OOD report is [`evaluation-general-ood-v26-scaled.json`](docs/results/evaluation-general-ood-v26-scaled.json).
+
 The fast ablation report is
 [`evaluation-general-routes-v28-fast-ablation.json`](docs/results/evaluation-general-routes-v28-fast-ablation.json),
 and its OOD report is
