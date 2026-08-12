@@ -38,3 +38,35 @@ def test_closed_loop_route_planner_does_not_fake_imagination_metrics():
     assert row["imagined_success"] is None
     assert row["imagined_final_distance_px"] is None
     assert 0.0 <= row["real_success"]["mean"] <= 1.0
+
+
+def test_fixed_predictor_safety_entrypoint_reports_all_methods(tmp_path):
+    from pocketworld.evaluate_safety_methods import evaluate_safety_methods
+    from pocketworld.route_completion import RouteCompletionPredictor
+
+    predictor_path = tmp_path / "route-predictor.pt"
+    predictor = RouteCompletionPredictor()
+    features = np.asarray(
+        [
+            [0.8, 0.2, 0.2, 0.6, 0.0, 1.0, 0.4, 0.1, 0.5],
+            [0.8, 0.8, 0.7, 0.0, 1.0, 0.3, 0.8, 0.8, 0.5],
+            [0.7, 0.3, 0.3, 0.4, 0.1, 0.9, 0.5, 0.2, 0.5],
+            [0.7, 0.9, 0.8, -0.2, 0.9, 0.2, 0.9, 0.9, 0.5],
+        ],
+        dtype=np.float32,
+    )
+    labels = np.asarray([1.0, 0.0, 1.0, 0.0], dtype=np.float32)
+    predictor.fit(features, labels, epochs=1)
+    predictor.save(predictor_path)
+
+    report = evaluate_safety_methods(
+        "artifacts/pocketworld-map-suite-v3-final.pt",
+        predictor_path,
+        evaluation_seeds=(5,),
+        evaluation_episodes=1,
+        candidates=8,
+        horizon=4,
+    )
+
+    assert "route_completion_soft" in report["summary"]
+    assert "paired_soft_comparison" in report
