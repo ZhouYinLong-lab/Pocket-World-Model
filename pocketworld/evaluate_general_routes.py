@@ -188,6 +188,7 @@ def evaluate_general_policy(
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
     gated_robust_risk_threshold: float = 0.45,
+    rgb_shield_margin: int = 4,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -200,6 +201,8 @@ def evaluate_general_policy(
         raise ValueError("route_progress_tolerance must be finite and non-negative")
     if not 0.0 <= gated_robust_risk_threshold <= 1.0 or not np.isfinite(gated_robust_risk_threshold):
         raise ValueError("gated_robust_risk_threshold must be finite in [0, 1]")
+    if rgb_shield_margin < 1:
+        raise ValueError("rgb_shield_margin must be positive")
     for seed in seeds:
         cases = (
             cases_by_seed[seed]
@@ -562,7 +565,7 @@ def evaluate_general_policy(
                             action,
                             history,
                             action_history,
-                            margin=4,
+                            margin=rgb_shield_margin,
                         )
                         mpc_override_count += int(shielded)
                 planning_time_ms += (time.perf_counter() - planning_start) * 1000.0
@@ -697,6 +700,7 @@ def train_and_evaluate_general_routes(
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
     gated_robust_risk_threshold: float = 0.45,
+    rgb_shield_margin: int = 4,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
@@ -739,9 +743,10 @@ def train_and_evaluate_general_routes(
                 adaptive_risk_threshold=adaptive_risk_threshold,
                 adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
                 route_budget_margin=route_budget_margin,
-                route_progress_tolerance=route_progress_tolerance,
-                gated_robust_risk_threshold=gated_robust_risk_threshold,
-            )
+                    route_progress_tolerance=route_progress_tolerance,
+                    gated_robust_risk_threshold=gated_robust_risk_threshold,
+                    rgb_shield_margin=rgb_shield_margin,
+                )
         for method in selected_methods
     }
     policy.save(
@@ -788,6 +793,7 @@ def train_and_evaluate_general_routes(
             "route_budget_margin": route_budget_margin,
             "route_progress_tolerance": route_progress_tolerance,
             "gated_robust_risk_threshold": gated_robust_risk_threshold,
+            "rgb_shield_margin": rgb_shield_margin,
             "methods": list(selected_methods),
             "training_families": list(
                 training_families
@@ -870,6 +876,7 @@ def main() -> None:
     parser.add_argument("--route-budget-margin", type=float, default=1.05)
     parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
     parser.add_argument("--gated-robust-risk-threshold", type=float, default=0.45)
+    parser.add_argument("--rgb-shield-margin", type=int, default=4)
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
     parser.add_argument(
         "--methods",
@@ -893,6 +900,7 @@ def main() -> None:
         route_budget_margin=args.route_budget_margin,
         route_progress_tolerance=args.route_progress_tolerance,
         gated_robust_risk_threshold=args.gated_robust_risk_threshold,
+        rgb_shield_margin=args.rgb_shield_margin,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)

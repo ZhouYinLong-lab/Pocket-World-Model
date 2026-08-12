@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pocket-world-model"
-version = "0.27.0"
+version = "0.28.0"
 description = "A tiny and observable world model for 2D dynamics and imagined planning."
 requires-python = ">=3.10"
 dependencies = [
