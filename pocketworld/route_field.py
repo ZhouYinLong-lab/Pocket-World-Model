@@ -14,6 +14,27 @@ from .planner import _dilate, extract_agent_position, extract_wall_mask
 FIELD_GRID = 16
 
 
+def coarse_wall_signature(observation: np.ndarray, grid_size: int = FIELD_GRID) -> np.ndarray:
+    """Encode only coarse RGB wall occupancy for layout-shift monitoring."""
+    if grid_size < 1 or 64 % grid_size != 0:
+        raise ValueError("grid_size must be a positive divisor of 64")
+    mask = extract_wall_mask(observation)
+    block = 64 // grid_size
+    return mask.reshape(grid_size, block, grid_size, block).any(axis=(1, 3)).astype(np.float32).ravel()
+
+
+def wall_layout_shift_score(
+    observation: np.ndarray,
+    reference_signatures: np.ndarray,
+) -> float:
+    """Return nearest-reference Hamming distance for the visible wall layout."""
+    references = np.asarray(reference_signatures, dtype=np.float32)
+    signature = coarse_wall_signature(observation)
+    if references.ndim != 2 or references.shape[1] != signature.size or len(references) < 1:
+        raise ValueError("reference_signatures must have shape [N, 256]")
+    return float(np.min(np.mean(references != signature[None], axis=1)))
+
+
 def estimate_action_velocity(
     observation_history: list[np.ndarray],
     action_history: list[int] | None = None,

@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from .env import PocketWorldEnv
-from .general_routes import GENERAL_FAMILIES, sample_general_route_cases
+from .general_routes import GENERAL_FAMILIES, GeneralRouteCase, sample_general_route_cases
 from .planner import _astar_path, _dilate, extract_agent_position, extract_wall_mask
 from .route_policy import (
     RouteSketchPolicy,
@@ -40,7 +40,9 @@ GENERAL_METHODS = (
     "distance_field_beam_robust_mpc",
     "distance_field_clearance_beam_rgb_projection",
     "distance_field_beam_guarded_mpc",
+    "distance_field_mpc_shift_fallback",
 )
+GENERAL_DEFAULT_METHODS = GENERAL_METHODS[:-1]
 
 
 def _segment_hits_wall(
@@ -136,13 +138,29 @@ def evaluate_general_policy(
     mpc_horizon: int = 6,
     mpc_beam_width: int = 24,
     mpc_velocity_source: str = "rgb",
+    cases_by_seed: dict[int, tuple[GeneralRouteCase, ...]] | None = None,
+    agent_speed_scale: float = 1.0,
+    reference_signatures: np.ndarray | None = None,
+    shift_threshold: float = 0.0,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
     rows: list[dict[str, object]] = []
+    if agent_speed_scale <= 0.0 or not np.isfinite(agent_speed_scale):
+        raise ValueError("agent_speed_scale must be finite and positive")
     for seed in seeds:
-        for case in sample_general_route_cases(seed, episodes, split="holdout"):
-            env = PocketWorldEnv(walls=case.walls, agent_start=case.start, goal=case.goal)
+        cases = (
+            cases_by_seed[seed]
+            if cases_by_seed is not None
+            else sample_general_route_cases(seed, episodes, split="holdout")
+        )
+        for case in cases:
+            env = PocketWorldEnv(
+                walls=case.walls,
+                agent_start=case.start,
+                goal=case.goal,
+                agent_speed_scale=agent_speed_scale,
+            )
             observation, info = env.reset()
             history = [observation]
             action_history: list[int] = []
@@ -152,6 +170,8 @@ def evaluate_general_policy(
             mpc_calls = 0
             mpc_override_count = 0
             planning_time_ms = 0.0
+            layout_shift_score = 0.0
+            shift_detected = False
             if method == "rgb_astar":
                 waypoints = _astar_waypoints(observation, case.goal, position, points)
                 astar_calls += 1
@@ -164,6 +184,7 @@ def evaluate_general_policy(
                 "distance_field_beam_robust_mpc",
                 "distance_field_clearance_beam_rgb_projection",
                 "distance_field_beam_guarded_mpc",
+                "distance_field_mpc_shift_fallback",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -178,9 +199,27 @@ def evaluate_general_policy(
                         "distance_field_beam_mpc",
                         "distance_field_beam_robust_mpc",
                         "distance_field_clearance_beam_rgb_projection",
+                        "distance_field_mpc_shift_fallback",
                     }
                     else 1,
                 )
+                if method == "distance_field_mpc_shift_fallback":
+                    if reference_signatures is None or shift_threshold <= 0.0:
+                        raise ValueError(
+                            "shift fallback requires reference_signatures and positive shift_threshold"
+                        )
+                    from .route_field import wall_layout_shift_score
+
+                    layout_shift_score = wall_layout_shift_score(
+                        observation, reference_signatures
+                    )
+                    if layout_shift_score > shift_threshold:
+                        waypoints = _astar_waypoints(
+                            observation, case.goal, position, points
+                        )
+                        astar_calls += 1
+                        fallback_triggered = True
+                        shift_detected = True
             else:
                 predicted = policy.predict_points(observation, case.goal)
                 waypoints = observable_route_sketch_waypoints(observation, case.goal, predicted)
@@ -227,6 +266,17 @@ def evaluate_general_policy(
                 if method == "distance_field_beam_conservative":
                     action = conservative_field_action(observation, target, history)
                 if method == "distance_field_beam_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
+                if method == "distance_field_mpc_shift_fallback":
                     mpc_calls += 1
                     action = local_mpc_action(
                         observation,
@@ -289,6 +339,8 @@ def evaluate_general_policy(
                     "mpc_calls": mpc_calls,
                     "mpc_override_count": mpc_override_count,
                     "planning_time_ms": planning_time_ms,
+                    "layout_shift_score": layout_shift_score,
+                    "shift_detected": shift_detected,
                 }
             )
     metrics = (
@@ -301,6 +353,8 @@ def evaluate_general_policy(
         "mpc_calls",
         "mpc_override_count",
         "planning_time_ms",
+        "layout_shift_score",
+        "shift_detected",
     )
     values = {key: np.asarray([row[key] for row in rows], dtype=np.float64) for key in metrics}
     by_family: dict[str, dict[str, dict[str, float]]] = {}
@@ -338,7 +392,7 @@ def train_and_evaluate_general_routes(
     mpc_velocity_source: str = "rgb",
     methods: tuple[str, ...] | None = None,
 ) -> dict[str, object]:
-    selected_methods = tuple(GENERAL_METHODS if methods is None else methods)
+    selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
     if unknown_methods:
         raise ValueError(f"unknown general route methods: {sorted(unknown_methods)}")
@@ -434,6 +488,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_beam_robust_mpc": False,
                 "distance_field_clearance_beam_rgb_projection": False,
                 "distance_field_beam_guarded_mpc": False,
+                "distance_field_mpc_shift_fallback": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -452,6 +507,7 @@ def train_and_evaluate_general_routes(
             "distance_field_beam_robust_mpc": "learned-field beam with velocity-scale robust RGB-only MPC",
             "distance_field_clearance_beam_rgb_projection": "clearance-penalized learned field with beam and RGB guard",
             "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
+            "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),
@@ -475,7 +531,7 @@ def main() -> None:
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
     parser.add_argument(
         "--methods",
-        default=",".join(GENERAL_METHODS),
+        default=",".join(GENERAL_DEFAULT_METHODS),
         help="comma-separated subset of methods for focused ablations",
     )
     args = parser.parse_args()
