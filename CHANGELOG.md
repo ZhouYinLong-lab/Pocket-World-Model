@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 2.1 seconds
+Output:
 # Changelog
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
@@ -24,6 +27,24 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
   baseline ranged from 33.3% to 77.8%.
 
 See [the v28 OOD report](artifacts/evaluation-general-ood-v28-budgeted.json).
+
+## [0.25.0] - 2026-08-12
+
+### Added
+
+- A matched fast-vs-robust route-budget ablation. Both variants share the same
+  route progress, remaining-budget, wall confirmation, cooldown, and route-lock
+  logic; only the post-fallback local MPC robustness differs.
+
+### Results
+
+- Ordinary-MPC hybrid reaches 100.0% success with 0.400 collisions/episode and
+  0.61 s planning, while robust-MPC hybrid reaches 100.0% with 0.133
+  collisions/episode and 9.36 s planning on the same holdout.
+- The fast hybrid keeps 100% success across the six-condition OOD smoke matrix,
+  with 0.22–0.67 collisions/episode and 0.13–0.19 s planning time.
+- The project now exposes a reliability/latency Pareto comparison instead of
+  presenting the expensive robust fallback as the only route-level solution.
 
 ## [0.20.0] - 2026-08-12
 
@@ -488,3 +509,4 @@ learned general obstacle navigation is solved.
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0
+
