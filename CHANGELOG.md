@@ -2,6 +2,13 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.12.1] - 2026-08-12
+
+### Fixed
+
+- Synchronized the published OOD evaluator sources with the v0.12.0 reports.
+- Aligned the package version with the v0.12.1 reproducibility patch release.
+
 ## [0.12.0] - 2026-08-12
 
 ### Added
