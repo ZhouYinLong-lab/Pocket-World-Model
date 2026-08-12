@@ -331,6 +331,32 @@ def test_visual_safety_gate_requires_collision_aware_planning():
         )
 
 
+def test_visual_safety_modes_validate_and_produce_finite_route_scores():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    for mode in ("joint", "rgb_only", "soft"):
+        torch.manual_seed(15)
+        result = random_shooting(
+            PocketWorldModel(),
+            observation,
+            (54, 32),
+            horizon=4,
+            candidates=8,
+            collision_aware=True,
+            learned_collision=True,
+            route_objective=True,
+            route_completion_weight=10.0,
+            visual_safety_mode=mode,
+        )
+        assert np.isfinite(result.route_score)
+        assert result.rgb_route_collision in {0.0, 1.0}
+
+
 def test_visual_safety_gate_reports_rgb_route_collision_state():
     import torch
 

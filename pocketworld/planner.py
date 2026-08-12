@@ -787,9 +787,19 @@ def random_shooting(
     route_completion_model: object | None = None,
     route_completion_weight: float = 10.0,
     visual_safety_gate: bool = False,
+    visual_safety_mode: str = "off",
+    visual_safety_penalty: float = 64.0,
 ) -> PlanResult:
-    if visual_safety_gate and not collision_aware:
-        raise ValueError("visual_safety_gate requires collision_aware=True")
+    if visual_safety_gate:
+        if visual_safety_mode not in {"off", "joint"}:
+            raise ValueError("visual_safety_gate cannot be combined with another visual_safety_mode")
+        visual_safety_mode = "joint"
+    if visual_safety_mode not in {"off", "joint", "rgb_only", "soft"}:
+        raise ValueError("visual_safety_mode must be one of: off, joint, rgb_only, soft")
+    if visual_safety_mode != "off" and not collision_aware:
+        raise ValueError("visual_safety_gate/visual_safety_mode requires collision_aware=True")
+    if visual_safety_penalty < 0.0 or not np.isfinite(visual_safety_penalty):
+        raise ValueError("visual_safety_penalty must be finite and non-negative")
     model.eval()
     risk_model = model if collision_model is None else collision_model
     risk_model.eval()
@@ -938,8 +948,11 @@ def random_shooting(
             collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), peak_risk), axis=1)
         else:
             collision_prefix = _collision_prefix(positions, wall_mask)
-        if visual_safety_gate:
-            visible_collision_prefix = _collision_prefix(positions, wall_mask).astype(np.float32)
+        # Always compute the observable RGB collision trace for diagnostics.
+        # The safety mode decides whether this trace affects selection; the
+        # metric itself should remain available for every collision-aware
+        # baseline so comparisons do not confuse "not measured" with zero.
+        visible_collision_prefix = _collision_prefix(positions, wall_mask).astype(np.float32)
         if hybrid_collision or wall_aware_route:
             collision_prefix = np.maximum(
                 collision_prefix,
@@ -995,22 +1008,31 @@ def random_shooting(
         visible_feasible = None
         if visible_collision_prefix is not None:
             visible_feasible = visible_collision_prefix[:, -1] <= 0.0
-        if risk_feasible is not None or visible_feasible is not None:
-            # Apply the intersection when it is non-empty. If the two safety
-            # checks disagree on every candidate, retain the strongest gate
-            # that still has support; this prevents a temporary calibration
-            # failure from turning the whole route search into a 1e6 tie.
-            feasible_route = np.ones(candidates, dtype=bool)
-            if risk_feasible is not None:
-                feasible_route &= risk_feasible
-            if visible_feasible is not None:
-                feasible_route &= visible_feasible
-            if feasible_route.any():
-                route_scores[~feasible_route] = 1e6
-            elif visible_feasible is not None and visible_feasible.any():
-                route_scores[~visible_feasible] = 1e6
-            elif risk_feasible is not None and risk_feasible.any():
+        if visual_safety_mode == "soft" and visible_collision_prefix is not None:
+            route_scores += float(visual_safety_penalty) * visible_collision_prefix[:, -1]
+        if visual_safety_mode in {"off", "soft"} and risk_feasible is not None:
+            if risk_feasible.any():
                 route_scores[~risk_feasible] = 1e6
+        if visual_safety_mode in {"joint", "rgb_only"}:
+            if visual_safety_mode == "rgb_only":
+                risk_feasible = None
+            if risk_feasible is not None or visible_feasible is not None:
+                # Apply the intersection when it is non-empty. If the two
+                # safety checks disagree on every candidate, retain the
+                # strongest gate that still has support; this prevents a
+                # temporary calibration failure from turning the whole route
+                # search into a 1e6 tie.
+                feasible_route = np.ones(candidates, dtype=bool)
+                if risk_feasible is not None:
+                    feasible_route &= risk_feasible
+                if visible_feasible is not None:
+                    feasible_route &= visible_feasible
+                if feasible_route.any():
+                    route_scores[~feasible_route] = 1e6
+                elif visible_feasible is not None and visible_feasible.any():
+                    route_scores[~visible_feasible] = 1e6
+                elif risk_feasible is not None and risk_feasible.any():
+                    route_scores[~risk_feasible] = 1e6
         best = int(np.argmin(route_scores))
         reached = np.flatnonzero(safe_scores[best] <= 4.0)
         best_step = int(reached[0]) if len(reached) else horizon

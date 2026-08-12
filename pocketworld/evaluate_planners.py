@@ -32,6 +32,8 @@ SUPPORTED_PLANNERS = DEFAULT_PLANNERS + (
     "conformal_collision",
     "route_completion",
     "route_completion_safe_gate",
+    "route_completion_rgb_only",
+    "route_completion_soft",
     "route_completion_mpc",
 )
 
@@ -162,6 +164,30 @@ def _planner_result(
             route_completion_weight=ROUTE_COMPLETION_WEIGHT,
             collision_risk_budget=COLLISION_RISK_BUDGET,
             visual_safety_gate=True,
+            observation_history=[observation],
+        )
+    if planner in {"route_completion_rgb_only", "route_completion_soft"}:
+        if route_model is None:
+            raise ValueError(f"{planner} requires a route_models['{planner}'] predictor")
+        safety_mode = "rgb_only" if planner == "route_completion_rgb_only" else "soft"
+        return random_shooting(
+            model,
+            observation,
+            goal,
+            horizon=horizon,
+            candidates=candidates,
+            collision_aware=True,
+            learned_collision=True,
+            probabilistic_uncertainty=True,
+            uncertainty_samples=8,
+            robust_candidates=min(32, candidates),
+            route_objective=True,
+            route_execution_horizon=horizon,
+            route_completion_model=route_model,
+            route_completion_weight=ROUTE_COMPLETION_WEIGHT,
+            collision_risk_budget=COLLISION_RISK_BUDGET,
+            visual_safety_mode=safety_mode,
+            visual_safety_penalty=64.0,
             observation_history=[observation],
         )
     if planner == "route_aware_hybrid":

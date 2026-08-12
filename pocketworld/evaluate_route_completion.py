@@ -376,12 +376,16 @@ def evaluate_route_completion(
             "learned_collision",
             "route_completion",
             "route_completion_safe_gate",
+            "route_completion_rgb_only",
+            "route_completion_soft",
             "route_completion_mpc",
             "route_aware_hybrid",
         ),
         route_models={
             "route_completion": predictor,
             "route_completion_safe_gate": predictor,
+            "route_completion_rgb_only": predictor,
+            "route_completion_soft": predictor,
             "route_completion_mpc": predictor,
         },
         risk_model_metadata={
@@ -415,6 +419,12 @@ def evaluate_route_completion(
     )
     report["paired_safe_gate_comparison"] = _paired_success_delta(
         report["rows"], "learned_collision", "route_completion_safe_gate"
+    )
+    report["paired_rgb_only_comparison"] = _paired_success_delta(
+        report["rows"], "learned_collision", "route_completion_rgb_only"
+    )
+    report["paired_soft_comparison"] = _paired_success_delta(
+        report["rows"], "learned_collision", "route_completion_soft"
     )
     return report
 
