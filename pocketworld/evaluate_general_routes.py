@@ -291,6 +291,8 @@ def evaluate_general_policy(
             progress_regression_events = 0
             wall_block_streak = 0
             last_budget_fallback_step = -1000
+            route_lock_until_step = -1
+            route_lock_steps = 0
             budget_slack_sum = 0.0
             budget_slack_min = float("inf")
             for _ in range(max_steps):
@@ -331,7 +333,11 @@ def evaluate_general_policy(
                     target_dirty or step_index - last_route_check >= 4
                 ):
                     route_check_due = True
-                    route_is_blocked = _segment_hits_wall(observation, position, target)
+                    route_lock_steps += int(step_index < route_lock_until_step)
+                    route_is_blocked = (
+                        step_index >= route_lock_until_step
+                        and _segment_hits_wall(observation, position, target)
+                    )
                     budget_is_infeasible = budget_slack < 0.0
                     progress_is_stalled = progress_regression_streak >= 2
                     wall_block_events += int(route_is_blocked)
@@ -355,6 +361,7 @@ def evaluate_general_policy(
                         astar_calls += 1
                         budget_fallbacks += 1
                         last_budget_fallback_step = step_index
+                        route_lock_until_step = step_index + 24
                         fallback_triggered = True
                         target_dirty = True
                         planned_target = None
@@ -549,6 +556,7 @@ def evaluate_general_policy(
                     "layout_shift_score": layout_shift_score,
                     "shift_detected": shift_detected,
                     "budget_fallbacks": budget_fallbacks,
+                    "route_lock_steps": route_lock_steps,
                     "budget_infeasible_events": budget_infeasible_events,
                     "wall_block_events": wall_block_events,
                     "progress_regression_events": progress_regression_events,
@@ -583,6 +591,7 @@ def evaluate_general_policy(
         "layout_shift_score",
         "shift_detected",
         "budget_fallbacks",
+        "route_lock_steps",
         "budget_infeasible_events",
         "wall_block_events",
         "progress_regression_events",
