@@ -72,6 +72,7 @@ BUDGETED_HYBRID_METHODS = frozenset(
         "distance_field_budgeted_hybrid_fast_mpc",
         "distance_field_budgeted_hybrid_gated_mpc",
         "distance_field_budgeted_hybrid_shielded_mpc",
+        "distance_field_predicted_gate_hybrid",
     }
 )
 
@@ -351,6 +352,9 @@ def evaluate_general_policy(
                     waypoints = _astar_waypoints(observation, case.goal, position, points)
                     waypoint_index = 0
                     route_points = np.asarray((tuple(position),) + tuple(waypoints), dtype=np.float32)
+                    route_progress = route_progress_metrics(position, route_points)
+                    last_route_progress = float(route_progress["progress_px"])
+                    progress_regression_streak = 0
                     astar_calls += 1
                     budget_fallbacks += 1
                     route_gate_triggered = True
