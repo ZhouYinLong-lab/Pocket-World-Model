@@ -39,6 +39,7 @@ but this is not sufficient evidence that it improves planner selection.
 | Route completion, weight 64, no gate | 28.3% | 7.93 | −33.33pp | 5 / 25 / 30 |
 | Route completion, weight 64 + risk gate | 51.7% | 3.32 | −10.00pp | 9 / 15 / 36 |
 | Hard-negative mining, weight 64 + risk gate | 53.3% | 3.25 | −8.33pp | 8 / 13 / 39 |
+| Route completion + RGB safety gate | 65.0% | 2.20 | +3.33pp | 12 / 10 / 38 |
 | Route-completion MPC, weight 10 + 4px fallback | 5.0% | 2.12 | −56.67pp | 2 / 36 / 22 |
 | Route-aware closed-loop hybrid | 100.0% | 0.65 | not comparable | high-query reference |
 
@@ -67,6 +68,33 @@ collision supervision with hard negatives constructed from near-goal collision
 failures, or a safety controller that can reject a route prediction using
 observable wall geometry before committing to it.
 
+## RGB safety-gate ablation
+
+The next comparison isolates that proposed safety controller. The
+`route_completion_safe_gate` planner keeps the same route predictor, 48-step
+horizon, 256-candidate budget, uncertainty shortlist, and 0.15 learned-risk
+budget, but additionally rejects a candidate when its imagined positions
+intersect the footprint-inflated wall mask extracted from the current RGB
+frame. If the learned and RGB gates have no common candidate, it falls back to
+the supported RGB-safe subset instead of producing an all-infeasible tie.
+
+On the same paired three-seed barrier protocol, the gate raises real success
+from **61.7%** for learned collision and **53.3%** for route completion to
+**65.0%**, while reducing collisions from **2.47** to **2.20** per episode.
+The paired gain is only **+3.33pp** with seed-wise deltas of `0, 0, +10pp`
+and 38 ties, so this is an encouraging ablation rather than a solved obstacle
+model. The selected imagined route still intersects the RGB wall mask on
+11.7% of cases when the gates have no joint support and the safe fallback is
+used. The high-query route-aware hybrid remains the reference at 100.0% real
+success and 0.65 collisions per episode.
+
+This experiment broadens the study from “which learned route score is best?”
+to a controlled decomposition of learned ranking, observable safety filtering,
+and explicit global fallback. It also makes the remaining limitation concrete:
+the RGB gate can reject visibly unsafe imagined paths, but it cannot correct a
+world model whose predicted trajectory is itself misaligned with the real
+simulator.
+
 ## Reproduction
 
 ```bash
@@ -87,3 +115,4 @@ Results:
 - [fixed risk-gated study](../results/evaluation-route-completion-barrier-v4-risk-gated-fixed.json)
 - [hard-negative study](../results/evaluation-route-completion-barrier-v5-hard-negative.json)
 - [online MPC study](../results/evaluation-route-completion-barrier-v6-mpc.json)
+- [RGB safety-gate ablation](../results/evaluation-route-completion-barrier-v7-safe-gate.json)

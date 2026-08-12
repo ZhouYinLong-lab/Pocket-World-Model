@@ -2,6 +2,24 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.10.0] - 2026-08-12
+
+### Added
+
+- RGB wall-mask safety gate as an isolated route-completion planner ablation.
+- Selected-route RGB collision diagnostics in planner tournament reports.
+- Formal three-seed barrier comparison covering learned collision, route completion, RGB safety gating, route-completion MPC, and route-aware hybrid.
+- Machine-readable v7 result and route predictor checkpoint.
+
+### Changed
+
+- Route feasibility handling now combines learned-risk and visible-wall gates when their intersection is supported, with a bounded fallback when calibration makes the intersection empty.
+
+### Results
+
+- The RGB safety gate reaches 65.0% real success and 2.20 collisions/episode, versus 61.7% and 2.47 for learned collision; the paired gain is +3.33pp and remains seed-sensitive.
+- Route completion without the gate reaches 53.3%, while route-completion MPC reaches 6.7%; the high-query route-aware hybrid remains 100.0%.
+
 ## [0.9.0] - 2026-08-12
 
 ### Added

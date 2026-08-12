@@ -294,6 +294,28 @@ python -m pocketworld.evaluate_route_completion artifacts/pocketworld-map-suite-
   --output artifacts/evaluation-route-completion-barrier-v5-hard-negative.json
 ```
 
+The follow-up adds an isolated `route_completion_safe_gate` ablation: before
+the route score is trusted, the planner rejects imagined trajectories that
+intersect the footprint-inflated wall mask extracted from the current RGB
+observation. On the same 60 paired barrier tasks, this raises real success to
+**65.0%** and lowers collisions to **2.20/episode**, versus **61.7%** and
+**2.47/episode** for learned collision. The paired gain is only **+3.33pp**
+(`0, 0, +10pp` across the three seeds), so the result is a bounded safety
+improvement, not a claim that the learned model now solves obstacle
+traversal. The high-query route-aware hybrid remains at **100.0%** real
+success. See the [RGB safety-gate ablation](docs/plans/route-completion.md)
+and [machine-readable v7 result](docs/results/evaluation-route-completion-barrier-v7-safe-gate.json).
+
+Reproduce the complete route-method comparison with:
+
+```bash
+python -m pocketworld.evaluate_route_completion artifacts/pocketworld-map-suite-v3-final.pt \
+  --train-seeds 101,103 --evaluation-seeds 11,23,41 --train-episodes 12 --evaluation-episodes 20 \
+  --calibration-candidates 32 --candidates 256 --horizon 48 --hard-negative-rounds 1 \
+  --predictor-output artifacts/route-completion-v3-safe-gate.pt \
+  --output artifacts/evaluation-route-completion-barrier-v7-safe-gate.json
+```
+
 Reproduce the risk-method study with:
 
 ```bash
