@@ -1,7 +1,3 @@
-Exit code: 0
-Wall time: 2 seconds
-Total output lines: 934
-Output:
 # PocketWorld
 
 <p align="center">
