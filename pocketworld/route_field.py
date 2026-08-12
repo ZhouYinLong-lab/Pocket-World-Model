@@ -629,3 +629,116 @@ def guarded_mpc_action(
         safe_actions,
         key=lambda action: float(np.linalg.norm(position + directions[action] - goal)),
     )
+
+
+def adaptive_mpc_risk_score(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    baseline_action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+) -> float:
+    """Estimate local execution risk before choosing ordinary or robust MPC.
+
+    The score uses only information available to the controller at the current
+    step.  It is intentionally not a learned oracle: unsafe baseline landing,
+    proximity to visible walls, velocity disagreement, and high speed are
+    observable RGB/history signals.  A fixed threshold can therefore be
+    evaluated without exposing shifted-map labels or future collisions.
+    """
+    history = observation_history or [observation]
+    position = extract_agent_position(observation).astype(np.float32)
+    from .planner import estimate_agent_velocity
+
+    rgb_velocity = estimate_agent_velocity(history, max_speed=2.3)
+    fused_velocity = estimate_action_velocity(history, action_history, max_speed=2.3)
+    speed_risk = float(np.clip((np.linalg.norm(rgb_velocity) - 1.10) / 1.20, 0.0, 1.0))
+    disagreement_risk = float(
+        np.clip(np.linalg.norm(fused_velocity - rgb_velocity) / 1.75, 0.0, 1.0)
+    )
+    baseline_unsafe = not rgb_action_is_safe(
+        observation, baseline_action, history, action_history, margin=4
+    )
+
+    wall_mask = extract_wall_mask(observation)
+    wall_pixels = np.argwhere(wall_mask)
+    if len(wall_pixels) == 0 or not np.isfinite(position).all():
+        proximity_risk = 0.0
+    else:
+        distances = np.linalg.norm(
+            wall_pixels[:, ::-1].astype(np.float32) - position[None], axis=1
+        )
+        proximity_risk = float(np.clip((10.0 - float(distances.min())) / 10.0, 0.0, 1.0))
+
+    # Baseline safety dominates: an unsafe nominal landing should immediately
+    # spend the robust-MPC budget, while benign open-space motion stays cheap.
+    score = (
+        0.55 * float(baseline_unsafe)
+        + 0.20 * proximity_risk
+        + 0.15 * disagreement_risk
+        + 0.10 * speed_risk
+    )
+    return float(np.clip(score, 0.0, 1.0))
+
+
+def adaptive_mpc_decision(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    baseline_action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    horizon: int = 6,
+    beam_width: int = 24,
+    velocity_source: str = "rgb",
+    risk_threshold: float = 0.45,
+    risk_exit_threshold: float = 0.30,
+    robust_active: bool = False,
+) -> tuple[int, bool, float]:
+    """Choose ordinary versus robust MPC from an online risk score.
+
+    The lower exit threshold creates hysteresis, preventing robust MPC from
+    flickering on and off when local risk is close to the entry boundary.  The
+    risk score is computed from the ordinary MPC candidate, so the action being
+    assessed matches the controller that would otherwise be executed.
+    """
+    if not 0.0 <= risk_exit_threshold <= risk_threshold <= 1.0:
+        raise ValueError(
+            "risk_exit_threshold must be between 0 and risk_threshold, and risk_threshold <= 1"
+        )
+    ordinary_action = local_mpc_action(
+        observation,
+        target,
+        observation_history,
+        horizon=horizon,
+        beam_width=beam_width,
+        robust=False,
+        action_history=action_history,
+        velocity_source=velocity_source,
+    )
+    risk_score = adaptive_mpc_risk_score(
+        observation,
+        target,
+        ordinary_action,
+        observation_history,
+        action_history,
+    )
+    use_robust = (
+        risk_score >= risk_exit_threshold
+        if robust_active
+        else risk_score >= risk_threshold
+    )
+    action = (
+        local_mpc_action(
+            observation,
+            target,
+            observation_history,
+            horizon=horizon,
+            beam_width=beam_width,
+            robust=True,
+            action_history=action_history,
+            velocity_source=velocity_source,
+        )
+        if use_robust
+        else ordinary_action
+    )
+    return int(action), bool(use_robust), float(risk_score)

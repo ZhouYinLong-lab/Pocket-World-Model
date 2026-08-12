@@ -124,6 +124,8 @@ def run_general_ood(
     train_seeds: tuple[int, ...] = (101, 103, 107),
     train_episodes: int = 20,
     shift_threshold_quantile: float = 0.99,
+    adaptive_risk_threshold: float = 0.45,
+    adaptive_risk_exit_threshold: float = 0.30,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -165,6 +167,8 @@ def run_general_ood(
                     agent_speed_scale=speed_scale,
                     reference_signatures=reference_signatures,
                     shift_threshold=shift_threshold,
+                    adaptive_risk_threshold=adaptive_risk_threshold,
+                    adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -190,6 +194,8 @@ def run_general_ood(
             "train_episodes_for_shift_calibration": train_episodes,
             "shift_threshold_quantile": shift_threshold_quantile,
             "shift_threshold": shift_threshold,
+            "adaptive_risk_threshold": adaptive_risk_threshold,
+            "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
@@ -218,6 +224,8 @@ def main() -> None:
     parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
     parser.add_argument("--train-seeds", default="101,103,107")
     parser.add_argument("--train-episodes", type=int, default=20)
+    parser.add_argument("--adaptive-risk-threshold", type=float, default=0.45)
+    parser.add_argument("--adaptive-risk-exit-threshold", type=float, default=0.30)
     parser.add_argument("--shift-threshold-quantile", type=float, default=0.99)
     parser.add_argument("--output", default="artifacts/evaluation-general-ood-v21.json")
     args = parser.parse_args()
@@ -235,6 +243,8 @@ def main() -> None:
         mpc_velocity_source=args.mpc_velocity_source,
         train_seeds=tuple(int(item) for item in args.train_seeds.split(",") if item.strip()),
         train_episodes=args.train_episodes,
+        adaptive_risk_threshold=args.adaptive_risk_threshold,
+        adaptive_risk_exit_threshold=args.adaptive_risk_exit_threshold,
         shift_threshold_quantile=args.shift_threshold_quantile,
     )
     destination = Path(args.output)

@@ -38,11 +38,16 @@ GENERAL_METHODS = (
     "distance_field_beam_conservative",
     "distance_field_beam_mpc",
     "distance_field_beam_robust_mpc",
+    "distance_field_beam_adaptive_mpc",
     "distance_field_clearance_beam_rgb_projection",
     "distance_field_beam_guarded_mpc",
     "distance_field_mpc_shift_fallback",
 )
-GENERAL_DEFAULT_METHODS = GENERAL_METHODS[:-1]
+GENERAL_DEFAULT_METHODS = tuple(
+    method
+    for method in GENERAL_METHODS[:-1]
+    if method != "distance_field_beam_adaptive_mpc"
+)
 
 
 def _segment_hits_wall(
@@ -150,6 +155,8 @@ def evaluate_general_policy(
     agent_speed_scale: float = 1.0,
     reference_signatures: np.ndarray | None = None,
     shift_threshold: float = 0.0,
+    adaptive_risk_threshold: float = 0.45,
+    adaptive_risk_exit_threshold: float = 0.30,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -176,7 +183,12 @@ def evaluate_general_policy(
             astar_calls = 0
             fallback_triggered = False
             mpc_calls = 0
+            robust_mpc_calls = 0
             mpc_override_count = 0
+            adaptive_switches = 0
+            adaptive_risk_sum = 0.0
+            adaptive_risk_max = 0.0
+            adaptive_robust_active = False
             planning_time_ms = 0.0
             layout_shift_score = 0.0
             shift_detected = False
@@ -190,6 +202,7 @@ def evaluate_general_policy(
                 "distance_field_beam_conservative",
                 "distance_field_beam_mpc",
                 "distance_field_beam_robust_mpc",
+                "distance_field_beam_adaptive_mpc",
                 "distance_field_clearance_beam_rgb_projection",
                 "distance_field_beam_guarded_mpc",
                 "distance_field_mpc_shift_fallback",
@@ -206,6 +219,7 @@ def evaluate_general_policy(
                         "distance_field_beam_conservative",
                         "distance_field_beam_mpc",
                         "distance_field_beam_robust_mpc",
+                        "distance_field_beam_adaptive_mpc",
                         "distance_field_clearance_beam_rgb_projection",
                         "distance_field_mpc_shift_fallback",
                     }
@@ -307,6 +321,36 @@ def evaluate_general_policy(
                         action_history=action_history,
                         velocity_source=mpc_velocity_source,
                     )
+                    robust_mpc_calls += 1
+                if method == "distance_field_beam_adaptive_mpc":
+                    from .route_field import adaptive_mpc_decision
+
+                    mpc_calls += 1
+                    action, use_robust, risk_score = adaptive_mpc_decision(
+                        observation,
+                        target,
+                        action,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        velocity_source=mpc_velocity_source,
+                        risk_threshold=adaptive_risk_threshold,
+                        risk_exit_threshold=adaptive_risk_exit_threshold,
+                        robust_active=adaptive_robust_active,
+                    )
+                    adaptive_risk_sum += risk_score
+                    adaptive_risk_max = max(adaptive_risk_max, risk_score)
+                    if use_robust:
+                        # The decision first evaluates an ordinary MPC
+                        # candidate, then runs robust MPC when the risk gate is
+                        # active. Count both actual planner calls.
+                        mpc_calls += 1
+                    if use_robust != adaptive_robust_active:
+                        adaptive_switches += 1
+                    adaptive_robust_active = use_robust
+                    if use_robust:
+                        robust_mpc_calls += 1
                 if method == "distance_field_beam_guarded_mpc":
                     mpc_calls += 1
                     baseline_action = action
@@ -345,7 +389,11 @@ def evaluate_general_policy(
                     "astar_calls": astar_calls,
                     "fallback_triggered": fallback_triggered,
                     "mpc_calls": mpc_calls,
+                    "robust_mpc_calls": robust_mpc_calls,
                     "mpc_override_count": mpc_override_count,
+                    "adaptive_switches": adaptive_switches,
+                    "adaptive_risk_mean": adaptive_risk_sum / max(1, int(env.steps)),
+                    "adaptive_risk_max": adaptive_risk_max,
                     "planning_time_ms": planning_time_ms,
                     "layout_shift_score": layout_shift_score,
                     "shift_detected": shift_detected,
@@ -359,7 +407,11 @@ def evaluate_general_policy(
         "astar_calls",
         "fallback_triggered",
         "mpc_calls",
+        "robust_mpc_calls",
         "mpc_override_count",
+        "adaptive_switches",
+        "adaptive_risk_mean",
+        "adaptive_risk_max",
         "planning_time_ms",
         "layout_shift_score",
         "shift_detected",
@@ -401,6 +453,8 @@ def train_and_evaluate_general_routes(
     methods: tuple[str, ...] | None = None,
     training_families: tuple[str, ...] | None = None,
     balanced_training_families: bool = False,
+    adaptive_risk_threshold: float = 0.45,
+    adaptive_risk_exit_threshold: float = 0.30,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
@@ -438,9 +492,11 @@ def train_and_evaluate_general_routes(
             points,
             method,
             mpc_horizon,
-            mpc_beam_width,
-            mpc_velocity_source,
-        )
+                mpc_beam_width,
+                mpc_velocity_source,
+                adaptive_risk_threshold=adaptive_risk_threshold,
+                adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
+            )
         for method in selected_methods
     }
     policy.save(
@@ -482,6 +538,8 @@ def train_and_evaluate_general_routes(
             "mpc_horizon": mpc_horizon,
             "mpc_beam_width": mpc_beam_width,
             "mpc_velocity_source": mpc_velocity_source,
+            "adaptive_risk_threshold": adaptive_risk_threshold,
+            "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
             "methods": list(selected_methods),
             "training_families": list(
                 training_families
@@ -507,6 +565,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_beam_conservative": False,
                 "distance_field_beam_mpc": False,
                 "distance_field_beam_robust_mpc": False,
+                "distance_field_beam_adaptive_mpc": False,
                 "distance_field_clearance_beam_rgb_projection": False,
                 "distance_field_beam_guarded_mpc": False,
                 "distance_field_mpc_shift_fallback": True,
@@ -526,6 +585,7 @@ def train_and_evaluate_general_routes(
             "distance_field_beam_conservative": "learned-field beam with RGB guard and conservative local action shield",
             "distance_field_beam_mpc": "learned-field beam with RGB-only short-horizon inertial MPC",
             "distance_field_beam_robust_mpc": "learned-field beam with velocity-scale robust RGB-only MPC",
+            "distance_field_beam_adaptive_mpc": "learned-field beam with fixed-threshold online ordinary/robust MPC switching",
             "distance_field_clearance_beam_rgb_projection": "clearance-penalized learned field with beam and RGB guard",
             "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
             "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
