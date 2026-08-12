@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-98%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-70%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-105%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-83%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -110,6 +110,42 @@ python -m pocketworld.evaluate_learned_route_policy --route-level \
   --train-seeds 101,103 --train-scenarios single_barrier,barrier_narrow_gap \
   --evaluation-seeds 11,23,41 --evaluation-episodes 20 --max-steps 64 \
   --epochs 300 --output artifacts/evaluation-route-mode-policy-v15.json
+```
+
+### Procedural multi-obstacle route study
+
+The next comparison expands the fixed four-layout benchmark into deterministic
+procedural maps with three or four vertical barriers and held-out endpoint
+bands. It compares a continuous route-sketch student (v16) with a structured
+per-barrier gap-center student (v17):
+
+| Method | Learned output | Evaluation-time geometry | Real success | Collisions / episode |
+| --- | --- | --- | ---: | ---: |
+| Route sketch v16 | 5–9 continuous route points | RGB waypoint executor | 25.0% (9-point scale) | negative result |
+| Gap route v17, raw | one gap center per barrier | none | **83.3%** | 1.417 |
+| Gap route v17 + visible projection | one gap center per barrier | clamp to RGB-visible feasible gap | **100.0%** | **0.367** |
+
+The v17 result uses 600 training tasks and 60 held-out tasks across three
+evaluation seeds (`11,23,41`, 20 each). The student does **not** receive the
+target gap center: its input is the initial RGB frame plus the goal, while the
+gap center is only a teacher label. Evaluation makes no A* calls. The
+projection is a separate RGB feasibility layer that clamps each prediction to
+the visible gap interval; therefore the 100% number is a hybrid safety result,
+not pure end-to-end learned obstacle navigation. The raw-vs-projected paired
+ablation measures exactly how much that safety layer contributes.
+
+The remaining limitation is scope: these procedural maps are left-to-right
+vertical barriers with visible gaps. This is a controlled study of route
+representation and model-error containment, not a claim of general 2D
+navigation. See the [v17 machine-readable report](docs/results/evaluation-gap-route-policy-v17-honest-full.json).
+
+Reproduce it with:
+
+```bash
+python -m pocketworld.evaluate_gap_route_policy \
+  --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
+  --train-episodes 200 --evaluation-episodes 20 --max-steps 140 \
+  --epochs 360 --output artifacts/evaluation-gap-route-policy-v17.json
 ```
 
 <p align="center">

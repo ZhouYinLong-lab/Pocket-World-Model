@@ -2,6 +2,30 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.15.0] - 2026-08-12
+
+### Added
+
+- Deterministic procedural route tasks with two-to-four vertical barriers,
+  varied gap widths, and distinct train/holdout endpoint distributions.
+- Continuous route-sketch policy (v16) and structured per-barrier gap route
+  policy (v17) for a direct representation-level comparison.
+- RGB visible-gap feasibility projection and a paired raw-vs-projected
+  evaluation, with explicit no-target-leakage protocol fields.
+- 105-test regression suite covering procedural sampling, feature contracts,
+  projection bounds, policy round-trips, and the v17 evaluation contract.
+
+### Results
+
+- On 600 training tasks and 60 held-out tasks across three evaluation seeds,
+  the honest raw v17 student reaches 83.3% real success and 1.417 collisions
+  per episode.
+- Adding the observable RGB feasibility projection reaches 100.0% real success
+  and 0.367 collisions per episode; four-barrier raw success is 65.5%, while
+  projected success is 100.0%.
+- The projection result is explicitly reported as a structured learned
+  predictor plus RGB safety layer, not as pure end-to-end learned navigation.
+
 ## [0.14.0] - 2026-08-12
 
 ### Added

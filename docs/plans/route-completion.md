@@ -161,6 +161,40 @@ Machine-readable reports:
 - [penalty selection](../results/evaluation-safety-sweep-selection-v11.json)
 - [OOD holdout](../results/evaluation-safety-sweep-ood-v12.json)
 
+## Procedural route representation expansion (v16–v17)
+
+The fixed four-layout route-mode result is a useful baseline, but it does not
+test whether a route representation scales beyond one barrier. This follow-up
+uses deterministic procedural maps with three or four vertical barriers,
+varied visible gap widths, and held-out endpoint bands. Every task is checked
+for a reachable footprint-inflated route before entering the benchmark.
+
+The v16 route-sketch policy predicts a fixed number of continuous waypoints.
+Its scale run reached only **25.0%** holdout success with nine output points;
+the failure analysis showed that a fixed point budget is a poor representation
+for a variable number of barrier crossings. The v17 policy instead predicts
+one normalized gap center for each visible barrier, matching the structure of
+this map family.
+
+The student input is restricted to the initial RGB observation, goal
+coordinates, RGB-derived wall-grid features, and RGB-derived barrier geometry
+with the target gap-center field zeroed. Gap centers are labels only. The
+evaluation executor uses RGB barrier geometry and waypoint control; neither
+raw nor projected student evaluation invokes A*.
+
+| Variant | Real success | Final distance (px) | Collisions / episode | 4-barrier success |
+| --- | ---: | ---: | ---: | ---: |
+| v17 raw prediction | 83.3% | 7.99 | 1.417 | 65.5% |
+| v17 + visible-gap projection | **100.0%** | **3.08** | **0.367** | **100.0%** |
+
+The 60-task holdout contains 31 three-barrier and 29 four-barrier maps. The
+projected result is stable across evaluation seeds `11,23,41` and gap widths
+14/22/24 (100% in each slice). This is evidence for a successful visible
+geometry containment layer, not proof that the neural predictor alone solves
+obstacle crossing: the paired raw ablation is the key distinction.
+
+Machine-readable artifact: [v17 honest report](../results/evaluation-gap-route-policy-v17-honest-full.json).
+
 ## Map-aware route-feature comparison
 
 The next method comparison asks whether the route predictor is failing because

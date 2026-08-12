@@ -1,0 +1,2087 @@
+{
+  "protocol": {
+    "teacher": "visible RGB vertical-barrier gap geometry",
+    "teacher_uses_astar_for_labels": false,
+    "student_inputs": [
+      "initial RGB observation",
+      "goal coordinates"
+    ],
+    "student_input_gap_center": false,
+    "student_output": "one normalized gap center per visible vertical barrier",
+    "student_evaluation_uses_astar": false,
+    "visible_gap_projection_uses_astar": false,
+    "train_seeds": [
+      101,
+      103,
+      107
+    ],
+    "evaluation_seeds": [
+      11,
+      23,
+      41
+    ],
+    "train_episodes_per_seed": 200,
+    "evaluation_episodes_per_seed": 20,
+    "max_steps": 140,
+    "project_to_visible_gap": true
+  },
+  "training": {
+    "epochs": 360,
+    "samples": 600,
+    "mean_gap_error_px": 0.37744948267936707
+  },
+  "evaluation": {
+    "rows": [
+      {
+        "map_id": "holdout-11-0-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.72925066947937,
+        "collision_count": 0,
+        "executed_actions": 35
+      },
+      {
+        "map_id": "holdout-11-1-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.4981210231781006,
+        "collision_count": 0,
+        "executed_actions": 49
+      },
+      {
+        "map_id": "holdout-11-2-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.8436403274536133,
+        "collision_count": 0,
+        "executed_actions": 47
+      },
+      {
+        "map_id": "holdout-11-3-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.962909698486328,
+        "collision_count": 0,
+        "executed_actions": 57
+      },
+      {
+        "map_id": "holdout-11-4-b4-g22",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.412569284439087,
+        "collision_count": 0,
+        "executed_actions": 50
+      },
+      {
+        "map_id": "holdout-11-5-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 1.776452898979187,
+        "collision_count": 1,
+        "executed_actions": 55
+      },
+      {
+        "map_id": "holdout-11-6-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.916926145553589,
+        "collision_count": 0,
+        "executed_actions": 45
+      },
+      {
+        "map_id": "holdout-11-7-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.938476324081421,
+        "collision_count": 0,
+        "executed_actions": 40
+      },
+      {
+        "map_id": "holdout-11-8-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.3324549198150635,
+        "collision_count": 2,
+        "executed_actions": 55
+      },
+      {
+        "map_id": "holdout-11-9-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.4532008171081543,
+        "collision_count": 1,
+        "executed_actions": 48
+      },
+      {
+        "map_id": "holdout-11-10-b4-g22",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 2.6823458671569824,
+        "collision_count": 0,
+        "executed_actions": 42
+      },
+      {
+        "map_id": "holdout-11-11-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.506577968597412,
+        "collision_count": 1,
+        "executed_actions": 60
+      },
+      {
+        "map_id": "holdout-11-12-b4-g22",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 2.0023393630981445,
+        "collision_count": 1,
+        "executed_actions": 53
+      },
+      {
+        "map_id": "holdout-11-13-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.2458395957946777,
+        "collision_count": 0,
+        "executed_actions": 38
+      },
+      {
+        "map_id": "holdout-11-14-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.297353506088257,
+        "collision_count": 0,
+        "executed_actions": 56
+      },
+      {
+        "map_id": "holdout-11-15-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.376988410949707,
+        "collision_count": 0,
+        "executed_actions": 54
+      },
+      {
+        "map_id": "holdout-11-16-b4-g14",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.374028444290161,
+        "collision_count": 1,
+        "executed_actions": 49
+      },
+      {
+        "map_id": "holdout-11-17-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.8071722984313965,
+        "collision_count": 0,
+        "executed_actions": 43
+      },
+      {
+        "map_id": "holdout-11-18-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.389430046081543,
+        "collision_count": 0,
+        "executed_actions": 53
+      },
+      {
+        "map_id": "holdout-11-19-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 11,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.8014440536499023,
+        "collision_count": 0,
+        "executed_actions": 66
+      },
+      {
+        "map_id": "holdout-23-0-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.11386775970459,
+        "collision_count": 0,
+        "executed_actions": 55
+      },
+      {
+        "map_id": "holdout-23-1-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 2.552987813949585,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "map_id": "holdout-23-2-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.409302234649658,
+        "collision_count": 1,
+        "executed_actions": 57
+      },
+      {
+        "map_id": "holdout-23-3-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.613915205001831,
+        "collision_count": 0,
+        "executed_actions": 53
+      },
+      {
+        "map_id": "holdout-23-4-b4-g22",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.3654580116271973,
+        "collision_count": 1,
+        "executed_actions": 54
+      },
+      {
+        "map_id": "holdout-23-5-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.295402765274048,
+        "collision_count": 0,
+        "executed_actions": 48
+      },
+      {
+        "map_id": "holdout-23-6-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.2418313026428223,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "map_id": "holdout-23-7-b4-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.6021969318389893,
+        "collision_count": 2,
+        "executed_actions": 64
+      },
+      {
+        "map_id": "holdout-23-8-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.4726710319519043,
+        "collision_count": 0,
+        "executed_actions": 34
+      },
+      {
+        "map_id": "holdout-23-9-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.619208574295044,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "map_id": "holdout-23-10-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.3522837162017822,
+        "collision_count": 0,
+        "executed_actions": 53
+      },
+      {
+        "map_id": "holdout-23-11-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.987060785293579,
+        "collision_count": 0,
+        "executed_actions": 45
+      },
+      {
+        "map_id": "holdout-23-12-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.298466682434082,
+        "collision_count": 0,
+        "executed_actions": 49
+      },
+      {
+        "map_id": "holdout-23-13-b4-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.7734861373901367,
+        "collision_count": 0,
+        "executed_actions": 35
+      },
+      {
+        "map_id": "holdout-23-14-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.4921183586120605,
+        "collision_count": 1,
+        "executed_actions": 59
+      },
+      {
+        "map_id": "holdout-23-15-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.6527369022369385,
+        "collision_count": 0,
+        "executed_actions": 54
+      },
+      {
+        "map_id": "holdout-23-16-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.836214303970337,
+        "collision_count": 0,
+        "executed_actions": 50
+      },
+      {
+        "map_id": "holdout-23-17-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.599135637283325,
+        "collision_count": 0,
+        "executed_actions": 43
+      },
+      {
+        "map_id": "holdout-23-18-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.864392042160034,
+        "collision_count": 0,
+        "executed_actions": 52
+      },
+      {
+        "map_id": "holdout-23-19-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 23,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.2456846237182617,
+        "collision_count": 0,
+        "executed_actions": 63
+      },
+      {
+        "map_id": "holdout-41-0-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.703260898590088,
+        "collision_count": 0,
+        "executed_actions": 44
+      },
+      {
+        "map_id": "holdout-41-1-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.986919403076172,
+        "collision_count": 0,
+        "executed_actions": 54
+      },
+      {
+        "map_id": "holdout-41-2-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.4320380687713623,
+        "collision_count": 0,
+        "executed_actions": 59
+      },
+      {
+        "map_id": "holdout-41-3-b4-g14",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.1784064769744873,
+        "collision_count": 2,
+        "executed_actions": 61
+      },
+      {
+        "map_id": "holdout-41-4-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.659867286682129,
+        "collision_count": 1,
+        "executed_actions": 46
+      },
+      {
+        "map_id": "holdout-41-5-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.0174357891082764,
+        "collision_count": 0,
+        "executed_actions": 56
+      },
+      {
+        "map_id": "holdout-41-6-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.284623861312866,
+        "collision_count": 1,
+        "executed_actions": 74
+      },
+      {
+        "map_id": "holdout-41-7-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.2978672981262207,
+        "collision_count": 0,
+        "executed_actions": 41
+      },
+      {
+        "map_id": "holdout-41-8-b3-g14",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.091468572616577,
+        "collision_count": 1,
+        "executed_actions": 62
+      },
+      {
+        "map_id": "holdout-41-9-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.2861382961273193,
+        "collision_count": 0,
+        "executed_actions": 55
+      },
+      {
+        "map_id": "holdout-41-10-b4-g22",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 1.8829749822616577,
+        "collision_count": 0,
+        "executed_actions": 42
+      },
+      {
+        "map_id": "holdout-41-11-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.601839303970337,
+        "collision_count": 1,
+        "executed_actions": 45
+      },
+      {
+        "map_id": "holdout-41-12-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.8752007484436035,
+        "collision_count": 0,
+        "executed_actions": 56
+      },
+      {
+        "map_id": "holdout-41-13-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.1624562740325928,
+        "collision_count": 2,
+        "executed_actions": 62
+      },
+      {
+        "map_id": "holdout-41-14-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.368448257446289,
+        "collision_count": 0,
+        "executed_actions": 59
+      },
+      {
+        "map_id": "holdout-41-15-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.7462403774261475,
+        "collision_count": 1,
+        "executed_actions": 50
+      },
+      {
+        "map_id": "holdout-41-16-b4-g14",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.7831814289093018,
+        "collision_count": 0,
+        "executed_actions": 51
+      },
+      {
+        "map_id": "holdout-41-17-b4-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 4,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 2.9829723834991455,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "map_id": "holdout-41-18-b3-g22",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 22,
+        "real_success": 1.0,
+        "final_distance_px": 3.865483283996582,
+        "collision_count": 0,
+        "executed_actions": 46
+      },
+      {
+        "map_id": "holdout-41-19-b3-g24",
+        "variant": "visible_gap_projection",
+        "seed": 41,
+        "barrier_count": 3,
+        "gap_height": 24,
+        "real_success": 1.0,
+        "final_distance_px": 3.56150221824646,
+        "collision_count": 1,
+        "executed_actions": 48
+      }
+    ],
+    "summary": {
+      "real_success": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "final_distance_px": {
+        "mean": 3.075071128209432,
+        "std": 0.5657707545320158
+      },
+      "collision_count": {
+        "mean": 0.36666666666666664,
+        "std": 0.6046119049072352
+      },
+      "executed_actions": {
+        "mean": 50.5,
+        "std": 8.419224033919832
+      }
+    }
+  },
+  "ablation": {
+    "raw_prediction": {
+      "rows": [
+        {
+          "map_id": "holdout-11-0-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.72925066947937,
+          "collision_count": 0,
+          "executed_actions": 35
+        },
+        {
+          "map_id": "holdout-11-1-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2709786891937256,
+          "collision_count": 0,
+          "executed_actions": 52
+        },
+        {
+          "map_id": "holdout-11-2-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8436403274536133,
+          "collision_count": 0,
+          "executed_actions": 47
+        },
+        {
+          "map_id": "holdout-11-3-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.962909698486328,
+          "collision_count": 0,
+          "executed_actions": 57
+        },
+        {
+          "map_id": "holdout-11-4-b4-g22",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.2453701496124268,
+          "collision_count": 2,
+          "executed_actions": 60
+        },
+        {
+          "map_id": "holdout-11-5-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 41.441158294677734,
+          "collision_count": 27,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-11-6-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.916926145553589,
+          "collision_count": 0,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-11-7-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.83130145072937,
+          "collision_count": 2,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-11-8-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 33.026248931884766,
+          "collision_count": 1,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-11-9-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.4477782249450684,
+          "collision_count": 1,
+          "executed_actions": 48
+        },
+        {
+          "map_id": "holdout-11-10-b4-g22",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.6823458671569824,
+          "collision_count": 0,
+          "executed_actions": 42
+        },
+        {
+          "map_id": "holdout-11-11-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 39.52406692504883,
+          "collision_count": 9,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-11-12-b4-g22",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.0023393630981445,
+          "collision_count": 1,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-11-13-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2458395957946777,
+          "collision_count": 0,
+          "executed_actions": 38
+        },
+        {
+          "map_id": "holdout-11-14-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.297353506088257,
+          "collision_count": 0,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-11-15-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.376988410949707,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-11-16-b4-g14",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 0.0,
+          "final_distance_px": 39.12812042236328,
+          "collision_count": 10,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-11-17-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8071722984313965,
+          "collision_count": 0,
+          "executed_actions": 43
+        },
+        {
+          "map_id": "holdout-11-18-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.8931963443756104,
+          "collision_count": 1,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-11-19-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.8014440536499023,
+          "collision_count": 0,
+          "executed_actions": 66
+        },
+        {
+          "map_id": "holdout-23-0-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.11386775970459,
+          "collision_count": 0,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-23-1-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.552987813949585,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-2-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8834149837493896,
+          "collision_count": 1,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-23-3-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.4982504844665527,
+          "collision_count": 0,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-23-4-b4-g22",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.713864326477051,
+          "collision_count": 2,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-23-5-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.295402765274048,
+          "collision_count": 0,
+          "executed_actions": 48
+        },
+        {
+          "map_id": "holdout-23-6-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.2418313026428223,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-7-b4-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 0.0,
+          "final_distance_px": 21.905048370361328,
+          "collision_count": 3,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-23-8-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.4726710319519043,
+          "collision_count": 0,
+          "executed_actions": 34
+        },
+        {
+          "map_id": "holdout-23-9-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.2327051162719727,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-10-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.3522837162017822,
+          "collision_count": 0,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-23-11-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.987060785293579,
+          "collision_count": 0,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-23-12-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.298466682434082,
+          "collision_count": 0,
+          "executed_actions": 49
+        },
+        {
+          "map_id": "holdout-23-13-b4-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 0.0,
+          "final_distance_px": 18.623201370239258,
+          "collision_count": 2,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-23-14-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.4921183586120605,
+          "collision_count": 1,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-23-15-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.6527369022369385,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-23-16-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.836214303970337,
+          "collision_count": 0,
+          "executed_actions": 50
+        },
+        {
+          "map_id": "holdout-23-17-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 36.283287048339844,
+          "collision_count": 2,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-23-18-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.864392042160034,
+          "collision_count": 0,
+          "executed_actions": 52
+        },
+        {
+          "map_id": "holdout-23-19-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2456846237182617,
+          "collision_count": 0,
+          "executed_actions": 63
+        },
+        {
+          "map_id": "holdout-41-0-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.4273712635040283,
+          "collision_count": 1,
+          "executed_actions": 49
+        },
+        {
+          "map_id": "holdout-41-1-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.986919403076172,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-41-2-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.4320380687713623,
+          "collision_count": 0,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-41-3-b4-g14",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 0.0,
+          "final_distance_px": 42.04671096801758,
+          "collision_count": 1,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-41-4-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.901785135269165,
+          "collision_count": 2,
+          "executed_actions": 51
+        },
+        {
+          "map_id": "holdout-41-5-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.0174357891082764,
+          "collision_count": 0,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-41-6-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 30.2755184173584,
+          "collision_count": 2,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-41-7-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.2978672981262207,
+          "collision_count": 0,
+          "executed_actions": 41
+        },
+        {
+          "map_id": "holdout-41-8-b3-g14",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.091468572616577,
+          "collision_count": 1,
+          "executed_actions": 62
+        },
+        {
+          "map_id": "holdout-41-9-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.7035000324249268,
+          "collision_count": 2,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-41-10-b4-g22",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 1.8829749822616577,
+          "collision_count": 0,
+          "executed_actions": 42
+        },
+        {
+          "map_id": "holdout-41-11-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.9090306758880615,
+          "collision_count": 1,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-41-12-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 0.0,
+          "final_distance_px": 24.73874855041504,
+          "collision_count": 1,
+          "executed_actions": 140
+        },
+        {
+          "map_id": "holdout-41-13-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2332723140716553,
+          "collision_count": 2,
+          "executed_actions": 61
+        },
+        {
+          "map_id": "holdout-41-14-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.368448257446289,
+          "collision_count": 0,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-41-15-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.428114891052246,
+          "collision_count": 2,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-41-16-b4-g14",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.741110324859619,
+          "collision_count": 3,
+          "executed_actions": 60
+        },
+        {
+          "map_id": "holdout-41-17-b4-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.2197489738464355,
+          "collision_count": 1,
+          "executed_actions": 44
+        },
+        {
+          "map_id": "holdout-41-18-b3-g22",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.865483283996582,
+          "collision_count": 0,
+          "executed_actions": 46
+        },
+        {
+          "map_id": "holdout-41-19-b3-g24",
+          "variant": "raw_prediction",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.56150221824646,
+          "collision_count": 1,
+          "executed_actions": 48
+        }
+      ],
+      "summary": {
+        "real_success": {
+          "mean": 0.8333333333333334,
+          "std": 0.372677996249965
+        },
+        "final_distance_px": {
+          "mean": 7.985816142956415,
+          "std": 11.541092285636601
+        },
+        "collision_count": {
+          "mean": 1.4166666666666667,
+          "std": 3.7872226704480365
+        },
+        "executed_actions": {
+          "mean": 65.58333333333333,
+          "std": 34.0275827658811
+        }
+      }
+    },
+    "visible_gap_projection": {
+      "rows": [
+        {
+          "map_id": "holdout-11-0-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.72925066947937,
+          "collision_count": 0,
+          "executed_actions": 35
+        },
+        {
+          "map_id": "holdout-11-1-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.4981210231781006,
+          "collision_count": 0,
+          "executed_actions": 49
+        },
+        {
+          "map_id": "holdout-11-2-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8436403274536133,
+          "collision_count": 0,
+          "executed_actions": 47
+        },
+        {
+          "map_id": "holdout-11-3-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.962909698486328,
+          "collision_count": 0,
+          "executed_actions": 57
+        },
+        {
+          "map_id": "holdout-11-4-b4-g22",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.412569284439087,
+          "collision_count": 0,
+          "executed_actions": 50
+        },
+        {
+          "map_id": "holdout-11-5-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 1.776452898979187,
+          "collision_count": 1,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-11-6-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.916926145553589,
+          "collision_count": 0,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-11-7-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.938476324081421,
+          "collision_count": 0,
+          "executed_actions": 40
+        },
+        {
+          "map_id": "holdout-11-8-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.3324549198150635,
+          "collision_count": 2,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-11-9-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.4532008171081543,
+          "collision_count": 1,
+          "executed_actions": 48
+        },
+        {
+          "map_id": "holdout-11-10-b4-g22",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.6823458671569824,
+          "collision_count": 0,
+          "executed_actions": 42
+        },
+        {
+          "map_id": "holdout-11-11-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.506577968597412,
+          "collision_count": 1,
+          "executed_actions": 60
+        },
+        {
+          "map_id": "holdout-11-12-b4-g22",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.0023393630981445,
+          "collision_count": 1,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-11-13-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2458395957946777,
+          "collision_count": 0,
+          "executed_actions": 38
+        },
+        {
+          "map_id": "holdout-11-14-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.297353506088257,
+          "collision_count": 0,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-11-15-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.376988410949707,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-11-16-b4-g14",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.374028444290161,
+          "collision_count": 1,
+          "executed_actions": 49
+        },
+        {
+          "map_id": "holdout-11-17-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8071722984313965,
+          "collision_count": 0,
+          "executed_actions": 43
+        },
+        {
+          "map_id": "holdout-11-18-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.389430046081543,
+          "collision_count": 0,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-11-19-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 11,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.8014440536499023,
+          "collision_count": 0,
+          "executed_actions": 66
+        },
+        {
+          "map_id": "holdout-23-0-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.11386775970459,
+          "collision_count": 0,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-23-1-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 2.552987813949585,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-2-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.409302234649658,
+          "collision_count": 1,
+          "executed_actions": 57
+        },
+        {
+          "map_id": "holdout-23-3-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.613915205001831,
+          "collision_count": 0,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-23-4-b4-g22",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.3654580116271973,
+          "collision_count": 1,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-23-5-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.295402765274048,
+          "collision_count": 0,
+          "executed_actions": 48
+        },
+        {
+          "map_id": "holdout-23-6-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.2418313026428223,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-7-b4-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.6021969318389893,
+          "collision_count": 2,
+          "executed_actions": 64
+        },
+        {
+          "map_id": "holdout-23-8-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.4726710319519043,
+          "collision_count": 0,
+          "executed_actions": 34
+        },
+        {
+          "map_id": "holdout-23-9-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.619208574295044,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-23-10-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.3522837162017822,
+          "collision_count": 0,
+          "executed_actions": 53
+        },
+        {
+          "map_id": "holdout-23-11-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.987060785293579,
+          "collision_count": 0,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-23-12-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.298466682434082,
+          "collision_count": 0,
+          "executed_actions": 49
+        },
+        {
+          "map_id": "holdout-23-13-b4-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.7734861373901367,
+          "collision_count": 0,
+          "executed_actions": 35
+        },
+        {
+          "map_id": "holdout-23-14-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.4921183586120605,
+          "collision_count": 1,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-23-15-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.6527369022369385,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-23-16-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.836214303970337,
+          "collision_count": 0,
+          "executed_actions": 50
+        },
+        {
+          "map_id": "holdout-23-17-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.599135637283325,
+          "collision_count": 0,
+          "executed_actions": 43
+        },
+        {
+          "map_id": "holdout-23-18-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.864392042160034,
+          "collision_count": 0,
+          "executed_actions": 52
+        },
+        {
+          "map_id": "holdout-23-19-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 23,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2456846237182617,
+          "collision_count": 0,
+          "executed_actions": 63
+        },
+        {
+          "map_id": "holdout-41-0-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.703260898590088,
+          "collision_count": 0,
+          "executed_actions": 44
+        },
+        {
+          "map_id": "holdout-41-1-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.986919403076172,
+          "collision_count": 0,
+          "executed_actions": 54
+        },
+        {
+          "map_id": "holdout-41-2-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.4320380687713623,
+          "collision_count": 0,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-41-3-b4-g14",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 2.1784064769744873,
+          "collision_count": 2,
+          "executed_actions": 61
+        },
+        {
+          "map_id": "holdout-41-4-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.659867286682129,
+          "collision_count": 1,
+          "executed_actions": 46
+        },
+        {
+          "map_id": "holdout-41-5-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.0174357891082764,
+          "collision_count": 0,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-41-6-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.284623861312866,
+          "collision_count": 1,
+          "executed_actions": 74
+        },
+        {
+          "map_id": "holdout-41-7-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.2978672981262207,
+          "collision_count": 0,
+          "executed_actions": 41
+        },
+        {
+          "map_id": "holdout-41-8-b3-g14",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.091468572616577,
+          "collision_count": 1,
+          "executed_actions": 62
+        },
+        {
+          "map_id": "holdout-41-9-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.2861382961273193,
+          "collision_count": 0,
+          "executed_actions": 55
+        },
+        {
+          "map_id": "holdout-41-10-b4-g22",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 1.8829749822616577,
+          "collision_count": 0,
+          "executed_actions": 42
+        },
+        {
+          "map_id": "holdout-41-11-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.601839303970337,
+          "collision_count": 1,
+          "executed_actions": 45
+        },
+        {
+          "map_id": "holdout-41-12-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.8752007484436035,
+          "collision_count": 0,
+          "executed_actions": 56
+        },
+        {
+          "map_id": "holdout-41-13-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.1624562740325928,
+          "collision_count": 2,
+          "executed_actions": 62
+        },
+        {
+          "map_id": "holdout-41-14-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.368448257446289,
+          "collision_count": 0,
+          "executed_actions": 59
+        },
+        {
+          "map_id": "holdout-41-15-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.7462403774261475,
+          "collision_count": 1,
+          "executed_actions": 50
+        },
+        {
+          "map_id": "holdout-41-16-b4-g14",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 14,
+          "real_success": 1.0,
+          "final_distance_px": 3.7831814289093018,
+          "collision_count": 0,
+          "executed_actions": 51
+        },
+        {
+          "map_id": "holdout-41-17-b4-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 4,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 2.9829723834991455,
+          "collision_count": 0,
+          "executed_actions": 39
+        },
+        {
+          "map_id": "holdout-41-18-b3-g22",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 22,
+          "real_success": 1.0,
+          "final_distance_px": 3.865483283996582,
+          "collision_count": 0,
+          "executed_actions": 46
+        },
+        {
+          "map_id": "holdout-41-19-b3-g24",
+          "variant": "visible_gap_projection",
+          "seed": 41,
+          "barrier_count": 3,
+          "gap_height": 24,
+          "real_success": 1.0,
+          "final_distance_px": 3.56150221824646,
+          "collision_count": 1,
+          "executed_actions": 48
+        }
+      ],
+      "summary": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 3.075071128209432,
+          "std": 0.5657707545320158
+        },
+        "collision_count": {
+          "mean": 0.36666666666666664,
+          "std": 0.6046119049072352
+        },
+        "executed_actions": {
+          "mean": 50.5,
+          "std": 8.419224033919832
+        }
+      }
+    }
+  },
+  "comparison": {
+    "route_mode_v15": "fixed four-class mode",
+    "route_sketch_v16": "fixed continuous route points",
+    "gap_route_v17": "per-barrier structured gap centers"
+  },
+  "checkpoint": "artifacts/gap-route-policy-v17-honest-full.pt"
+}
