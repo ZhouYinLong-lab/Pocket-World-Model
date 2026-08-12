@@ -133,6 +133,7 @@ def run_general_ood(
     collision_head_horizon_index: int = 1,
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
+    rgb_shield_margin: int = 4,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -182,6 +183,7 @@ def run_general_ood(
                     collision_head_horizon_index=collision_head_horizon_index,
                     route_budget_margin=route_budget_margin,
                     route_progress_tolerance=route_progress_tolerance,
+                    rgb_shield_margin=rgb_shield_margin,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -214,6 +216,7 @@ def run_general_ood(
             "collision_head_horizon_index": collision_head_horizon_index,
             "route_budget_margin": route_budget_margin,
             "route_progress_tolerance": route_progress_tolerance,
+            "rgb_shield_margin": rgb_shield_margin,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
@@ -259,6 +262,7 @@ def main() -> None:
     parser.add_argument("--shift-threshold-quantile", type=float, default=0.99)
     parser.add_argument("--route-budget-margin", type=float, default=1.05)
     parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
+    parser.add_argument("--rgb-shield-margin", type=int, default=4)
     parser.add_argument("--output", default="artifacts/evaluation-general-ood-v21.json")
     args = parser.parse_args()
     from .collision_head import CollisionProbabilityHead
@@ -291,6 +295,7 @@ def main() -> None:
         shift_threshold_quantile=args.shift_threshold_quantile,
         route_budget_margin=args.route_budget_margin,
         route_progress_tolerance=args.route_progress_tolerance,
+        rgb_shield_margin=args.rgb_shield_margin,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
