@@ -280,6 +280,20 @@ To test whether the remaining barrier gap is caused by an underpowered risk esti
 
 The reliability bins sharpen the diagnosis: ensemble plans with predicted risk in the 0–0.20 range still collide on **100%** of held-out routes. The next optimization target is therefore route-conditioned collision supervision and route-completion prediction, not a larger search population.
 
+### Route-conditioned completion study
+
+The next experiment adds an explicit `RouteCompletionPredictor` trained on real simulator outcomes for complete candidate routes. It achieves **0.997 held-out AUROC**, but planner transfer is much harder: weight 10 reaches **63.3% real success** versus **61.7%** for learned collision, while weight 64 collapses to **28.3%** and the risk-gated/hard-negative variants reach **51.7% / 53.3%**. The paired comparison is therefore a controlled negative result: candidate-level route classification is strong, but its score does not yet survive model-missed collisions during planning. See the [route-completion study](docs/plans/route-completion.md) and its [hard-negative report](docs/results/evaluation-route-completion-barrier-v5-hard-negative.json).
+
+Reproduce the latest route-conditioned experiment with:
+
+```bash
+python -m pocketworld.evaluate_route_completion artifacts/pocketworld-map-suite-v3-final.pt \
+  --train-seeds 101,103 --evaluation-seeds 11,23,41 --train-episodes 12 --evaluation-episodes 20 \
+  --calibration-candidates 32 --candidates 256 --horizon 48 --hard-negative-rounds 1 \
+  --predictor-output artifacts/route-completion-v2-hard-negative.pt \
+  --output artifacts/evaluation-route-completion-barrier-v5-hard-negative.json
+```
+
 Reproduce the risk-method study with:
 
 ```bash

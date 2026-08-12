@@ -2,6 +2,20 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.8.0] - 2026-08-12
+
+### Added
+
+- Explicit route-conditioned completion predictor trained from real simulator route outcomes.
+- Three-seed comparison of route-completion weights, risk gating, and hard-negative mining.
+- Held-out route-candidate AUROC/Brier metrics and paired planner win/loss/tie deltas.
+- Documented negative result showing that strong candidate classification does not guarantee real obstacle traversal.
+
+### Changed
+
+- Route completion can be injected into one-shot planning with an explicit score weight and collision-risk gate.
+- Planner reports now include predicted route-completion probability for selected plans.
+
 ## [0.7.0] - 2026-08-12
 
 ### Added
