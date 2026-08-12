@@ -2,6 +2,20 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.14.0] - 2026-08-12
+
+### Added
+
+- Action-level RGB route policy with DAgger aggregation and a strict no-A* evaluation path.
+- Route-level RGB policy that predicts `direct`, `top`, `bottom`, or `gap`, followed by an observable waypoint controller.
+- Same-protocol comparison reports for action imitation, route-mode distillation, and the geometry-locked hybrid reference.
+
+### Results
+
+- Under the three-seed, four-layout, 240-task protocol, action-level distillation reaches 59.2% real success with 17.63 collisions per episode.
+- Route-level distillation reaches 100.0% real success with 0.042 collisions per episode, while using no A* during student evaluation.
+- The result isolates route commitment as a stronger distillation target than next-action imitation for this benchmark; it does not claim general learned obstacle navigation because the mode vocabulary and waypoint executor are benchmark-specific.
+
 ## [0.13.0] - 2026-08-12
 
 ### Added

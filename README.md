@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-62%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-79%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-98%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-70%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -84,6 +84,33 @@ The current calibration matrix evaluates fresh rollouts at nominal speed, 0.8x s
 The formal imagination-gap evaluator fixes candidate sampling per seed and reports the same selected plan in the learned model and the real simulator. On the released v3-final checkpoint, 24-step imagined/real success is **100.0% / 95.3%** (4.7pp gap) and 32-step success is **100.0% / 93.3%** (6.7pp gap). This is the central reliability result: short-horizon planning transfers closely, while longer imagined rollouts expose a measurable but bounded bias. See [the imagination-gap result](docs/results/evaluation-imagination-gap-v3-final.json).
 
 The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md), [v3 maturity matrix](docs/results/evaluation-maturity-v3-final-3seed.json), and [formal imagination-gap result](docs/results/evaluation-imagination-gap-v3-final.json).
+
+### Learned route-level planning comparison
+
+The obstacle-navigation study now compares three distinct levels of abstraction:
+
+| Method | Evaluation A* | Student signal | 240-task real success | Collisions / episode |
+| --- | ---: | --- | ---: | ---: |
+| Action-level RGB policy + DAgger | No | next discrete action | 59.2% | 17.63 |
+| Route-mode RGB policy + waypoint controller | No | direct / top / bottom / gap | **100.0%** | **0.042** |
+| Geometry-locked RGB/A* hybrid | Yes | visible global route | 99.2% | 0.242 |
+
+The action-level student has reasonable held-out action accuracy (81.3%) but suffers from covariate shift: its real success drops to 0% on the shifted-barrier split. The route-level student predicts one persistent route mode from the initial RGB frame and goal, then uses an RGB-only local waypoint controller; it reaches 100% on all four barrier layouts across seeds `11,23,41` (20 tasks per layout and seed). This is a method comparison, not a claim that the learned policy has discovered general navigation: the route vocabulary and waypoint controller are deliberately specialized to this four-layout benchmark.
+
+Machine-readable reports:
+
+- [action-level student](docs/results/evaluation-learned-route-policy-v14.json)
+- [route-level student](docs/results/evaluation-route-mode-policy-v15.json)
+- [geometry-locked hybrid reference](docs/results/evaluation-route-aware-adaptive-v13-full.json)
+
+Reproduce the route-level study with:
+
+```bash
+python -m pocketworld.evaluate_learned_route_policy --route-level \
+  --train-seeds 101,103 --train-scenarios single_barrier,barrier_narrow_gap \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 20 --max-steps 64 \
+  --epochs 300 --output artifacts/evaluation-route-mode-policy-v15.json
+```
 
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />

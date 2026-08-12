@@ -247,6 +247,47 @@ python -m pocketworld.evaluate_route_controller \
 
 ## Reproduction
 
+## Learned route-mode policy comparison
+
+The next experiment replaces the high-query geometry override with a small
+student policy. Two student designs are compared under the same four-map,
+three-seed, 20-episode protocol:
+
+| Student | Training target | A* at evaluation | Real success | Collisions / episode |
+| --- | --- | ---: | ---: | ---: |
+| Action-level RGB + DAgger | next discrete action | no | 59.2% | 17.63 |
+| Route-level RGB policy | direct/top/bottom/gap mode | no | 100.0% | 0.042 |
+| Geometry-locked hybrid reference | visible RGB/A* route | yes | 99.2% | 0.242 |
+
+The action-level student reaches 81.3% held-out action accuracy but fails under
+closed-loop covariate shift, including 0% success on the shifted-barrier split.
+The route-level student predicts a persistent mode from the initial RGB frame
+and goal, then executes RGB-derived waypoints with a local velocity-aware
+controller. It reaches 100% on all four named layouts in this protocol.
+
+This result supports a narrower conclusion than “pure learned navigation is
+solved”: route abstraction and commitment are much easier to distill than
+individual teacher actions. The mode vocabulary is specialized to the current
+four-layout benchmark, and the waypoint executor remains a designed local
+controller. The next scale-up should add procedurally generated multi-barrier
+maps and evaluate whether the same route representation transfers without a
+fixed top/bottom/gap vocabulary.
+
+Machine-readable reports:
+
+- [action-level student](../results/evaluation-learned-route-policy-v14.json)
+- [route-level student](../results/evaluation-route-mode-policy-v15.json)
+- [hybrid reference](../results/evaluation-route-aware-adaptive-v13-full.json)
+
+Reproduce the route-level study:
+
+```bash
+python -m pocketworld.evaluate_learned_route_policy --route-level \
+  --train-seeds 101,103 --train-scenarios single_barrier,barrier_narrow_gap \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 20 --max-steps 64 \
+  --epochs 300 --output artifacts/evaluation-route-mode-policy-v15.json
+```
+
 ```bash
 python -m pocketworld.evaluate_route_completion \
   artifacts/pocketworld-map-suite-v3-final.pt \

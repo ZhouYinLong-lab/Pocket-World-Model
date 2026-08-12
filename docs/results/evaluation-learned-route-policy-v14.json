@@ -1,0 +1,2256 @@
+{
+  "protocol": {
+    "teacher": "geometry-locked RGB/A* controller",
+    "student_inputs": [
+      "RGB observation",
+      "goal coordinates",
+      "RGB history velocity"
+    ],
+    "student_evaluation_uses_astar": false,
+    "train_seeds": [
+      101,
+      103
+    ],
+    "train_scenarios": [
+      "single_barrier",
+      "barrier_narrow_gap"
+    ],
+    "evaluation_seeds": [
+      11,
+      23,
+      41
+    ],
+    "evaluation_scenarios": [
+      "single_barrier",
+      "barrier_shifted",
+      "barrier_narrow_gap",
+      "barrier_wide_gap"
+    ],
+    "train_episodes": 20,
+    "evaluation_episodes": 20,
+    "max_steps": 64,
+    "validation_seeds": [
+      107,
+      109
+    ],
+    "validation_scenarios": [
+      "single_barrier",
+      "barrier_narrow_gap"
+    ]
+  },
+  "training": {
+    "epochs": 120,
+    "samples": 7718,
+    "action_counts": [
+      1621,
+      1816,
+      781,
+      3500
+    ],
+    "final_loss": 0.3517144626576053,
+    "train_accuracy": 0.8682301044464111
+  },
+  "dagger": [
+    {
+      "round": 1,
+      "aggregated_samples": 7718,
+      "student_rollout_samples": 4866,
+      "student_rollout_teacher_action_rate": 0.3631319358816276
+    }
+  ],
+  "teacher_imitation": {
+    "train": {
+      "samples": 7718,
+      "action_accuracy": 0.868230111427831,
+      "action_macro_recall": 0.8303883613820597
+    },
+    "validation": {
+      "samples": 1383,
+      "action_accuracy": 0.8134490238611713,
+      "action_macro_recall": 0.7542176836320846
+    }
+  },
+  "evaluation": {
+    "rows": [
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.9389967918395996,
+        "collision_count": 0,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 1.9343489408493042,
+        "collision_count": 2,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.3783979415893555,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.152162790298462,
+        "collision_count": 2,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.4614124298095703,
+        "collision_count": 1,
+        "executed_actions": 39
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 2.8796629905700684,
+        "collision_count": 1,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.0511789321899414,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 3.9876437187194824,
+        "collision_count": 1,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 3.8683760166168213,
+        "collision_count": 1,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 3.6024973392486572,
+        "collision_count": 3,
+        "executed_actions": 46
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 10,
+        "real_success": 0.0,
+        "final_distance_px": 33.83324432373047,
+        "collision_count": 38,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 3.6783854961395264,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 2.7936947345733643,
+        "collision_count": 0,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 1.8429847955703735,
+        "collision_count": 1,
+        "executed_actions": 45
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 43.07743453979492,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 15,
+        "real_success": 1.0,
+        "final_distance_px": 2.4180140495300293,
+        "collision_count": 2,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 3.043743848800659,
+        "collision_count": 0,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 3.631385326385498,
+        "collision_count": 1,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.5714364051818848,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 11,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.002739667892456,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.7927839756011963,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 3.312434434890747,
+        "collision_count": 1,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 2.93095326423645,
+        "collision_count": 2,
+        "executed_actions": 45
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.148045063018799,
+        "collision_count": 1,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 4,
+        "real_success": 0.0,
+        "final_distance_px": 38.69145965576172,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 3.9960577487945557,
+        "collision_count": 2,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.3245785236358643,
+        "collision_count": 1,
+        "executed_actions": 39
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 3.767348051071167,
+        "collision_count": 0,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 2.6590518951416016,
+        "collision_count": 1,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 3.730599880218506,
+        "collision_count": 2,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 2.550501585006714,
+        "collision_count": 1,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 3.1585853099823,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 12,
+        "real_success": 0.0,
+        "final_distance_px": 41.21131896972656,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 3.53214430809021,
+        "collision_count": 3,
+        "executed_actions": 47
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.3294105529785156,
+        "collision_count": 3,
+        "executed_actions": 45
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 15,
+        "real_success": 1.0,
+        "final_distance_px": 2.13391375541687,
+        "collision_count": 2,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 2.31007981300354,
+        "collision_count": 0,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 2.798546075820923,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.644660234451294,
+        "collision_count": 2,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 23,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.1682372093200684,
+        "collision_count": 3,
+        "executed_actions": 46
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.2874228954315186,
+        "collision_count": 1,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 3.4908759593963623,
+        "collision_count": 1,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.9836976528167725,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.2107808589935303,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.6789629459381104,
+        "collision_count": 0,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 3.2702536582946777,
+        "collision_count": 0,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.9424755573272705,
+        "collision_count": 1,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 3.1391761302948,
+        "collision_count": 1,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 42.53413772583008,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 40.92003631591797,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 1.7682116031646729,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 40.92003631591797,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 3.4594388008117676,
+        "collision_count": 3,
+        "executed_actions": 49
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 3.7855262756347656,
+        "collision_count": 3,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.36928129196167,
+        "collision_count": 1,
+        "executed_actions": 39
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 41.159420013427734,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 2.431612730026245,
+        "collision_count": 2,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 2.135941505432129,
+        "collision_count": 1,
+        "executed_actions": 40
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 2.991711139678955,
+        "collision_count": 0,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "single_barrier",
+        "seed": 41,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.916747808456421,
+        "collision_count": 3,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 0,
+        "real_success": 0.0,
+        "final_distance_px": 27.971925735473633,
+        "collision_count": 40,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 1,
+        "real_success": 0.0,
+        "final_distance_px": 31.016456604003906,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 2,
+        "real_success": 0.0,
+        "final_distance_px": 24.18950843811035,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 3,
+        "real_success": 0.0,
+        "final_distance_px": 29.21340560913086,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 4,
+        "real_success": 0.0,
+        "final_distance_px": 27.639440536499023,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 5,
+        "real_success": 0.0,
+        "final_distance_px": 23.668020248413086,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 6,
+        "real_success": 0.0,
+        "final_distance_px": 30.141677856445312,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 23.88141632080078,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 25.108970642089844,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 28.213342666625977,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 10,
+        "real_success": 0.0,
+        "final_distance_px": 26.526721954345703,
+        "collision_count": 50,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 27.396358489990234,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 12,
+        "real_success": 0.0,
+        "final_distance_px": 27.486913681030273,
+        "collision_count": 44,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 13,
+        "real_success": 0.0,
+        "final_distance_px": 24.89127540588379,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 30.984451293945312,
+        "collision_count": 41,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 29.603679656982422,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 16,
+        "real_success": 0.0,
+        "final_distance_px": 26.9241886138916,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 17,
+        "real_success": 0.0,
+        "final_distance_px": 27.39382553100586,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 18,
+        "real_success": 0.0,
+        "final_distance_px": 25.648231506347656,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 11,
+        "episode": 19,
+        "real_success": 0.0,
+        "final_distance_px": 30.586408615112305,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 0,
+        "real_success": 0.0,
+        "final_distance_px": 24.857145309448242,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 1,
+        "real_success": 0.0,
+        "final_distance_px": 28.10053825378418,
+        "collision_count": 1,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 2,
+        "real_success": 0.0,
+        "final_distance_px": 25.11122703552246,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 3,
+        "real_success": 0.0,
+        "final_distance_px": 27.22539520263672,
+        "collision_count": 41,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 4,
+        "real_success": 0.0,
+        "final_distance_px": 27.985761642456055,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 5,
+        "real_success": 0.0,
+        "final_distance_px": 29.2606201171875,
+        "collision_count": 44,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 6,
+        "real_success": 0.0,
+        "final_distance_px": 25.489545822143555,
+        "collision_count": 41,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 24.52573013305664,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 23.963577270507812,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 22.35482406616211,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 10,
+        "real_success": 0.0,
+        "final_distance_px": 23.4328556060791,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 26.899250030517578,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 12,
+        "real_success": 0.0,
+        "final_distance_px": 28.41278839111328,
+        "collision_count": 2,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 13,
+        "real_success": 0.0,
+        "final_distance_px": 29.193462371826172,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 24.196805953979492,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 24.630760192871094,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 16,
+        "real_success": 0.0,
+        "final_distance_px": 21.861557006835938,
+        "collision_count": 44,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 17,
+        "real_success": 0.0,
+        "final_distance_px": 25.628311157226562,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 18,
+        "real_success": 0.0,
+        "final_distance_px": 26.758176803588867,
+        "collision_count": 44,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 23,
+        "episode": 19,
+        "real_success": 0.0,
+        "final_distance_px": 28.986465454101562,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 0,
+        "real_success": 0.0,
+        "final_distance_px": 26.496997833251953,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 1,
+        "real_success": 0.0,
+        "final_distance_px": 23.006494522094727,
+        "collision_count": 44,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 2,
+        "real_success": 0.0,
+        "final_distance_px": 26.115158081054688,
+        "collision_count": 48,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 3,
+        "real_success": 0.0,
+        "final_distance_px": 27.62895393371582,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 4,
+        "real_success": 0.0,
+        "final_distance_px": 25.726404190063477,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 5,
+        "real_success": 0.0,
+        "final_distance_px": 23.57643699645996,
+        "collision_count": 48,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 6,
+        "real_success": 0.0,
+        "final_distance_px": 23.8387451171875,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 25.623987197875977,
+        "collision_count": 45,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 31.129985809326172,
+        "collision_count": 1,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 29.263307571411133,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 10,
+        "real_success": 0.0,
+        "final_distance_px": 27.97104263305664,
+        "collision_count": 42,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 29.263307571411133,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 12,
+        "real_success": 0.0,
+        "final_distance_px": 27.275123596191406,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 13,
+        "real_success": 0.0,
+        "final_distance_px": 21.843082427978516,
+        "collision_count": 46,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 27.274866104125977,
+        "collision_count": 39,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 28.63533592224121,
+        "collision_count": 50,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 16,
+        "real_success": 0.0,
+        "final_distance_px": 25.919544219970703,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 17,
+        "real_success": 0.0,
+        "final_distance_px": 25.66914939880371,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 18,
+        "real_success": 0.0,
+        "final_distance_px": 27.143413543701172,
+        "collision_count": 43,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_shifted",
+        "seed": 41,
+        "episode": 19,
+        "real_success": 0.0,
+        "final_distance_px": 25.589908599853516,
+        "collision_count": 49,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 2.785050630569458,
+        "collision_count": 0,
+        "executed_actions": 31
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 3.0610101222991943,
+        "collision_count": 4,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.436279773712158,
+        "collision_count": 0,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.348566770553589,
+        "collision_count": 0,
+        "executed_actions": 34
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.878769636154175,
+        "collision_count": 0,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 2.1867079734802246,
+        "collision_count": 0,
+        "executed_actions": 22
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 2.3229963779449463,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 3.074779987335205,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 27.333036422729492,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 31.07964515686035,
+        "collision_count": 52,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 3.3794796466827393,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 2.667269706726074,
+        "collision_count": 0,
+        "executed_actions": 24
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 2.133445978164673,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 2.9685769081115723,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 14,
+        "real_success": 1.0,
+        "final_distance_px": 2.2261033058166504,
+        "collision_count": 3,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 15,
+        "real_success": 1.0,
+        "final_distance_px": 3.216784954071045,
+        "collision_count": 0,
+        "executed_actions": 23
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 3.361541509628296,
+        "collision_count": 0,
+        "executed_actions": 30
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 17,
+        "real_success": 0.0,
+        "final_distance_px": 30.038644790649414,
+        "collision_count": 52,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.7031445503234863,
+        "collision_count": 0,
+        "executed_actions": 24
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 11,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.679222345352173,
+        "collision_count": 0,
+        "executed_actions": 29
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 2.9830996990203857,
+        "collision_count": 0,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 2.3961074352264404,
+        "collision_count": 0,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 1.9091265201568604,
+        "collision_count": 0,
+        "executed_actions": 33
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.218353509902954,
+        "collision_count": 0,
+        "executed_actions": 31
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.686485767364502,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 2.1820621490478516,
+        "collision_count": 0,
+        "executed_actions": 24
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.1247568130493164,
+        "collision_count": 0,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 3.734060525894165,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 8,
+        "real_success": 0.0,
+        "final_distance_px": 28.293643951416016,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 9,
+        "real_success": 0.0,
+        "final_distance_px": 27.377004623413086,
+        "collision_count": 51,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 3.109104871749878,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 33.19010925292969,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 2.855029582977295,
+        "collision_count": 6,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 2.488856792449951,
+        "collision_count": 0,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 29.370952606201172,
+        "collision_count": 52,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 33.36834716796875,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 3.1557743549346924,
+        "collision_count": 0,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 3.2443642616271973,
+        "collision_count": 0,
+        "executed_actions": 23
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.052971124649048,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 23,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.491212844848633,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.679121971130371,
+        "collision_count": 0,
+        "executed_actions": 35
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 2.7202200889587402,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.199106454849243,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.125938653945923,
+        "collision_count": 0,
+        "executed_actions": 23
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.5472521781921387,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 2.866899013519287,
+        "collision_count": 0,
+        "executed_actions": 31
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.8500559329986572,
+        "collision_count": 0,
+        "executed_actions": 22
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 34.73823928833008,
+        "collision_count": 50,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 2.9402096271514893,
+        "collision_count": 0,
+        "executed_actions": 30
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 3.1173810958862305,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 3.201159715652466,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 3.117380380630493,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 3.119126081466675,
+        "collision_count": 1,
+        "executed_actions": 31
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 13,
+        "real_success": 0.0,
+        "final_distance_px": 29.768718719482422,
+        "collision_count": 47,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 14,
+        "real_success": 1.0,
+        "final_distance_px": 3.9907760620117188,
+        "collision_count": 0,
+        "executed_actions": 30
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 15,
+        "real_success": 1.0,
+        "final_distance_px": 3.7701876163482666,
+        "collision_count": 0,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 16,
+        "real_success": 0.0,
+        "final_distance_px": 27.512704849243164,
+        "collision_count": 39,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 2.8252358436584473,
+        "collision_count": 0,
+        "executed_actions": 25
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 2.247530221939087,
+        "collision_count": 0,
+        "executed_actions": 27
+      },
+      {
+        "scenario": "barrier_narrow_gap",
+        "seed": 41,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.0762863159179688,
+        "collision_count": 0,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 0,
+        "real_success": 0.0,
+        "final_distance_px": 29.72974967956543,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 1,
+        "real_success": 0.0,
+        "final_distance_px": 24.28852653503418,
+        "collision_count": 38,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 2,
+        "real_success": 0.0,
+        "final_distance_px": 20.30974006652832,
+        "collision_count": 11,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 3.1164283752441406,
+        "collision_count": 4,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.0959551334381104,
+        "collision_count": 1,
+        "executed_actions": 46
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 3.507302761077881,
+        "collision_count": 0,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 6,
+        "real_success": 1.0,
+        "final_distance_px": 3.6980104446411133,
+        "collision_count": 1,
+        "executed_actions": 34
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 7,
+        "real_success": 1.0,
+        "final_distance_px": 2.8375208377838135,
+        "collision_count": 0,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 3.0855677127838135,
+        "collision_count": 1,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 2.9548611640930176,
+        "collision_count": 1,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 3.83512020111084,
+        "collision_count": 3,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 2.293431520462036,
+        "collision_count": 1,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 3.9049065113067627,
+        "collision_count": 0,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 13,
+        "real_success": 0.0,
+        "final_distance_px": 18.990962982177734,
+        "collision_count": 9,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 23.537019729614258,
+        "collision_count": 38,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 15,
+        "real_success": 1.0,
+        "final_distance_px": 3.7546398639678955,
+        "collision_count": 0,
+        "executed_actions": 22
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 3.8583524227142334,
+        "collision_count": 0,
+        "executed_actions": 32
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 17,
+        "real_success": 0.0,
+        "final_distance_px": 27.39497184753418,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.6001172065734863,
+        "collision_count": 4,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 11,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.160670042037964,
+        "collision_count": 1,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.3143553733825684,
+        "collision_count": 1,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 1,
+        "real_success": 0.0,
+        "final_distance_px": 29.461166381835938,
+        "collision_count": 53,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.8724257946014404,
+        "collision_count": 1,
+        "executed_actions": 38
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 3,
+        "real_success": 0.0,
+        "final_distance_px": 26.841012954711914,
+        "collision_count": 54,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 2.79122257232666,
+        "collision_count": 1,
+        "executed_actions": 34
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 3.2585277557373047,
+        "collision_count": 0,
+        "executed_actions": 22
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 6,
+        "real_success": 0.0,
+        "final_distance_px": 26.402162551879883,
+        "collision_count": 51,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 26.102977752685547,
+        "collision_count": 52,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 3.9840588569641113,
+        "collision_count": 1,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 3.752373456954956,
+        "collision_count": 1,
+        "executed_actions": 48
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 2.998330593109131,
+        "collision_count": 0,
+        "executed_actions": 39
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 11,
+        "real_success": 0.0,
+        "final_distance_px": 22.23475456237793,
+        "collision_count": 9,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 12,
+        "real_success": 0.0,
+        "final_distance_px": 23.070837020874023,
+        "collision_count": 34,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 3.819667100906372,
+        "collision_count": 4,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 20.0944766998291,
+        "collision_count": 2,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 24.382238388061523,
+        "collision_count": 2,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 16,
+        "real_success": 1.0,
+        "final_distance_px": 3.604583263397217,
+        "collision_count": 1,
+        "executed_actions": 43
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 3.6667184829711914,
+        "collision_count": 2,
+        "executed_actions": 26
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 2.0286333560943604,
+        "collision_count": 1,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 23,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 3.298084020614624,
+        "collision_count": 1,
+        "executed_actions": 33
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 0,
+        "real_success": 1.0,
+        "final_distance_px": 3.7445929050445557,
+        "collision_count": 1,
+        "executed_actions": 47
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 1,
+        "real_success": 1.0,
+        "final_distance_px": 3.567747116088867,
+        "collision_count": 0,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.4332778453826904,
+        "collision_count": 3,
+        "executed_actions": 37
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 3,
+        "real_success": 1.0,
+        "final_distance_px": 2.91845703125,
+        "collision_count": 1,
+        "executed_actions": 35
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 4,
+        "real_success": 1.0,
+        "final_distance_px": 3.593693733215332,
+        "collision_count": 0,
+        "executed_actions": 29
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 5,
+        "real_success": 1.0,
+        "final_distance_px": 3.088310956954956,
+        "collision_count": 1,
+        "executed_actions": 42
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 6,
+        "real_success": 0.0,
+        "final_distance_px": 25.46685791015625,
+        "collision_count": 54,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 7,
+        "real_success": 0.0,
+        "final_distance_px": 22.797033309936523,
+        "collision_count": 11,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 8,
+        "real_success": 1.0,
+        "final_distance_px": 3.9536705017089844,
+        "collision_count": 4,
+        "executed_actions": 44
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 9,
+        "real_success": 1.0,
+        "final_distance_px": 2.465743064880371,
+        "collision_count": 4,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 10,
+        "real_success": 1.0,
+        "final_distance_px": 3.2000527381896973,
+        "collision_count": 0,
+        "executed_actions": 29
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 11,
+        "real_success": 1.0,
+        "final_distance_px": 2.465743064880371,
+        "collision_count": 4,
+        "executed_actions": 41
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 12,
+        "real_success": 1.0,
+        "final_distance_px": 2.7167437076568604,
+        "collision_count": 1,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 13,
+        "real_success": 1.0,
+        "final_distance_px": 3.5272655487060547,
+        "collision_count": 1,
+        "executed_actions": 45
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 14,
+        "real_success": 0.0,
+        "final_distance_px": 28.279373168945312,
+        "collision_count": 54,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 15,
+        "real_success": 0.0,
+        "final_distance_px": 21.894268035888672,
+        "collision_count": 35,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 16,
+        "real_success": 0.0,
+        "final_distance_px": 21.55157470703125,
+        "collision_count": 8,
+        "executed_actions": 64
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 17,
+        "real_success": 1.0,
+        "final_distance_px": 3.9296205043792725,
+        "collision_count": 0,
+        "executed_actions": 28
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 18,
+        "real_success": 1.0,
+        "final_distance_px": 3.571303367614746,
+        "collision_count": 0,
+        "executed_actions": 36
+      },
+      {
+        "scenario": "barrier_wide_gap",
+        "seed": 41,
+        "episode": 19,
+        "real_success": 1.0,
+        "final_distance_px": 2.8316235542297363,
+        "collision_count": 1,
+        "executed_actions": 33
+      }
+    ],
+    "summary": {
+      "real_success": {
+        "mean": 0.5916666666666667,
+        "std": 0.49152540343528756
+      },
+      "final_distance_px": {
+        "mean": 13.189757859706878,
+        "std": 12.436631389689726
+      },
+      "collision_count": {
+        "mean": 17.629166666666666,
+        "std": 21.76101213881274
+      },
+      "executed_actions": {
+        "mean": 47.13333333333333,
+        "std": 15.077263972249373
+      }
+    }
+  },
+  "checkpoint": "artifacts/learned-route-policy-v14.pt"
+}
