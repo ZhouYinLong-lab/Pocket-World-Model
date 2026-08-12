@@ -54,6 +54,7 @@ def run_adaptive_calibration(
     mpc_horizon: int = 4,
     mpc_beam_width: int = 8,
     mpc_velocity_source: str = "rgb",
+    method: str = "distance_field_beam_adaptive_mpc",
 ) -> dict[str, object]:
     if not thresholds or any(not 0.0 < value <= 1.0 for value in thresholds):
         raise ValueError("thresholds must be non-empty values in (0, 1]")
@@ -61,6 +62,8 @@ def run_adaptive_calibration(
         raise ValueError("exit_ratio must be in (0, 1]")
     if not 0.0 <= minimum_success <= 1.0:
         raise ValueError("minimum_success must be between 0 and 1")
+    if method not in {"distance_field_beam_adaptive_mpc", "distance_field_budgeted_hybrid_gated_mpc"}:
+        raise ValueError("method must be an adaptive or gated hybrid method")
     policy = RouteFieldPolicy.load(checkpoint)
     cases_by_seed: dict[int, tuple[GeneralRouteCase, ...]] = {
         seed: sample_general_route_cases(seed, calibration_episodes, split="holdout")
@@ -75,13 +78,14 @@ def run_adaptive_calibration(
             calibration_episodes,
             max_steps,
             points,
-            "distance_field_beam_adaptive_mpc",
+            method,
             mpc_horizon=mpc_horizon,
             mpc_beam_width=mpc_beam_width,
             mpc_velocity_source=mpc_velocity_source,
             cases_by_seed=cases_by_seed,
             adaptive_risk_threshold=float(threshold),
             adaptive_risk_exit_threshold=exit_threshold,
+            gated_robust_risk_threshold=float(threshold),
         )
         candidates.append(
             {
@@ -105,6 +109,7 @@ def run_adaptive_calibration(
             "mpc_horizon": mpc_horizon,
             "mpc_beam_width": mpc_beam_width,
             "mpc_velocity_source": mpc_velocity_source,
+            "method": method,
             "selection_split_is_disjoint_from_final_holdout": True,
             "selection_rule": "success floor, then collision mean, then planning time",
             "student_evaluation_uses_astar": False,
@@ -130,6 +135,11 @@ def main() -> None:
     parser.add_argument("--mpc-horizon", type=int, default=4)
     parser.add_argument("--mpc-beam-width", type=int, default=8)
     parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
+    parser.add_argument(
+        "--method",
+        choices=("distance_field_beam_adaptive_mpc", "distance_field_budgeted_hybrid_gated_mpc"),
+        default="distance_field_beam_adaptive_mpc",
+    )
     parser.add_argument("--output", default="artifacts/evaluation-adaptive-calibration-v25.json")
     args = parser.parse_args()
     report = run_adaptive_calibration(
@@ -144,6 +154,7 @@ def main() -> None:
         mpc_horizon=args.mpc_horizon,
         mpc_beam_width=args.mpc_beam_width,
         mpc_velocity_source=args.mpc_velocity_source,
+        method=args.method,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
