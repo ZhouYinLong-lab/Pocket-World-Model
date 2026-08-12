@@ -2,6 +2,32 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.29.0] - 2026-08-12
+
+### Added
+
+- General-obstacle route-completion features and a calibrated predicted-gate
+  evaluator.
+- A corrected `distance_field_predicted_gate_hybrid` method that combines the
+  initial route probability with route-progress, remaining-budget, cooldown,
+  and route-lock fallback logic.
+
+### Results
+
+- The isolated initial gate fails as a reliable controller: 83.3% final
+  holdout success and 63.2–93.3% OOD success because its probabilities
+  saturate near one and miss execution failures.
+- After inheriting the established closed-loop fallback, predicted-gate hybrid
+  reaches 100% holdout success, 0.483 collisions/episode, 1.467 A* calls, and
+  507.3 ms planning, versus fast hybrid's 100%, 0.500, 1.467, and 510.2 ms.
+- Across six OOD conditions it remains at 100% success and exactly matches fast
+  hybrid collision rates; the initial gate fires in only 5% of nominal slow
+  episodes. The probability is therefore retained as a diagnostic, not claimed
+  as the main source of route reliability.
+
+See [the holdout result](docs/results/evaluation-general-route-gate-v1-final.json)
+and [the corrected OOD result](docs/results/evaluation-general-route-gate-ood-v1-final.json).
+
 ## [0.28.0] - 2026-08-12
 
 ### Added
