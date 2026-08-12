@@ -25,6 +25,26 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 See [the v28 OOD report](artifacts/evaluation-general-ood-v28-budgeted.json).
 
+## [0.26.0] - 2026-08-12
+
+### Added
+
+- A disjoint calibration protocol for the gated robust route hybrid.
+- Final and OOD comparisons between fast hybrid and gated robust hybrid.
+
+### Results
+
+- Calibration seeds `53,67` produced identical outcomes for thresholds
+  `0.25`–`0.65`; the selected `0.25` threshold is therefore not evidence of
+  calibrated risk.
+- On the final holdout, gated robust planning remains at 100% success but is
+  slightly worse than fast hybrid in collisions (0.433 vs 0.400) and latency
+  (0.858 s vs 0.679 s).
+- Across six OOD speed/map conditions, both methods remain at 100% success;
+  gated robust improves only one condition and is otherwise tied or worse.
+  The negative result is retained as a boundary of the current observable risk
+  score.
+
 ## [0.25.0] - 2026-08-12
 
 ### Added
