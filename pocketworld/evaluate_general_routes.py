@@ -502,11 +502,12 @@ def evaluate_general_policy(
                 history.append(observation)
                 history = history[-16:]
                 collisions += int(info.get("collision", False))
+                route_progress = route_progress_metrics(
+                    extract_agent_position(observation).astype(np.float32), route_points
+                )
                 last_route_progress = max(
                     last_route_progress,
-                    float(route_progress_metrics(
-                        extract_agent_position(observation).astype(np.float32), route_points
-                    )["progress_px"]),
+                    float(route_progress["progress_px"]),
                 )
                 if terminated or truncated:
                     break
@@ -621,6 +622,8 @@ def train_and_evaluate_general_routes(
     balanced_training_families: bool = False,
     adaptive_risk_threshold: float = 0.45,
     adaptive_risk_exit_threshold: float = 0.30,
+    route_budget_margin: float = 1.05,
+    route_progress_tolerance: float = 1.5,
 ) -> dict[str, object]:
     selected_methods = tuple(GENERAL_DEFAULT_METHODS if methods is None else methods)
     unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
@@ -662,6 +665,8 @@ def train_and_evaluate_general_routes(
                 mpc_velocity_source,
                 adaptive_risk_threshold=adaptive_risk_threshold,
                 adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
+                route_budget_margin=route_budget_margin,
+                route_progress_tolerance=route_progress_tolerance,
             )
         for method in selected_methods
     }
@@ -706,6 +711,8 @@ def train_and_evaluate_general_routes(
             "mpc_velocity_source": mpc_velocity_source,
             "adaptive_risk_threshold": adaptive_risk_threshold,
             "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
+            "route_budget_margin": route_budget_margin,
+            "route_progress_tolerance": route_progress_tolerance,
             "methods": list(selected_methods),
             "training_families": list(
                 training_families
