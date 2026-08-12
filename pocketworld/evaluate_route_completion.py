@@ -14,12 +14,19 @@ from .evaluate_planners import (
     COLLISION_RISK_BUDGET,
     ROUTE_COMPLETION_WEIGHT,
     SINGLE_BARRIER_WALLS,
+    _scenario_walls,
     _episode_cases,
     evaluate_planner_tournament,
 )
 from .model import PocketWorldModel
-from .planner import extract_agent_position, random_shooting, receding_horizon_plan
-from .route_completion import ROUTE_FEATURE_NAMES, RouteCompletionPredictor, extract_route_features
+from .planner import extract_agent_position, extract_wall_mask, random_shooting, receding_horizon_plan
+from .route_completion import (
+    MAP_AWARE_ROUTE_FEATURE_NAMES,
+    ROUTE_FEATURE_NAMES,
+    RouteCompletionPredictor,
+    extract_map_context_features,
+    extract_route_features,
+)
 
 
 def _load_model(checkpoint: str | Path) -> PocketWorldModel:
@@ -60,6 +67,7 @@ def _imagined_route_features(
     observation: np.ndarray,
     goal: tuple[float, float],
     actions: np.ndarray,
+    map_aware: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     start_position = extract_agent_position(observation).astype(np.float32)
     if not np.isfinite(start_position).all():
@@ -87,15 +95,29 @@ def _imagined_route_features(
         (np.zeros((actions.shape[0], 1), dtype=np.float32), np.maximum.accumulate(risks, axis=1)),
         axis=1,
     )
-    return extract_route_features(positions, goal, prefix, actions=actions), prefix
+    map_context = None
+    if map_aware:
+        map_context = extract_map_context_features(
+            start_position,
+            goal,
+            extract_wall_mask(observation),
+        )
+    return extract_route_features(
+        positions,
+        goal,
+        prefix,
+        actions=actions,
+        map_context=map_context,
+    ), prefix
 
 
 def _execute_route(
     start: tuple[float, float],
     goal: tuple[float, float],
     actions: np.ndarray,
+    walls=SINGLE_BARRIER_WALLS,
 ) -> float:
-    env = PocketWorldEnv(walls=SINGLE_BARRIER_WALLS, agent_start=start, goal=goal)
+    env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
     _, info = env.reset()
     for action in actions:
         _, _, terminated, truncated, info = env.step(int(action))
@@ -110,80 +132,86 @@ def collect_route_examples(
     episodes: int = 12,
     candidates: int = 32,
     horizon: int = 48,
+    scenarios: tuple[str, ...] = ("single_barrier",),
+    map_aware: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Collect imagined-route features with real simulator completion labels."""
     all_features: list[np.ndarray] = []
     all_labels: list[float] = []
     for seed in seeds:
         rng = np.random.default_rng(seed)
-        for episode, (start, goal) in enumerate(_episode_cases(episodes, seed, "single_barrier")):
-            torch.manual_seed(seed * 100_000 + episode)
-            env = PocketWorldEnv(walls=SINGLE_BARRIER_WALLS, agent_start=start, goal=goal)
-            observation, _ = env.reset()
-            sequences = _sample_action_sequences(rng, start, goal, candidates, horizon)
-            # Add one map-aware route candidate so the binary target contains
-            # successful as well as failed routes when the learned model is
-            # systematically overconfident near the wall.
-            wall_plan = random_shooting(
-                model,
-                observation,
-                goal,
-                horizon=horizon,
-                candidates=max(32, candidates),
-                collision_aware=True,
-                learned_collision=True,
-                route_objective=True,
-                route_execution_horizon=horizon,
-                wall_aware_route=True,
-                observation_history=[observation],
-            )
-            if len(wall_plan.actions):
-                padded = np.pad(
-                    wall_plan.actions.astype(np.int64),
-                    (0, max(0, horizon - len(wall_plan.actions))),
-                    mode="constant",
-                )[:horizon]
-                sequences = np.concatenate((sequences, padded[None]), axis=0)
-            # The existing RGB-only hybrid controller supplies a successful
-            # route teacher when available. Its executed action prefix is
-            # still relabeled by a fresh simulator rollout below, so the
-            # predictor never trains on the teacher's private success flag.
-            teacher_env = PocketWorldEnv(walls=SINGLE_BARRIER_WALLS, agent_start=start, goal=goal)
-            teacher_observation, _ = teacher_env.reset()
-            teacher = receding_horizon_plan(
-                model,
-                teacher_observation,
-                goal,
-                teacher_env.step,
-                max_steps=horizon,
-                rollout_horizon=min(16, horizon),
-                candidates=max(32, candidates),
-                collision_aware=True,
-                preserve_route=True,
-                route_tolerance=6.0,
-                learned_collision=True,
-                hybrid_collision=True,
-                use_history_velocity=True,
-                use_learned_velocity=True,
-                route_objective=True,
-                route_execution_horizon=min(12, horizon),
-                alignment_fallback_threshold=4.0,
-                wall_aware_route=True,
-            )
-            if len(teacher.actions):
-                padded = np.pad(
-                    teacher.actions.astype(np.int64),
-                    (0, max(0, horizon - len(teacher.actions))),
-                    mode="constant",
-                )[:horizon]
-                sequences = np.concatenate((sequences, padded[None]), axis=0)
-            features, _ = _imagined_route_features(model, observation, goal, sequences)
-            labels = np.asarray(
-                [_execute_route(start, goal, sequence) for sequence in sequences],
-                dtype=np.float32,
-            )
-            all_features.append(features)
-            all_labels.append(labels)
+        for scenario_index, scenario in enumerate(scenarios):
+            walls = _scenario_walls(scenario)
+            for episode, (start, goal) in enumerate(_episode_cases(episodes, seed, scenario)):
+                torch.manual_seed(seed * 100_000 + scenario_index * 10_000 + episode)
+                env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+                observation, _ = env.reset()
+                sequences = _sample_action_sequences(rng, start, goal, candidates, horizon)
+                # Add one map-aware route candidate so the binary target contains
+                # successful as well as failed routes when the learned model is
+                # systematically overconfident near the wall.
+                wall_plan = random_shooting(
+                    model,
+                    observation,
+                    goal,
+                    horizon=horizon,
+                    candidates=max(32, candidates),
+                    collision_aware=True,
+                    learned_collision=True,
+                    route_objective=True,
+                    route_execution_horizon=horizon,
+                    wall_aware_route=True,
+                    observation_history=[observation],
+                )
+                if len(wall_plan.actions):
+                    padded = np.pad(
+                        wall_plan.actions.astype(np.int64),
+                        (0, max(0, horizon - len(wall_plan.actions))),
+                        mode="constant",
+                    )[:horizon]
+                    sequences = np.concatenate((sequences, padded[None]), axis=0)
+                # The existing RGB-only hybrid controller supplies a successful
+                # route teacher when available. Its executed action prefix is
+                # still relabeled by a fresh simulator rollout below, so the
+                # predictor never trains on the teacher's private success flag.
+                teacher_env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+                teacher_observation, _ = teacher_env.reset()
+                teacher = receding_horizon_plan(
+                    model,
+                    teacher_observation,
+                    goal,
+                    teacher_env.step,
+                    max_steps=horizon,
+                    rollout_horizon=min(16, horizon),
+                    candidates=max(32, candidates),
+                    collision_aware=True,
+                    preserve_route=True,
+                    route_tolerance=6.0,
+                    learned_collision=True,
+                    hybrid_collision=True,
+                    use_history_velocity=True,
+                    use_learned_velocity=True,
+                    route_objective=True,
+                    route_execution_horizon=min(12, horizon),
+                    alignment_fallback_threshold=4.0,
+                    wall_aware_route=True,
+                )
+                if len(teacher.actions):
+                    padded = np.pad(
+                        teacher.actions.astype(np.int64),
+                        (0, max(0, horizon - len(teacher.actions))),
+                        mode="constant",
+                    )[:horizon]
+                    sequences = np.concatenate((sequences, padded[None]), axis=0)
+                features, _ = _imagined_route_features(
+                    model, observation, goal, sequences, map_aware=map_aware
+                )
+                labels = np.asarray(
+                    [_execute_route(start, goal, sequence, walls=walls) for sequence in sequences],
+                    dtype=np.float32,
+                )
+                all_features.append(features)
+                all_labels.append(labels)
     return np.concatenate(all_features, axis=0), np.concatenate(all_labels, axis=0)
 
 
