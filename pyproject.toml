@@ -1,10 +1,13 @@
+Exit code: 0
+Wall time: 2.1 seconds
+Output:
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pocket-world-model"
-version = "0.24.0"
+version = "0.25.0"
 description = "A tiny and observable world model for 2D dynamics and imagined planning."
 requires-python = ">=3.10"
 dependencies = [
@@ -47,3 +50,4 @@ include = ["pocketworld*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
