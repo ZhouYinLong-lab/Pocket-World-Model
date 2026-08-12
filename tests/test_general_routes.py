@@ -13,11 +13,14 @@ from pocketworld.evaluate_mpc_ablation import run_mpc_ablation
 from pocketworld.evaluate_general_ood import run_general_ood
 from pocketworld.evaluate_coverage_study import run_coverage_study
 from pocketworld.evaluate_planner_comparison import run_planner_comparison
+from pocketworld.evaluate_adaptive_calibration import run_adaptive_calibration
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
     conservative_field_action,
     local_mpc_action,
+    adaptive_mpc_decision,
+    adaptive_mpc_risk_score,
     rgb_action_is_safe,
     estimate_action_velocity,
     guarded_mpc_action,
@@ -102,6 +105,7 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
     assert contract["distance_field_beam_conservative"] is False
     assert contract["distance_field_beam_mpc"] is False
     assert contract["distance_field_beam_robust_mpc"] is False
+    assert contract["distance_field_beam_adaptive_mpc"] is False
     assert contract["distance_field_clearance_beam_rgb_projection"] is False
     assert contract["distance_field_beam_guarded_mpc"] is False
     assert set(report["evaluation"]) == {
@@ -123,6 +127,7 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
     assert report["protocol"]["mpc_horizon"] == 6
     assert report["protocol"]["mpc_beam_width"] == 24
     assert report["protocol"]["methods"] == list(GENERAL_DEFAULT_METHODS)
+    assert "distance_field_beam_adaptive_mpc" not in report["protocol"]["methods"]
     assert report["evaluation"]["distance_field_beam_mpc"]["summary"]["mpc_calls"]["mean"] >= 0
 
 
@@ -154,11 +159,51 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=2, beam_width=4) in range(4)
     assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=1, beam_width=1) in range(4)
     assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=2, beam_width=4, robust=True) in range(4)
+    risk = adaptive_mpc_risk_score(frames[0], tuple(goals[0]), 0, [frames[0]], [0])
+    assert 0.0 <= risk <= 1.0
+    action, robust, score = adaptive_mpc_decision(
+        frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4
+    )
+    assert action in range(4)
+    assert isinstance(robust, bool)
+    assert score == risk
+    with pytest.raises(ValueError, match="risk_exit_threshold"):
+        adaptive_mpc_decision(
+            frames[0], tuple(goals[0]), 0, [frames[0]], [0],
+            risk_threshold=0.3, risk_exit_threshold=0.4,
+        )
     assert estimate_action_velocity([frames[0]], [0, 1, 3]).shape == (2,)
     assert isinstance(rgb_action_is_safe(frames[0], 0, [frames[0]], [0]), bool)
     assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
+
+
+def test_adaptive_mpc_hysteresis_keeps_robust_mode_until_exit(monkeypatch):
+    import pocketworld.route_field as route_field
+
+    scores = iter((0.60, 0.40, 0.20))
+    monkeypatch.setattr(
+        route_field,
+        "adaptive_mpc_risk_score",
+        lambda *args, **kwargs: next(scores),
+    )
+    monkeypatch.setattr(route_field, "local_mpc_action", lambda *args, **kwargs: 2)
+    frame = np.zeros((64, 64, 3), dtype=np.uint8)
+    action, robust, _ = adaptive_mpc_decision(
+        frame, (50.0, 50.0), 0, [frame], [], risk_threshold=0.45, risk_exit_threshold=0.30
+    )
+    assert action == 2 and robust is True
+    _, robust, _ = adaptive_mpc_decision(
+        frame, (50.0, 50.0), 0, [frame], [],
+        risk_threshold=0.45, risk_exit_threshold=0.30, robust_active=robust,
+    )
+    assert robust is True
+    _, robust, _ = adaptive_mpc_decision(
+        frame, (50.0, 50.0), 0, [frame], [],
+        risk_threshold=0.45, risk_exit_threshold=0.30, robust_active=robust,
+    )
+    assert robust is False
 
 
 def test_mpc_ablation_has_fixed_protocol_and_family_metrics(tmp_path):
@@ -216,6 +261,7 @@ def test_general_ood_protocol_keeps_shift_hidden_and_checks_reachability(tmp_pat
     assert report["protocol"]["student_evaluation_uses_astar"] is False
     assert report["protocol"]["fallback_method_uses_astar"] is True
     assert report["protocol"]["shift_labels_visible_to_planner"] is False
+    assert report["protocol"]["adaptive_risk_threshold"] == 0.45
     assert set(report["results"]) == {"nominal@speed0.75", "walls_x_plus2@speed0.75"}
     assert report["results"]["walls_x_plus2@speed0.75"]["paired_episode_count"] >= 0
 
@@ -262,6 +308,24 @@ def test_planner_comparison_uses_one_shared_holdout_and_explicit_reference(tmp_p
     assert report["protocol"]["rgb_astar_is_geometric_reference"] is True
     assert report["protocol"]["selection_on_holdout"] is False
     assert set(report["evaluation"]) == {"rgb_astar"}
+
+
+def test_adaptive_calibration_selects_from_disjoint_split(tmp_path):
+    policy = RouteFieldPolicy()
+    checkpoint = policy.save(tmp_path / "field.pt")
+    report = run_adaptive_calibration(
+        checkpoint,
+        calibration_seeds=(53,),
+        calibration_episodes=1,
+        max_steps=4,
+        points=3,
+        thresholds=(0.35, 0.55),
+        mpc_horizon=1,
+        mpc_beam_width=2,
+    )
+    assert report["protocol"]["selection_split_is_disjoint_from_final_holdout"] is True
+    assert len(report["candidates"]) == 2
+    assert report["selected"]["entry_threshold"] in {0.35, 0.55}
 
 
 def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
