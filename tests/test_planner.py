@@ -312,6 +312,49 @@ def test_collision_risk_budget_prefers_feasible_steps_and_has_soft_fallback():
     assert np.isfinite(scores[1]).all()
 
 
+def test_visual_safety_gate_requires_collision_aware_planning():
+    import pytest
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(), agent_start=(8, 8), goal=(18, 18))
+    observation, _ = env.reset()
+    with pytest.raises(ValueError, match="visual_safety_gate"):
+        random_shooting(
+            PocketWorldModel(),
+            observation,
+            (18, 18),
+            horizon=3,
+            candidates=4,
+            visual_safety_gate=True,
+        )
+
+
+def test_visual_safety_gate_reports_rgb_route_collision_state():
+    import torch
+
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    torch.manual_seed(12)
+    result = random_shooting(
+        PocketWorldModel(),
+        observation,
+        (54, 32),
+        horizon=4,
+        candidates=8,
+        collision_aware=True,
+        learned_collision=True,
+        route_objective=True,
+        visual_safety_gate=True,
+    )
+
+    assert result.rgb_route_collision in {0.0, 1.0}
+
+
 def test_route_objective_reports_progress_and_alignment_monitor_is_finite():
     import torch
 

@@ -24,6 +24,7 @@ class PlanResult:
     route_progress: float = 0.0
     route_endpoint_distance: float = 0.0
     predicted_route_completion_probability: float = 0.0
+    rgb_route_collision: float = 0.0
     wall_route_preference: str | None = None
     wall_route_remaining_px: float = 0.0
 
@@ -785,7 +786,10 @@ def random_shooting(
     collision_model: object | None = None,
     route_completion_model: object | None = None,
     route_completion_weight: float = 10.0,
+    visual_safety_gate: bool = False,
 ) -> PlanResult:
+    if visual_safety_gate and not collision_aware:
+        raise ValueError("visual_safety_gate requires collision_aware=True")
     model.eval()
     risk_model = model if collision_model is None else collision_model
     risk_model.eval()
@@ -825,6 +829,7 @@ def random_shooting(
     ).cpu().numpy() * 64.0
     positions = np.concatenate((np.broadcast_to(start_position, (candidates, 1, 2)), imagined_positions), axis=1)
     goal_distances = np.linalg.norm(positions - np.asarray(goal), axis=-1)
+    visible_collision_prefix: np.ndarray | None = None
     count = 0
     template_route_preferences: list[str | None] = [None] * candidates
     template_route_lengths = np.full(candidates, np.nan, dtype=np.float32)
@@ -933,6 +938,8 @@ def random_shooting(
             collision_prefix = np.concatenate((np.zeros((candidates, 1), dtype=np.float32), peak_risk), axis=1)
         else:
             collision_prefix = _collision_prefix(positions, wall_mask)
+        if visual_safety_gate:
+            visible_collision_prefix = _collision_prefix(positions, wall_mask).astype(np.float32)
         if hybrid_collision or wall_aware_route:
             collision_prefix = np.maximum(
                 collision_prefix,
@@ -980,12 +987,30 @@ def random_shooting(
             # progress guarantee. Use it only as a last resort when A* found
             # no route at all.
             route_scores[count:] = 1e6
+        risk_feasible: np.ndarray | None = None
         if route_completion_model is not None and collision_risk_budget is not None:
-            feasible_route = collision_prefix[:, -1] <= float(np.clip(collision_risk_budget, 0.0, 1.0))
+            risk_feasible = collision_prefix[:, -1] <= float(np.clip(collision_risk_budget, 0.0, 1.0))
             if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
-                feasible_route &= eligible
+                risk_feasible &= eligible
+        visible_feasible = None
+        if visible_collision_prefix is not None:
+            visible_feasible = visible_collision_prefix[:, -1] <= 0.0
+        if risk_feasible is not None or visible_feasible is not None:
+            # Apply the intersection when it is non-empty. If the two safety
+            # checks disagree on every candidate, retain the strongest gate
+            # that still has support; this prevents a temporary calibration
+            # failure from turning the whole route search into a 1e6 tie.
+            feasible_route = np.ones(candidates, dtype=bool)
+            if risk_feasible is not None:
+                feasible_route &= risk_feasible
+            if visible_feasible is not None:
+                feasible_route &= visible_feasible
             if feasible_route.any():
                 route_scores[~feasible_route] = 1e6
+            elif visible_feasible is not None and visible_feasible.any():
+                route_scores[~visible_feasible] = 1e6
+            elif risk_feasible is not None and risk_feasible.any():
+                route_scores[~risk_feasible] = 1e6
         best = int(np.argmin(route_scores))
         reached = np.flatnonzero(safe_scores[best] <= 4.0)
         best_step = int(reached[0]) if len(reached) else horizon
@@ -999,6 +1024,11 @@ def random_shooting(
         best_step = min(best_step, max(1, int(route_execution_horizon)))
     if best_step == 0 and initial_distance > 4.0:
         best_step = 1
+    rgb_route_collision = (
+        float(visible_collision_prefix[best, best_step])
+        if visible_collision_prefix is not None
+        else 0.0
+    )
     selected_wall_route_preference = None
     selected_wall_route_remaining_px = 0.0
     if wall_aware_route and best < len(template_route_preferences):
@@ -1014,6 +1044,7 @@ def random_shooting(
         route_progress=initial_distance - float(goal_distances[best, -1]),
         route_endpoint_distance=float(goal_distances[best, -1]),
         predicted_route_completion_probability=float(route_completion_probabilities[best]),
+        rgb_route_collision=rgb_route_collision,
         wall_route_preference=selected_wall_route_preference,
         wall_route_remaining_px=selected_wall_route_remaining_px,
     )

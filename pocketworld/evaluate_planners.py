@@ -27,7 +27,13 @@ DEFAULT_PLANNERS = (
     "cem_collision",
     "route_aware_hybrid",
 )
-SUPPORTED_PLANNERS = DEFAULT_PLANNERS + ("ensemble_collision", "conformal_collision", "route_completion", "route_completion_mpc")
+SUPPORTED_PLANNERS = DEFAULT_PLANNERS + (
+    "ensemble_collision",
+    "conformal_collision",
+    "route_completion",
+    "route_completion_safe_gate",
+    "route_completion_mpc",
+)
 
 
 def _nominal_queries(planner: str, horizon: int, candidates: int) -> int:
@@ -136,6 +142,28 @@ def _planner_result(
             collision_risk_budget=COLLISION_RISK_BUDGET,
             observation_history=[observation],
         )
+    if planner == "route_completion_safe_gate":
+        if route_model is None:
+            raise ValueError("route_completion_safe_gate requires a route_models['route_completion_safe_gate'] predictor")
+        return random_shooting(
+            model,
+            observation,
+            goal,
+            horizon=horizon,
+            candidates=candidates,
+            collision_aware=True,
+            learned_collision=True,
+            probabilistic_uncertainty=True,
+            uncertainty_samples=8,
+            robust_candidates=min(32, candidates),
+            route_objective=True,
+            route_execution_horizon=horizon,
+            route_completion_model=route_model,
+            route_completion_weight=ROUTE_COMPLETION_WEIGHT,
+            collision_risk_budget=COLLISION_RISK_BUDGET,
+            visual_safety_gate=True,
+            observation_history=[observation],
+        )
     if planner == "route_aware_hybrid":
         return random_shooting(
             model,
@@ -230,6 +258,7 @@ def evaluate_planner_tournament(
                             "planning_score": float(closed.first_plan_route_distance),
                             "executed_actions": float(len(closed.actions)),
                             "imagined_collision_risk": None,
+                            "rgb_route_collision": None,
                             "predicted_route_completion_probability": float(closed.first_plan_route_completion_probability),
                             "planning_calls": float(max(1, closed.replans)),
                             "estimated_model_queries": float(max(1, closed.replans) * candidates),
@@ -262,6 +291,7 @@ def evaluate_planner_tournament(
                         "planning_score": float(result.planning_score),
                         "executed_actions": float(len(result.actions)),
                         "imagined_collision_risk": float(result.imagined_collision_risk),
+                        "rgb_route_collision": float(result.rgb_route_collision),
                         "predicted_route_completion_probability": float(result.predicted_route_completion_probability),
                         "planning_calls": 1.0,
                         "estimated_model_queries": float(_nominal_queries(planner, horizon, candidates)),
@@ -300,6 +330,7 @@ def evaluate_planner_tournament(
             "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
             "collision_risk_budget": COLLISION_RISK_BUDGET,
             "route_completion_weight": ROUTE_COMPLETION_WEIGHT,
+            "visual_safety_gate": "route_completion_safe_gate",
             "route_mpc_completion_weight": ROUTE_MPC_COMPLETION_WEIGHT,
             "risk_model_metadata": risk_model_metadata or {},
         },
