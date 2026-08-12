@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-112%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-113%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
 </p>
 
@@ -180,6 +180,52 @@ The reliable 100% methods still use observable RGB geometry plus repeated A*
 planning. Thus v18 improves the learned route representation and quantifies
 the remaining gap; it does not claim that pure learned obstacle navigation is
 solved. See the [v18 machine-readable report](docs/results/evaluation-general-routes-v18-current-final.json).
+
+### v23 coverage, density, and planner-method study
+
+The latest study separates two questions that were previously confounded:
+whether the model has seen enough obstacle families, and whether each family
+has enough training density. Training is balanced by family and evaluated on
+the same 60 held-out tasks for every condition:
+
+| Training condition | Total samples | Samples / family / seed | Learned MPC success | Collisions / episode |
+| --- | ---: | ---: | ---: | ---: |
+| 2 families | 600 | 100 | 90.0% | 0.333 |
+| 4 families | 600 | 50 | **95.0%** | **0.367** |
+| 4 families | 1200 | 100 | 93.3% | 0.433 |
+
+The result is deliberately non-monotonic: adding families at fixed total
+budget helps this holdout, while doubling the four-family budget does not.
+Coverage and per-family density therefore need to be reported as separate
+variables rather than summarized as “more data is better.”
+
+On the shared four-family/600 holdout, robust MPC matches ordinary MPC's
+95.0% success and lowers collisions from 0.367 to 0.150, but costs 2.80 s of
+planning per episode versus 255 ms. The guarded-MPC negative ablation reaches
+only 66.7% success. The clearance-field variant is identical to the base
+field on this task set, so its current loss is not yet demonstrated to change
+the policy. RGB/A* reaches 100% with 0.067 collisions and remains a geometric
+reference, not a pure learned result.
+
+These are paired, fixed-protocol comparisons; no holdout result is used for
+method selection. See the [coverage report](docs/results/evaluation-coverage-study-v23.json)
+and [planner comparison](docs/results/evaluation-planner-comparison-v23.json).
+
+The paired OOD matrix makes the robustness trade-off explicit:
+
+| Condition | RGB projection | MPC | Robust MPC |
+| --- | ---: | ---: | ---: |
+| Nominal, speed 1.0 | 91.7% / 1.767 | **95.0% / 0.367** | **95.0% / 0.150** |
+| Nominal, speed 1.25 | 76.7% / 15.083 | **95.0% / 0.533** | 93.3% / **0.433** |
+| Walls +1, speed 1.0 | 73.7% / 2.456 | **78.9% / 0.474** | 77.2% / **0.298** |
+| Walls +1, speed 1.25 | 64.9% / 12.070 | **78.9% / 0.877** | 73.7% / 1.053 |
+
+Each cell is `real success / collisions per episode`. Robust MPC lowers risk
+in three of four conditions, but loses success on the joint shift and costs
+roughly 2.5–3.4 seconds of planning time per episode. This motivates the next
+research step: a calibrated risk budget that can choose ordinary versus robust
+MPC based on predicted uncertainty, instead of always enabling the expensive
+envelope. See the [paired OOD report](docs/results/evaluation-coverage-study-v23-ood.json).
 
 Reproduce the full comparison with:
 
