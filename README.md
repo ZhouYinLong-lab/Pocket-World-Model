@@ -492,6 +492,29 @@ The fast ablation report is
 and its OOD report is
 [`evaluation-general-ood-v28-fast.json`](docs/results/evaluation-general-ood-v28-fast.json).
 
+#### Gated-robust threshold audit
+
+The `distance_field_budgeted_hybrid_gated_mpc` variant first runs ordinary MPC
+and escalates to robust MPC only when an RGB/history-only risk score exceeds a
+threshold. The threshold is selected on disjoint calibration seeds (`53,67`)
+from `{0.25, 0.35, 0.45, 0.55, 0.65}` with a 90% success floor. All five
+thresholds produced the same calibration outcome, so the predeclared tie-break
+selected `0.25`; this is evidence that the current observable score is not
+well calibrated enough to tune collision risk.
+
+On the final holdout, gated robust planning reaches the same **100% success**
+as fast hybrid but has **0.433 collisions/episode**, **0.858 s** planning, and
+0.97 robust calls/episode, versus fast hybrid's **0.400**, **0.679 s**, and
+zero robust calls. In the six-condition OOD matrix, both remain at 100% success;
+gated robust improves only nominal speed 0.75 and is otherwise tied or worse.
+This negative ablation is retained: route-level progress/budget control is the
+reliable contributor, while the current hand-crafted risk threshold does not
+provide a stable collision reduction.
+
+See the [gated calibration report](docs/results/evaluation-gated-hybrid-calibration-v25.json),
+[final holdout comparison](docs/results/evaluation-general-routes-v28-gated-final.json),
+and [OOD comparison](docs/results/evaluation-general-ood-v28-gated-final.json).
+
 Reproduce the comparison with:
 
 ```bash

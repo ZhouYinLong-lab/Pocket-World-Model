@@ -1,0 +1,8 @@
+{
+  "protocol": {"evaluation_seeds": [11, 23, 41], "episodes_per_seed": 10, "shared_cases": true, "gated_threshold": 0.25},
+  "summary": {
+    "distance_field_budgeted_hybrid_fast_mpc": {"real_success": 1.0, "collision_count": 0.4, "astar_calls": 1.4667, "robust_mpc_calls": 0.0, "mpc_calls": 57.2, "planning_time_ms": 678.6221},
+    "distance_field_budgeted_hybrid_gated_mpc": {"real_success": 1.0, "collision_count": 0.4333, "astar_calls": 1.5, "robust_mpc_calls": 0.9667, "mpc_calls": 57.8333, "planning_time_ms": 857.6194}
+  },
+  "interpretation": "Gated robust escalation does not improve the final holdout over fast hybrid."
+}
