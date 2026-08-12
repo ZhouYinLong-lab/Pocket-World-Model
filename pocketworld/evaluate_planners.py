@@ -16,6 +16,9 @@ from .planner import beam_search, cem_shooting, random_shooting, receding_horizo
 
 
 SINGLE_BARRIER_WALLS = (Rect(29, 10, 5, 44),)
+SHIFTED_BARRIER_WALLS = (Rect(34, 10, 5, 44),)
+NARROW_GAP_WALLS = (Rect(29, 3, 5, 22), Rect(29, 39, 5, 22))
+WIDE_GAP_WALLS = (Rect(29, 3, 5, 15), Rect(29, 46, 5, 15))
 COLLISION_RISK_BUDGET = 0.15
 ROUTE_COMPLETION_WEIGHT = 64.0
 ROUTE_MPC_COMPLETION_WEIGHT = 10.0
@@ -36,6 +39,24 @@ SUPPORTED_PLANNERS = DEFAULT_PLANNERS + (
     "route_completion_soft",
     "route_completion_mpc",
 )
+PLANNER_SEED_OFFSETS = {
+    # Keep the historical route-study offsets stable even when a tournament
+    # evaluates only a subset of methods. This makes parameter sweeps
+    # comparable to the full seven-method report.
+    "learned_collision": 0,
+    "route_completion": 1,
+    "route_completion_safe_gate": 2,
+    "route_completion_rgb_only": 3,
+    "route_completion_soft": 4,
+    "route_completion_mpc": 5,
+    "route_aware_hybrid": 6,
+    "random_shooting": 7,
+    "cem": 8,
+    "beam_search": 9,
+    "cem_collision": 10,
+    "ensemble_collision": 11,
+    "conformal_collision": 12,
+}
 
 
 def _nominal_queries(planner: str, horizon: int, candidates: int) -> int:
@@ -55,7 +76,7 @@ def _episode_cases(episodes: int, seed: int, scenario: str) -> list[tuple[tuple[
             )
             for _ in range(episodes)
         ]
-    if scenario == "single_barrier":
+    if scenario in {"single_barrier", "barrier_shifted"}:
         return [
             (
                 (float(rng.integers(7, 13)), float(rng.integers(25, 39))),
@@ -63,6 +84,41 @@ def _episode_cases(episodes: int, seed: int, scenario: str) -> list[tuple[tuple[
             )
             for _ in range(episodes)
         ]
+    if scenario == "barrier_narrow_gap":
+        # Start and goal lie in the wall-covered bands, not in the 14px gap;
+        # a successful route must visibly detour through that gap.
+        bands = np.concatenate((np.arange(8, 23), np.arange(42, 57)))
+        return [
+            (
+                (float(rng.integers(7, 13)), float(rng.choice(bands))),
+                (float(rng.integers(51, 57)), float(rng.choice(bands))),
+            )
+            for _ in range(episodes)
+        ]
+    if scenario == "barrier_wide_gap":
+        # Start and goal lie in the wall-covered bands, not in the 28px gap.
+        bands = np.concatenate((np.arange(7, 17), np.arange(49, 59)))
+        return [
+            (
+                (float(rng.integers(7, 13)), float(rng.choice(bands))),
+                (float(rng.integers(51, 57)), float(rng.choice(bands))),
+            )
+            for _ in range(episodes)
+        ]
+    raise ValueError(f"unsupported scenario: {scenario}")
+
+
+def _scenario_walls(scenario: str) -> tuple[Rect, ...]:
+    if scenario == "open":
+        return ()
+    if scenario == "single_barrier":
+        return SINGLE_BARRIER_WALLS
+    if scenario == "barrier_shifted":
+        return SHIFTED_BARRIER_WALLS
+    if scenario == "barrier_narrow_gap":
+        return NARROW_GAP_WALLS
+    if scenario == "barrier_wide_gap":
+        return WIDE_GAP_WALLS
     raise ValueError(f"unsupported scenario: {scenario}")
 
 
@@ -75,6 +131,7 @@ def _planner_result(
     candidates: int,
     collision_models: dict[str, object] | None = None,
     route_models: dict[str, object] | None = None,
+    soft_rgb_penalty: float = 64.0,
 ) -> object:
     collision_model = None if collision_models is None else collision_models.get(planner)
     route_model = None if route_models is None else route_models.get(planner)
@@ -187,7 +244,7 @@ def _planner_result(
             route_completion_weight=ROUTE_COMPLETION_WEIGHT,
             collision_risk_budget=COLLISION_RISK_BUDGET,
             visual_safety_mode=safety_mode,
-            visual_safety_penalty=64.0,
+            visual_safety_penalty=soft_rgb_penalty,
             observation_history=[observation],
         )
     if planner == "route_aware_hybrid":
@@ -219,6 +276,8 @@ def evaluate_planner_tournament(
     route_models: dict[str, object] | None = None,
     risk_model_metadata: dict[str, object] | None = None,
     include_rows: bool = False,
+    agent_speed_scale: float = 1.0,
+    soft_rgb_penalty: float = 64.0,
 ) -> dict[str, object]:
     """Compare planners on paired tasks under one rollout-query budget.
 
@@ -235,11 +294,20 @@ def evaluate_planner_tournament(
     for seed in seeds:
         rows = {planner: [] for planner in planners}
         for episode, (start, goal) in enumerate(_episode_cases(episodes, seed, scenario)):
-            for planner_index, planner in enumerate(planners):
-                torch.manual_seed(seed * 100_000 + episode * 100 + planner_index)
+            for planner in planners:
+                torch.manual_seed(
+                    seed * 100_000
+                    + episode * 100
+                    + PLANNER_SEED_OFFSETS[planner]
+                )
                 route_model = None if route_models is None else route_models.get(planner)
-                walls = () if scenario == "open" else SINGLE_BARRIER_WALLS
-                env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
+                walls = _scenario_walls(scenario)
+                env = PocketWorldEnv(
+                    walls=walls,
+                    agent_start=start,
+                    goal=goal,
+                    agent_speed_scale=agent_speed_scale,
+                )
                 observation, info = env.reset()
                 if planner in {"route_aware_hybrid", "route_completion_mpc"}:
                     if planner == "route_completion_mpc" and route_model is None:
@@ -300,6 +368,7 @@ def evaluate_planner_tournament(
                     candidates,
                     collision_models=collision_models,
                     route_models=route_models,
+                    soft_rgb_penalty=soft_rgb_penalty,
                 )
                 collision_count = 0
                 for action in result.actions:
@@ -349,14 +418,17 @@ def evaluate_planner_tournament(
             "horizon": horizon,
             "candidates": candidates,
             "scenario": scenario,
+            "agent_speed_scale": agent_speed_scale,
             "planners": list(planners),
             "paired_tasks": True,
+            "planner_seed_offset_policy": "fixed by planner name; subset tournaments preserve full-tournament random streams",
             "budget_scope": "nominal candidate budget per planning call; closed-loop totals are reported separately",
             "cem_budget_policy": "candidates split evenly across categorical CEM iterations",
             "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
             "collision_risk_budget": COLLISION_RISK_BUDGET,
             "route_completion_weight": ROUTE_COMPLETION_WEIGHT,
             "visual_safety_gate": "route_completion_safe_gate",
+            "soft_rgb_penalty": soft_rgb_penalty,
             "route_mpc_completion_weight": ROUTE_MPC_COMPLETION_WEIGHT,
             "risk_model_metadata": risk_model_metadata or {},
         },

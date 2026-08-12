@@ -37,6 +37,10 @@ def evaluate_safety_methods(
     evaluation_episodes: int = 20,
     candidates: int = 256,
     horizon: int = 48,
+    scenario: str = "single_barrier",
+    agent_speed_scale: float = 1.0,
+    soft_rgb_penalty: float = 64.0,
+    planners: tuple[str, ...] = SAFETY_METHOD_PLANNERS,
 ) -> dict[str, object]:
     """Run a fixed-predictor safety-method tournament."""
     model = _load_model(checkpoint)
@@ -47,8 +51,10 @@ def evaluate_safety_methods(
         episodes=evaluation_episodes,
         horizon=horizon,
         candidates=candidates,
-        scenario="single_barrier",
-        planners=SAFETY_METHOD_PLANNERS,
+        scenario=scenario,
+        agent_speed_scale=agent_speed_scale,
+        soft_rgb_penalty=soft_rgb_penalty,
+        planners=planners,
         route_models={
             "route_completion": predictor,
             "route_completion_safe_gate": predictor,
@@ -60,6 +66,9 @@ def evaluate_safety_methods(
             "protocol": "fixed route predictor safety-method comparison",
             "route_predictor": str(route_predictor),
             "route_features": list(ROUTE_FEATURE_NAMES),
+            "scenario": scenario,
+            "agent_speed_scale": agent_speed_scale,
+            "soft_rgb_penalty": soft_rgb_penalty,
         },
         include_rows=True,
     )
@@ -72,6 +81,8 @@ def evaluate_safety_methods(
         ("route_completion_soft", "paired_soft_comparison"),
         ("route_completion_mpc", "paired_mpc_comparison"),
     ):
+        if planner not in planners:
+            continue
         report[key] = _paired_success_delta(rows, baseline, planner)
     return report
 
@@ -115,6 +126,13 @@ def main() -> None:
     parser.add_argument("--evaluation-episodes", type=int, default=20)
     parser.add_argument("--candidates", type=int, default=256)
     parser.add_argument("--horizon", type=int, default=48)
+    parser.add_argument(
+        "--scenario",
+        choices=("single_barrier", "barrier_shifted", "barrier_narrow_gap", "barrier_wide_gap"),
+        default="single_barrier",
+    )
+    parser.add_argument("--agent-speed-scale", type=float, default=1.0)
+    parser.add_argument("--soft-rgb-penalty", type=float, default=64.0)
     parser.add_argument("--output", default="artifacts/evaluation-safety-methods.json")
     args = parser.parse_args()
     report = evaluate_safety_methods(
@@ -124,6 +142,9 @@ def main() -> None:
         evaluation_episodes=args.evaluation_episodes,
         candidates=args.candidates,
         horizon=args.horizon,
+        scenario=args.scenario,
+        agent_speed_scale=args.agent_speed_scale,
+        soft_rgb_penalty=args.soft_rgb_penalty,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
