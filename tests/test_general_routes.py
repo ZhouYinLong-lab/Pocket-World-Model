@@ -246,12 +246,20 @@ def test_general_route_gate_feature_contract_and_predictor():
         observation, case.goal, RouteFieldPolicy()
     )
     assert features.shape == (len(GENERAL_ROUTE_FEATURE_NAMES),)
+    assert len(GENERAL_ROUTE_FEATURE_NAMES) == 12
+    assert "field_route_distance_norm" not in GENERAL_ROUTE_FEATURE_NAMES
     assert np.isfinite(features).all()
     predictor = make_general_route_predictor()
     train_features = np.stack((features, features + 0.01, features + 0.02, features + 0.03))
     labels = np.asarray((0.0, 1.0, 0.0, 1.0), dtype=np.float32)
     assert predictor.fit(train_features, labels, epochs=1)["samples"] == 4
     assert predictor.predict_proba(features[None]).shape == (1,)
+    calibration = predictor.fit_temperature(
+        np.concatenate((train_features, train_features + 0.04)),
+        np.asarray((0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0), dtype=np.float32),
+        epochs=2,
+    )
+    assert calibration["temperature"] > 0.0
 
 
 def test_gated_hybrid_threshold_calibration_is_selectable(tmp_path):
