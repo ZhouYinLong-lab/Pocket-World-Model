@@ -221,6 +221,8 @@ def run_general_ood(
                 method in {
                     "distance_field_mpc_shift_fallback",
                     "distance_field_budgeted_hybrid_mpc",
+                    "distance_field_budgeted_hybrid_fast_mpc",
+                    "distance_field_budgeted_hybrid_gated_mpc",
                 }
                 for method in methods
             ),
@@ -298,3 +300,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
