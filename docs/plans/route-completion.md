@@ -39,6 +39,7 @@ but this is not sufficient evidence that it improves planner selection.
 | Route completion, weight 64, no gate | 28.3% | 7.93 | −33.33pp | 5 / 25 / 30 |
 | Route completion, weight 64 + risk gate | 51.7% | 3.32 | −10.00pp | 9 / 15 / 36 |
 | Hard-negative mining, weight 64 + risk gate | 53.3% | 3.25 | −8.33pp | 8 / 13 / 39 |
+| Route-completion MPC, weight 10 + 4px fallback | 5.0% | 2.12 | −56.67pp | 2 / 36 / 22 |
 | Route-aware closed-loop hybrid | 100.0% | 0.65 | not comparable | high-query reference |
 
 The small +1.67pp at weight 10 is not stable: the paired seed deltas are
@@ -57,11 +58,14 @@ This experiment separates three claims that are often conflated:
 3. The ranked candidate transfers to real obstacle traversal.
 
 The first claim is supported; the second is fragile; the third is not yet
-supported. The main failure is still route-level collision misspecification,
-not insufficient route-completion capacity. The next principled direction is
-joint route-and-collision supervision with hard negatives constructed from
-near-goal collision failures, or a planner that executes a short safe prefix
-and re-estimates route completion online.
+supported. The MPC result makes the failure sharper: online re-estimation does
+not help when the route probability is systematically wrong; it repeats the
+wrong local choice and spends about **1,681 model queries per episode**. The
+main failure is still route-level collision misspecification, not insufficient
+route-completion capacity. The next principled direction is joint route-and-
+collision supervision with hard negatives constructed from near-goal collision
+failures, or a safety controller that can reject a route prediction using
+observable wall geometry before committing to it.
 
 ## Reproduction
 
@@ -82,4 +86,4 @@ Results:
 - [weight-64 study](../results/evaluation-route-completion-barrier-v2-weight64.json)
 - [fixed risk-gated study](../results/evaluation-route-completion-barrier-v4-risk-gated-fixed.json)
 - [hard-negative study](../results/evaluation-route-completion-barrier-v5-hard-negative.json)
-
+- [online MPC study](../results/evaluation-route-completion-barrier-v6-mpc.json)

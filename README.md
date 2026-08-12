@@ -282,7 +282,7 @@ The reliability bins sharpen the diagnosis: ensemble plans with predicted risk i
 
 ### Route-conditioned completion study
 
-The next experiment adds an explicit `RouteCompletionPredictor` trained on real simulator outcomes for complete candidate routes. It achieves **0.997 held-out AUROC**, but planner transfer is much harder: weight 10 reaches **63.3% real success** versus **61.7%** for learned collision, while weight 64 collapses to **28.3%** and the risk-gated/hard-negative variants reach **51.7% / 53.3%**. The paired comparison is therefore a controlled negative result: candidate-level route classification is strong, but its score does not yet survive model-missed collisions during planning. See the [route-completion study](docs/plans/route-completion.md) and its [hard-negative report](docs/results/evaluation-route-completion-barrier-v5-hard-negative.json).
+The next experiment adds an explicit `RouteCompletionPredictor` trained on real simulator outcomes for complete candidate routes. It achieves **0.997 held-out AUROC**, but planner transfer is much harder: weight 10 reaches **63.3% real success** versus **61.7%** for learned collision, weight 64 collapses to **28.3%**, the risk-gated/hard-negative variants reach **51.7% / 53.3%**, and online route-completion MPC falls to **5.0%** despite replanning. The paired comparison is therefore a controlled negative result: candidate-level route classification is strong, but its score does not yet survive model-missed collisions during planning. See the [route-completion study](docs/plans/route-completion.md) and its [MPC report](docs/results/evaluation-route-completion-barrier-v6-mpc.json).
 
 Reproduce the latest route-conditioned experiment with:
 

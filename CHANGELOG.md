@@ -2,6 +2,18 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.9.0] - 2026-08-12
+
+### Added
+
+- Closed-loop route-completion MPC comparison with short-prefix replanning and alignment fallback.
+- Query-cost accounting for route-completion MPC.
+- Formal negative result showing that repeated online replanning amplifies a misspecified route probability.
+
+### Changed
+
+- Route-completion documentation now separates one-shot ranking, risk-gated ranking, hard-negative mining, and closed-loop MPC.
+
 ## [0.8.0] - 2026-08-12
 
 ### Added
