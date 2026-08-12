@@ -10,7 +10,7 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-113%20passed-419400">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-115%20passed-419400">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
 </p>
 
