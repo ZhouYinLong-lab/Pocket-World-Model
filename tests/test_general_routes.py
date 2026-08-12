@@ -7,11 +7,15 @@ from pocketworld.general_routes import (
     general_wall_layout,
     sample_general_route_cases,
 )
-from pocketworld.evaluate_general_routes import train_and_evaluate_general_routes
+from pocketworld.evaluate_general_routes import GENERAL_METHODS, train_and_evaluate_general_routes
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
     conservative_field_action,
+    local_mpc_action,
+    rgb_action_is_safe,
+    estimate_action_velocity,
+    guarded_mpc_action,
     field_waypoints,
     route_field_targets,
 )
@@ -72,6 +76,10 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
     assert contract["rgb_astar"] is True
     assert contract["distance_field_beam_rgb_projection"] is False
     assert contract["distance_field_beam_conservative"] is False
+    assert contract["distance_field_beam_mpc"] is False
+    assert contract["distance_field_beam_robust_mpc"] is False
+    assert contract["distance_field_clearance_beam_rgb_projection"] is False
+    assert contract["distance_field_beam_guarded_mpc"] is False
     assert set(report["evaluation"]) == {
         "learned",
         "rgb_projection",
@@ -81,8 +89,17 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
         "distance_field_rgb_projection",
         "distance_field_beam_rgb_projection",
         "distance_field_beam_conservative",
+        "distance_field_beam_mpc",
+        "distance_field_beam_robust_mpc",
+        "distance_field_clearance_beam_rgb_projection",
+        "distance_field_beam_guarded_mpc",
     }
     assert report["distance_field_checkpoint"].endswith("-distance-field.pt")
+    assert report["clearance_field_checkpoint"].endswith("-clearance-field.pt")
+    assert report["protocol"]["mpc_horizon"] == 6
+    assert report["protocol"]["mpc_beam_width"] == 24
+    assert report["protocol"]["methods"] == list(GENERAL_METHODS)
+    assert report["evaluation"]["distance_field_beam_mpc"]["summary"]["mpc_calls"]["mean"] >= 0
 
 
 def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
@@ -100,12 +117,22 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     goals = np.asarray(goals, dtype=np.float32)
     targets, valid = route_field_targets(frames, goals)
     assert targets.shape == valid.shape == (8, 16, 16)
+    risk_targets, risk_valid = route_field_targets(frames, goals, clearance_weight=8.0)
+    assert risk_targets.shape == risk_valid.shape == (8, 16, 16)
+    with pytest.raises(ValueError, match="clearance_weight"):
+        route_field_targets(frames, goals, clearance_weight=-1.0)
     policy = RouteFieldPolicy()
     assert policy.fit(frames, goals, epochs=1)["samples"] == 8
     predicted = policy.predict_field(frames[0], tuple(goals[0]))
     assert predicted.shape == (16, 16)
     assert field_waypoints(frames[0], tuple(goals[0]), predicted)
     assert field_waypoints(frames[0], tuple(goals[0]), predicted, beam_width=4)
+    assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=2, beam_width=4) in range(4)
+    assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=1, beam_width=1) in range(4)
+    assert local_mpc_action(frames[0], tuple(goals[0]), [frames[0]], horizon=2, beam_width=4, robust=True) in range(4)
+    assert estimate_action_velocity([frames[0]], [0, 1, 3]).shape == (2,)
+    assert isinstance(rgb_action_is_safe(frames[0], 0, [frames[0]], [0]), bool)
+    assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
 
