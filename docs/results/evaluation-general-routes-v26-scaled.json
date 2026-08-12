@@ -1,0 +1,10 @@
+{
+  "protocol": {"checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt", "evaluation_seeds": [11, 23, 41], "episodes_per_seed": 20, "max_steps": 160, "shared_cases": true},
+  "summary": {
+    "distance_field_beam_mpc": {"real_success": 0.81667, "collision_count": 0.88333, "astar_calls": 0.0, "planning_time_ms": 858.43402},
+    "distance_field_budgeted_hybrid_fast_mpc": {"real_success": 1.0, "collision_count": 0.5, "astar_calls": 1.46667, "planning_time_ms": 513.00196}
+  },
+  "by_family_fast_success": {"l_shapes": 1.0, "multi_channel": 1.0, "staggered_blocks": 1.0, "staircase": 1.0},
+  "interpretation": "Scaled holdout confirms route budget plus sparse RGB/A* fallback closes the route completion gap at low local-MPC latency."
+}
+
