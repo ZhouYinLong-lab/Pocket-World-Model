@@ -335,6 +335,44 @@ python -m pocketworld.evaluate_safety_methods \
 See the [safety-mechanism protocol](docs/plans/route-completion.md) and
 [machine-readable v9 result](docs/results/evaluation-safety-methods-barrier-v9.json).
 
+### Penalty selection and OOD generalization
+
+The soft penalty was not chosen from the OOD results. A six-value scan on the
+original single-barrier task (`0, 8, 16, 32, 64, 128`) selected **16** by a
+predeclared rule: highest mean success, then smallest weight on ties. It gives
+**71.7%** in-distribution success and **+10.0pp** paired improvement.
+
+When frozen and moved to held-out shifted barriers, narrow/wide gaps, and
+speed scales 0.8/1.2, the result reverses: soft planning is never better than
+the learned-collision baseline, with paired deltas from **0.0pp to −25.0pp**.
+The gap tasks were corrected to place start and goal outside the wall footprint
+on opposite sides, so they require an actual detour. The current evidence is
+therefore precise: soft RGB penalties improve this barrier distribution but do
+not yet generalize across map geometry and dynamics shifts.
+
+Reproduce the selection and held-out protocols with the resumable sweep runner:
+
+```bash
+python -m pocketworld.evaluate_safety_sweep \
+  artifacts/pocketworld-map-suite-v3-final.pt \
+  --route-predictor artifacts/route-completion-v4-safety-methods.pt \
+  --penalties 0,8,16,32,64,128 --scenarios single_barrier \
+  --speed-scales 1.0 --evaluation-seeds 11,23,41 --evaluation-episodes 20 \
+  --candidates 256 --horizon 48 --resume-from artifacts/safety-sweep-selection-v11-progress.json \
+  --output artifacts/evaluation-safety-sweep-selection-v11.json
+
+python -m pocketworld.evaluate_safety_sweep \
+  artifacts/pocketworld-map-suite-v3-final.pt \
+  --route-predictor artifacts/route-completion-v4-safety-methods.pt \
+  --penalties 16 --scenarios barrier_shifted,barrier_narrow_gap,barrier_wide_gap \
+  --speed-scales 0.8,1.2 --evaluation-seeds 11,23,41 --evaluation-episodes 20 \
+  --candidates 256 --horizon 48 --resume-from artifacts/safety-sweep-ood-v12-progress.json \
+  --output artifacts/evaluation-safety-sweep-ood-v12.json
+```
+
+See the [selection report](docs/results/evaluation-safety-sweep-selection-v11.json)
+and [OOD holdout report](docs/results/evaluation-safety-sweep-ood-v12.json).
+
 Reproduce the complete route-method comparison with:
 
 ```bash

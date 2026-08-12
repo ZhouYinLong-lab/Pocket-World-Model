@@ -126,6 +126,41 @@ even though its learned collision score is low. The soft method lowers this
 to **21.7%**, showing that the gain is connected to fewer visibly impossible
 imagined routes rather than only to a changed success threshold.
 
+## Penalty selection and OOD holdout
+
+The v0.12 follow-up separates in-distribution selection from generalization.
+On the original single-barrier protocol, the soft RGB penalty was scanned over
+`0, 8, 16, 32, 64, 128`. The selection rule was declared before inspecting
+OOD results: maximize mean real success on `single_barrier`, breaking ties by
+the smaller penalty. This selects **16**, with **71.7%** success,
+**2.02** collisions/episode, and **+10.0pp** paired improvement over learned
+collision. Penalties 32 and 64 tie on success; 128 reduces collisions further
+but gives up 1.7pp success.
+
+The selected penalty was then frozen and evaluated on six held-out conditions:
+
+| OOD condition | Soft success | Baseline success | Paired delta | Soft collisions | Baseline collisions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Shifted barrier, speed 0.8 | 0.0% | 0.0% | +0.0pp | 6.23 | 5.97 |
+| Shifted barrier, speed 1.2 | 36.7% | 43.3% | −6.7pp | 3.22 | 3.52 |
+| Narrow gap, speed 0.8 | 0.0% | 25.0% | −25.0pp | 1.75 | 2.98 |
+| Narrow gap, speed 1.2 | 11.7% | 23.3% | −11.7pp | 4.53 | 5.73 |
+| Wide gap, speed 0.8 | 0.0% | 13.3% | −13.3pp | 0.20 | 0.48 |
+| Wide gap, speed 1.2 | 10.0% | 13.3% | −3.3pp | 2.77 | 3.87 |
+
+These are genuine detour tasks: starts and goals are sampled on opposite sides
+of the wall and outside the wall footprint, so the narrow/wide-gap cases cannot
+be solved by starting inside the opening. The result changes the claim
+boundary: soft RGB penalties are a useful in-distribution safety ablation, but
+the selected weight does **not** generalize to these map/velocity shifts. This
+is evidence of a distribution-specific planner correction, not a general
+obstacle traversal solution.
+
+Machine-readable reports:
+
+- [penalty selection](../results/evaluation-safety-sweep-selection-v11.json)
+- [OOD holdout](../results/evaluation-safety-sweep-ood-v12.json)
+
 ## Reproduction
 
 ```bash

@@ -2,6 +2,21 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.12.0] - 2026-08-12
+
+### Added
+
+- Resumable soft-RGB penalty and OOD safety sweep runner.
+- Explicit shifted-barrier, narrow-gap, wide-gap, and speed-shift evaluation scenarios.
+- Separate in-distribution penalty-selection and OOD holdout reports.
+- Fixed planner-name random streams so subset sweeps preserve the full-tournament candidate randomness.
+
+### Results
+
+- Penalty 16 is selected on the original barrier by a predeclared success-first rule: 71.7% real success, 2.02 collisions/episode, +10.0pp paired improvement.
+- On six held-out map/velocity conditions, the frozen penalty never beats learned collision; paired deltas range from 0.0pp to −25.0pp.
+- The gap-task sampler was corrected so starts and goals lie outside the wall footprint on opposite sides; earlier gap numbers from the invalid protocol are not reported.
+
 ## [0.11.0] - 2026-08-12
 
 ### Added

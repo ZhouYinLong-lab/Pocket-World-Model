@@ -1,0 +1,289 @@
+{
+  "config": {
+    "checkpoint": "artifacts/pocketworld-map-suite-v3-final.pt",
+    "route_predictor": "artifacts/route-completion-v4-safety-methods.pt",
+    "penalties": [
+      0.0,
+      8.0,
+      16.0,
+      32.0,
+      64.0,
+      128.0
+    ],
+    "scenarios": [
+      "single_barrier"
+    ],
+    "speed_scales": [
+      1.0
+    ],
+    "evaluation_seeds": [
+      11,
+      23,
+      41
+    ],
+    "evaluation_episodes": 20,
+    "candidates": 256,
+    "horizon": 48,
+    "selection_rule": "soft penalty is selected only from single_barrier rows; OOD rows remain held out"
+  },
+  "rows": [
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 0.0,
+      "real_success": {
+        "mean": 0.65,
+        "std": 0.07071067811865471
+      },
+      "collision_count": {
+        "mean": 2.283333333333333,
+        "std": 0.4696334267868458
+      },
+      "rgb_route_collision": {
+        "mean": 0.3333333333333333,
+        "std": 0.12472191289246472
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 3.3333333333333335,
+        "per_seed_mean_delta_pp": [
+          5.0,
+          5.0,
+          0.0
+        ],
+        "wins": 10,
+        "losses": 8,
+        "ties": 42
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    },
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 8.0,
+      "real_success": {
+        "mean": 0.6833333333333332,
+        "std": 0.062360956446232366
+      },
+      "collision_count": {
+        "mean": 2.1166666666666667,
+        "std": 0.2953340857778225
+      },
+      "rgb_route_collision": {
+        "mean": 0.3,
+        "std": 0.10801234497346433
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 6.666666666666667,
+        "per_seed_mean_delta_pp": [
+          10.0,
+          5.0,
+          5.0
+        ],
+        "wins": 10,
+        "losses": 6,
+        "ties": 44
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    },
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 16.0,
+      "real_success": {
+        "mean": 0.7166666666666667,
+        "std": 0.023570226039551605
+      },
+      "collision_count": {
+        "mean": 2.016666666666667,
+        "std": 0.2392116682401221
+      },
+      "rgb_route_collision": {
+        "mean": 0.21666666666666665,
+        "std": 0.1247219128924647
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 10.0,
+        "per_seed_mean_delta_pp": [
+          20.0,
+          5.0,
+          5.0
+        ],
+        "wins": 11,
+        "losses": 5,
+        "ties": 44
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    },
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 32.0,
+      "real_success": {
+        "mean": 0.7166666666666667,
+        "std": 0.023570226039551605
+      },
+      "collision_count": {
+        "mean": 2.016666666666667,
+        "std": 0.2392116682401221
+      },
+      "rgb_route_collision": {
+        "mean": 0.21666666666666665,
+        "std": 0.1247219128924647
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 10.0,
+        "per_seed_mean_delta_pp": [
+          20.0,
+          5.0,
+          5.0
+        ],
+        "wins": 11,
+        "losses": 5,
+        "ties": 44
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    },
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 64.0,
+      "real_success": {
+        "mean": 0.7166666666666667,
+        "std": 0.023570226039551605
+      },
+      "collision_count": {
+        "mean": 2.016666666666667,
+        "std": 0.2392116682401221
+      },
+      "rgb_route_collision": {
+        "mean": 0.21666666666666665,
+        "std": 0.1247219128924647
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 10.0,
+        "per_seed_mean_delta_pp": [
+          20.0,
+          5.0,
+          5.0
+        ],
+        "wins": 11,
+        "losses": 5,
+        "ties": 44
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    },
+    {
+      "scenario": "single_barrier",
+      "agent_speed_scale": 1.0,
+      "soft_rgb_penalty": 128.0,
+      "real_success": {
+        "mean": 0.7000000000000001,
+        "std": 0.04082482904638629
+      },
+      "collision_count": {
+        "mean": 1.8666666666666665,
+        "std": 0.09428090415820632
+      },
+      "rgb_route_collision": {
+        "mean": 0.16666666666666666,
+        "std": 0.08498365855987976
+      },
+      "estimated_model_queries": {
+        "mean": 256.0,
+        "std": 0.0
+      },
+      "paired_soft_comparison": {
+        "baseline": "learned_collision",
+        "challenger": "route_completion_soft",
+        "episodes": 60,
+        "mean_delta_pp": 8.333333333333334,
+        "per_seed_mean_delta_pp": [
+          15.0,
+          5.0,
+          5.0
+        ],
+        "wins": 11,
+        "losses": 6,
+        "ties": 43
+      },
+      "baseline_real_success": {
+        "mean": 0.6166666666666666,
+        "std": 0.08498365855987973
+      },
+      "baseline_collision_count": {
+        "mean": 2.466666666666667,
+        "std": 0.20138409955990957
+      }
+    }
+  ]
+}
