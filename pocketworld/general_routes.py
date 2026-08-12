@@ -114,6 +114,8 @@ def sample_general_route_cases(
     seed: int,
     episodes: int,
     split: str = "train",
+    families: tuple[str, ...] | None = None,
+    balanced: bool = False,
 ) -> tuple[GeneralRouteCase, ...]:
     """Sample reachable train/holdout tasks with distinct shape families."""
     if episodes < 1:
@@ -121,11 +123,24 @@ def sample_general_route_cases(
     if split not in {"train", "holdout"}:
         raise ValueError("split must be train or holdout")
     rng = np.random.default_rng(seed)
-    families = ("staggered_blocks", "multi_channel") if split == "train" else GENERAL_FAMILIES
+    if families is None:
+        selected_families = (
+            ("staggered_blocks", "multi_channel")
+            if split == "train"
+            else GENERAL_FAMILIES
+        )
+    else:
+        selected_families = tuple(families)
+        if not selected_families or any(family not in GENERAL_FAMILIES for family in selected_families):
+            raise ValueError(f"families must be a non-empty subset of {GENERAL_FAMILIES}")
     cases: list[GeneralRouteCase] = []
     for episode in range(episodes):
         for retry in range(48):
-            family = str(rng.choice(families))
+            family = (
+                str(selected_families[episode % len(selected_families)])
+                if balanced
+                else str(rng.choice(selected_families))
+            )
             layout_seed = int(rng.integers(0, 2**31 - 1))
             walls, channel_count = general_wall_layout(layout_seed, family)
             start, goal = _sample_endpoints(rng, split)
