@@ -10,6 +10,7 @@ import torch
 
 from .env import DEFAULT_WALLS
 from .model import PocketWorldModel, observable_velocity_from_frames
+from .route_completion import extract_route_features
 
 
 @dataclass
@@ -782,6 +783,8 @@ def random_shooting(
     wall_route_preference: str | None = None,
     wall_route_best_remaining_px: float | None = None,
     collision_model: object | None = None,
+    route_completion_model: object | None = None,
+    route_completion_weight: float = 10.0,
 ) -> PlanResult:
     model.eval()
     risk_model = model if collision_model is None else collision_model
@@ -942,14 +945,25 @@ def random_shooting(
     if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
         safe_scores[~eligible] = 1e6
     route_completion_probabilities = _route_completion_probabilities(goal_distances, collision_prefix)
-    if route_objective:
+    if route_completion_model is not None:
+        route_completion_model.eval()
+        route_features = extract_route_features(
+            positions,
+            goal,
+            collision_prefix,
+            actions=actions.detach().cpu().numpy(),
+        )
+        route_completion_probabilities = np.asarray(
+            route_completion_model.predict_proba(route_features), dtype=np.float32
+        ).reshape(-1)
+    if route_objective or route_completion_model is not None:
         route_regressions = np.maximum(0.0, np.diff(goal_distances, axis=1)).sum(axis=1)
         route_scores = (
             goal_distances[:, -1]
             + 0.35 * goal_distances[:, 1:].mean(axis=1)
             + 0.50 * route_regressions
             + 64.0 * collision_prefix[:, -1]
-            - 10.0 * route_completion_probabilities
+            - float(route_completion_weight) * route_completion_probabilities
         )
         route_scores = np.where(np.isfinite(route_scores), route_scores, 1e6)
         if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
@@ -966,6 +980,12 @@ def random_shooting(
             # progress guarantee. Use it only as a last resort when A* found
             # no route at all.
             route_scores[count:] = 1e6
+        if route_completion_model is not None and collision_risk_budget is not None:
+            feasible_route = collision_prefix[:, -1] <= float(np.clip(collision_risk_budget, 0.0, 1.0))
+            if collision_aware and learned_collision and (probabilistic_uncertainty or uncertainty_radius_px > 0 or uncertainty_growth_px > 0):
+                feasible_route &= eligible
+            if feasible_route.any():
+                route_scores[~feasible_route] = 1e6
         best = int(np.argmin(route_scores))
         reached = np.flatnonzero(safe_scores[best] <= 4.0)
         best_step = int(reached[0]) if len(reached) else horizon
@@ -975,7 +995,7 @@ def random_shooting(
         best_step = int(np.argmin(safe_scores[best]))
         selected_route_score = float(safe_scores[best, best_step])
     initial_distance = float(goal_distances[best, 0])
-    if route_objective and route_execution_horizon is not None:
+    if (route_objective or route_completion_model is not None) and route_execution_horizon is not None:
         best_step = min(best_step, max(1, int(route_execution_horizon)))
     if best_step == 0 and initial_distance > 4.0:
         best_step = 1

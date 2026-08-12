@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pocket-world-model"
-version = "0.7.0"
+version = "0.8.0"
 description = "A tiny and observable world model for 2D dynamics and imagined planning."
 requires-python = ">=3.10"
 dependencies = [
@@ -28,6 +28,7 @@ pocketworld-evaluate-maturity = "pocketworld.evaluate_maturity:main"
 pocketworld-evaluate-imagination = "pocketworld.evaluate_imagination:main"
 pocketworld-evaluate-planners = "pocketworld.evaluate_planners:main"
 pocketworld-evaluate-uncertainty = "pocketworld.evaluate_uncertainty:main"
+pocketworld-evaluate-route-completion = "pocketworld.evaluate_route_completion:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]
