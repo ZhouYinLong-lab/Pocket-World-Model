@@ -306,6 +306,35 @@ traversal. The high-query route-aware hybrid remains at **100.0%** real
 success. See the [RGB safety-gate ablation](docs/plans/route-completion.md)
 and [machine-readable v7 result](docs/results/evaluation-route-completion-barrier-v7-safe-gate.json).
 
+The next ablation compares three ways to use the same RGB wall evidence. A
+joint gate requires both learned-risk and RGB feasibility; an RGB-only gate
+uses only the visible wall mask; a soft method adds a wall-intersection cost
+without hard rejecting every risky route. On the same 60 paired barrier tasks:
+
+| Method | Real success | Collisions/episode | Imagined RGB wall intersection | Paired delta |
+| --- | ---: | ---: | ---: | ---: |
+| Learned collision | 61.7% | 2.47 | 41.7% | — |
+| Joint RGB gate | 65.0% | 2.20 | 11.7% | +3.33pp |
+| RGB-only gate | 65.0% | 2.02 | 6.7% | +3.33pp |
+| Soft RGB penalty | **71.7%** | **2.02** | 21.7% | **+10.00pp** |
+
+The soft penalty is currently the strongest one-shot method, but its result is
+still protocol-specific: three seeds, one barrier layout, and the same tasks
+used for method comparison. The fixed-predictor runner makes this comparison
+reproducible without retraining the route predictor:
+
+```bash
+python -m pocketworld.evaluate_safety_methods \
+  artifacts/pocketworld-map-suite-v3-final.pt \
+  --route-predictor artifacts/route-completion-v4-safety-methods.pt \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 20 \
+  --candidates 256 --horizon 48 \
+  --output artifacts/evaluation-safety-methods-barrier-v9.json
+```
+
+See the [safety-mechanism protocol](docs/plans/route-completion.md) and
+[machine-readable v9 result](docs/results/evaluation-safety-methods-barrier-v9.json).
+
 Reproduce the complete route-method comparison with:
 
 ```bash

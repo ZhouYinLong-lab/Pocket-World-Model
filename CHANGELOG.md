@@ -2,6 +2,20 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.11.0] - 2026-08-12
+
+### Added
+
+- Comparable route safety mechanisms: joint learned-risk/RGB gating, RGB-only hard gating, and soft RGB wall penalties.
+- A fixed-predictor `pocketworld-evaluate-safety-methods` entry point for separating predictor training from planner ablations.
+- Formal three-seed safety-method report with paired success deltas, collision counts, RGB imagined-wall diagnostics, and query budgets.
+
+### Results
+
+- Soft RGB penalties reach 71.7% real success and 2.02 collisions/episode, versus 61.7% and 2.47 for learned collision.
+- RGB-only hard gating reaches 65.0% and 2.02 collisions; joint gating reaches 65.0% and 2.20 collisions.
+- The soft method improves by +10.0pp paired success, with per-seed deltas of +20, +5, and +5pp; this is promising but not yet a statistically stable generalization claim.
+
 ## [0.10.0] - 2026-08-12
 
 ### Added

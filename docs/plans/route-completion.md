@@ -40,6 +40,8 @@ but this is not sufficient evidence that it improves planner selection.
 | Route completion, weight 64 + risk gate | 51.7% | 3.32 | −10.00pp | 9 / 15 / 36 |
 | Hard-negative mining, weight 64 + risk gate | 53.3% | 3.25 | −8.33pp | 8 / 13 / 39 |
 | Route completion + RGB safety gate | 65.0% | 2.20 | +3.33pp | 12 / 10 / 38 |
+| Route completion + RGB-only hard gate | 65.0% | 2.02 | +3.33pp | 9 / 7 / 44 |
+| Route completion + soft RGB penalty | 71.7% | 2.02 | +10.00pp | 11 / 5 / 44 |
 | Route-completion MPC, weight 10 + 4px fallback | 5.0% | 2.12 | −56.67pp | 2 / 36 / 22 |
 | Route-aware closed-loop hybrid | 100.0% | 0.65 | not comparable | high-query reference |
 
@@ -95,6 +97,35 @@ the RGB gate can reject visibly unsafe imagined paths, but it cannot correct a
 world model whose predicted trajectory is itself misaligned with the real
 simulator.
 
+## Safety-mechanism comparison
+
+The v0.11 comparison holds the v3-final dynamics checkpoint, the v4 route
+predictor, 60 paired barrier tasks, 48-step horizon, and 256 candidates fixed.
+It varies only how the observable RGB wall trace enters route selection:
+
+| Mechanism | Real success | Collisions/episode | Imagined RGB wall intersection | Paired delta |
+| --- | ---: | ---: | ---: | ---: |
+| Learned collision | 61.7% | 2.47 | 41.7% | — |
+| Route completion | 53.3% | 3.25 | 36.7% | −8.33pp |
+| Joint learned + RGB gate | 65.0% | 2.20 | 11.7% | +3.33pp |
+| RGB-only hard gate | 65.0% | 2.02 | 6.7% | +3.33pp |
+| Soft RGB penalty | 71.7% | 2.02 | 21.7% | +10.00pp |
+
+The soft penalty is the strongest one-shot result in this protocol. It does
+not reject all visibly risky candidates; instead it allows route completion
+and learned risk to trade against a wall-intersection cost. This preserves
+more alternatives than a hard gate and improves paired success on all three
+seeds (`+20, +5, +5pp`). The result remains an ablation, not a final claim:
+the same seed set was used for method selection, the environment is still a
+single barrier, and the high-query route-aware hybrid remains the 100% safety
+reference.
+
+The corrected RGB diagnostic is also important. Learned collision's selected
+imagined route intersects the observable wall mask on **41.7%** of episodes,
+even though its learned collision score is low. The soft method lowers this
+to **21.7%**, showing that the gain is connected to fewer visibly impossible
+imagined routes rather than only to a changed success threshold.
+
 ## Reproduction
 
 ```bash
@@ -116,3 +147,4 @@ Results:
 - [hard-negative study](../results/evaluation-route-completion-barrier-v5-hard-negative.json)
 - [online MPC study](../results/evaluation-route-completion-barrier-v6-mpc.json)
 - [RGB safety-gate ablation](../results/evaluation-route-completion-barrier-v7-safe-gate.json)
+- [safety-mechanism comparison](../results/evaluation-safety-methods-barrier-v9.json)
