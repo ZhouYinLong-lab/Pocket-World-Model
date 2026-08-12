@@ -48,9 +48,14 @@ The adaptive-gate calibration and v25 paired reports are in
 [evaluation-planner-comparison-v25.json](docs/results/evaluation-planner-comparison-v25.json),
 and [evaluation-planner-comparison-v25-ood.json](docs/results/evaluation-planner-comparison-v25-ood.json).
 
-## [0.22.0] - 2026-08-12
+## [0.23.0] - 2026-08-12
 
 ### Added
+
+- Per-horizon temperature calibration for the learned collision head.
+- Independent calibration-map holdout with reliability bins, Brier score, ECE,
+  AUROC/AUPRC, and threshold operating-point metrics.
+- Raw-versus-calibrated planner comparison on the unchanged final holdout.
 
 - Simulator-labelled, route-conditioned short-horizon collision probability
   head for 1/2/4-step risk prediction.
@@ -71,7 +76,18 @@ and [evaluation-planner-comparison-v25-ood.json](docs/results/evaluation-planner
   and is intentionally not reported; the corrected run selects 0.2051 using
   the highest threshold satisfying 80% calibration recall.
 
-See the [v26 nominal report](docs/results/evaluation-collision-head-v26-corrected.json)
+### Results
+
+- On the independent calibration holdout (`29,31,37`), horizon-2 ECE changes
+  from 0.02476 to 0.02241 and Brier score from 0.062274 to 0.062266;
+  horizon-2 AUROC remains 0.927.
+- On the untouched final `11,23,41` holdout, raw and calibrated gates both
+  reach 95.0% success and 0.183 collisions/episode. This is a small
+  calibration improvement, not a claim that temperature scaling solves OOD
+  obstacle traversal.
+
+See the [v27 calibration report](docs/results/evaluation-collision-head-v27-final.json),
+the [v26 nominal report](docs/results/evaluation-collision-head-v26-corrected.json)
 and [v26 OOD report](docs/results/evaluation-collision-head-v26-ood.json).
 
 ## [0.17.0] - 2026-08-12
@@ -449,3 +465,4 @@ learned general obstacle navigation is solved.
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0
+
