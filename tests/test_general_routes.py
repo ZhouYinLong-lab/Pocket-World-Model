@@ -14,6 +14,12 @@ from pocketworld.evaluate_general_ood import run_general_ood
 from pocketworld.evaluate_coverage_study import run_coverage_study
 from pocketworld.evaluate_planner_comparison import run_planner_comparison
 from pocketworld.evaluate_adaptive_calibration import run_adaptive_calibration
+from pocketworld.evaluate_collision_head import _quantile_threshold
+from pocketworld.collision_head import (
+    CollisionProbabilityHead,
+    collect_collision_head_dataset,
+    collision_head_features,
+)
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
@@ -128,6 +134,7 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
     assert report["protocol"]["mpc_beam_width"] == 24
     assert report["protocol"]["methods"] == list(GENERAL_DEFAULT_METHODS)
     assert "distance_field_beam_adaptive_mpc" not in report["protocol"]["methods"]
+    assert "distance_field_beam_collision_head_mpc" not in report["protocol"]["methods"]
     assert report["evaluation"]["distance_field_beam_mpc"]["summary"]["mpc_calls"]["mean"] >= 0
 
 
@@ -262,6 +269,7 @@ def test_general_ood_protocol_keeps_shift_hidden_and_checks_reachability(tmp_pat
     assert report["protocol"]["fallback_method_uses_astar"] is True
     assert report["protocol"]["shift_labels_visible_to_planner"] is False
     assert report["protocol"]["adaptive_risk_threshold"] == 0.45
+    assert report["protocol"]["collision_head_horizon_index"] == 1
     assert set(report["results"]) == {"nominal@speed0.75", "walls_x_plus2@speed0.75"}
     assert report["results"]["walls_x_plus2@speed0.75"]["paired_episode_count"] >= 0
 
@@ -326,6 +334,30 @@ def test_adaptive_calibration_selects_from_disjoint_split(tmp_path):
     assert report["protocol"]["selection_split_is_disjoint_from_final_holdout"] is True
     assert len(report["candidates"]) == 2
     assert report["selected"]["entry_threshold"] in {0.35, 0.55}
+
+
+def test_collision_head_dataset_model_and_roundtrip(tmp_path):
+    frame = np.zeros((3, 64, 64), dtype=np.uint8)
+    feature = collision_head_features(
+        frame, (50.0, 50.0), (45.0, 45.0), np.zeros(2, dtype=np.float32), 1
+    )
+    assert feature.shape == (238,)
+    features, labels = collect_collision_head_dataset(
+        seeds=(101,), episodes=1, max_steps=2, continuation_samples=1, sample_stride=1
+    )
+    assert features.shape[1] == 238
+    assert labels.shape == (len(features), 3)
+    head = CollisionProbabilityHead(input_dim=features.shape[1])
+    assert head.fit(features, labels, epochs=1)["samples"] == len(features)
+    checkpoint = head.save(tmp_path / "collision.pt")
+    restored = CollisionProbabilityHead.load(checkpoint)
+    assert restored.predict_proba(features[:1]).shape == (1, 3)
+
+
+def test_collision_threshold_keeps_highest_safe_gate():
+    probabilities = np.asarray([0.1, 0.2, 0.6, 0.8], dtype=np.float32)
+    labels = np.asarray([0.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    assert _quantile_threshold(probabilities, labels, target_coverage=2.0 / 3.0) == pytest.approx(0.6)
 
 
 def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
