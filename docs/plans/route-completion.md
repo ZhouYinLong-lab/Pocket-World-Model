@@ -207,6 +207,44 @@ python -m pocketworld.evaluate_route_variants \
   --output artifacts/evaluation-route-variants-v9.json
 ```
 
+## Executable hybrid route-control ablation
+
+The route-feature study showed that map-aware completion probabilities improve
+imagined risk signals without improving real gap-crossing success. To isolate
+the remaining execution bottleneck, the project now compares visible RGB/A*
+controllers independently of learned candidate ranking. The final adaptive
+policy locks its mode from the initial visible detour ratio and keeps that mode
+throughout the episode.
+
+The full controller matrix uses three seeds, 20 episodes per scenario, four
+barrier layouts, and a 64-step budget. The selected adaptive policy obtains
+100.0% single-barrier success, 100.0% shifted-barrier success, 98.3% narrow-gap
+success, and 98.3% wide-gap success. Collision rates are 0.650, 0.233, 0.067,
+and 0.017 per episode respectively. The closed-loop tournament reports zero
+learned model queries for this route override and counts geometry-planning
+calls separately.
+
+This is intentionally labeled a hybrid baseline: it demonstrates that the
+remaining failure is not A* route existence, but the transfer from learned
+imagined actions to safe execution. The next learned-planning milestone should
+replace the geometry override incrementally and retain this controller as a
+reference.
+
+Machine-readable reports:
+
+- [controller method comparison](../results/evaluation-route-controller-v13.json)
+- [adaptive controller comparison](../results/evaluation-route-controller-v13-adaptive.json)
+- [adaptive closed-loop tournament](../results/evaluation-route-aware-adaptive-v13-full.json)
+
+Reproduce the controller sweep with:
+
+```bash
+python -m pocketworld.evaluate_route_controller \
+  --episodes 20 --max-steps 64 \
+  --scenarios single_barrier,barrier_shifted,barrier_narrow_gap,barrier_wide_gap \
+  --output artifacts/evaluation-route-controller-v13.json
+```
+
 ## Reproduction
 
 ```bash

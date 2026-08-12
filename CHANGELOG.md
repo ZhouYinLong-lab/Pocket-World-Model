@@ -15,6 +15,13 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 - Map context raises mean imagined route success by 7.5pp and lowers collisions by 0.36 per episode in the published eight-condition matrix.
 - Mean real route success changes by 0.0pp, so map-aware route classification is a diagnostic/safety improvement, not a solved obstacle-crossing planner.
 
+### Hybrid execution follow-up
+
+- Added geometry-locked adaptive route control: short visible detours can use diagonal A* with longer lookahead, while long barrier detours keep conservative cardinal control.
+- Separated geometry-planning calls from learned model-query counts in closed-loop reports.
+- On the four-map, three-seed, 64-step execution matrix, the adaptive hybrid reaches 100.0% / 100.0% / 98.3% / 98.3% real success on single, shifted, narrow-gap, and wide-gap barriers, with 0.650 / 0.233 / 0.067 / 0.017 collisions per episode.
+- This is explicitly a visible-geometry hybrid result; learned model queries are zero in this route override and it is not presented as pure world-model obstacle navigation.
+
 ## [0.12.1] - 2026-08-12
 
 ### Fixed

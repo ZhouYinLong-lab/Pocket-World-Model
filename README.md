@@ -373,6 +373,33 @@ python -m pocketworld.evaluate_safety_sweep \
 See the [selection report](docs/results/evaluation-safety-sweep-selection-v11.json)
 and [OOD holdout report](docs/results/evaluation-safety-sweep-ood-v12.json).
 
+### Executable hybrid route control
+
+The OOD result exposed a second distinction: route-risk prediction and route
+execution are separate problems. PocketWorld now includes an explicitly
+reported geometry-locked controller. It computes a cardinal A* detour from the
+current RGB wall mask once per task; if the visible detour is short enough, it
+locks a diagonal/lookahead policy for gap crossing, otherwise it keeps
+conservative cardinal braking for full barriers. The policy is not selected by
+scenario name.
+
+On a fresh three-seed matrix with 20 episodes per map and a 64-step execution
+budget, the hybrid controller reaches:
+
+| Map | Real success | Collisions/episode |
+| --- | ---: | ---: |
+| Single barrier | 100.0% | 0.650 |
+| Shifted barrier | 100.0% | 0.233 |
+| Narrow gap | 98.3% | 0.067 |
+| Wide gap | 98.3% | 0.017 |
+
+These runs use **zero learned model queries** in the route override; geometry
+planning calls are reported separately. This makes the result a strong,
+observable hybrid-navigation baseline and a useful upper bound for future
+learned detour work, not evidence that the learned world model alone solves
+obstacle traversal. See the [controller comparison](docs/results/evaluation-route-controller-v13.json)
+and [adaptive hybrid report](docs/results/evaluation-route-aware-adaptive-v13-full.json).
+
 ### Map-aware route features: better risk signals, not yet better traversal
 
 To broaden the method comparison, v0.13 trains two otherwise identical route
