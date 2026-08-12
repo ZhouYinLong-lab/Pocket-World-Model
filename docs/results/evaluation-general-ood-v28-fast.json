@@ -1,0 +1,21 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "evaluation_seeds": [11, 23, 41],
+    "episodes_per_seed": 3,
+    "map_shifts": ["nominal", "walls_x_minus2", "walls_x_plus2"],
+    "speed_scales": [0.75, 1.25],
+    "method": "distance_field_budgeted_hybrid_fast_mpc",
+    "route_budget_margin": 1.05,
+    "route_progress_tolerance": 1.5
+  },
+  "conditions": {
+    "nominal@speed0.75": {"real_success": 1.0, "collision_count": 0.2222, "planning_time_ms": 132.0303, "astar_calls": 1.8889},
+    "nominal@speed1.25": {"real_success": 1.0, "collision_count": 0.4444, "planning_time_ms": 147.9445, "astar_calls": 1.2222},
+    "walls_x_minus2@speed0.75": {"real_success": 1.0, "collision_count": 0.4444, "planning_time_ms": 172.1108, "astar_calls": 2.0},
+    "walls_x_minus2@speed1.25": {"real_success": 1.0, "collision_count": 0.4444, "planning_time_ms": 140.1172, "astar_calls": 1.4444},
+    "walls_x_plus2@speed0.75": {"real_success": 1.0, "collision_count": 0.3333, "planning_time_ms": 178.4541, "astar_calls": 1.8889},
+    "walls_x_plus2@speed1.25": {"real_success": 1.0, "collision_count": 0.6667, "planning_time_ms": 193.1531, "astar_calls": 1.4444}
+  },
+  "interpretation": "Fast hybrid maintains route completion across the focused OOD matrix, with a latency/collision trade-off."
+}

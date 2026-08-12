@@ -25,6 +25,24 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 See [the v28 OOD report](artifacts/evaluation-general-ood-v28-budgeted.json).
 
+## [0.25.0] - 2026-08-12
+
+### Added
+
+- A matched fast-vs-robust route-budget ablation. Both variants share the same
+  route progress, remaining-budget, wall confirmation, cooldown, and route-lock
+  logic; only the post-fallback local MPC robustness differs.
+
+### Results
+
+- Ordinary-MPC hybrid reaches 100.0% success with 0.400 collisions/episode and
+  0.61 s planning, while robust-MPC hybrid reaches 100.0% with 0.133
+  collisions/episode and 9.36 s planning on the same holdout.
+- The fast hybrid keeps 100% success across the six-condition OOD smoke matrix,
+  with 0.22–0.67 collisions/episode and 0.13–0.19 s planning time.
+- The project now exposes a reliability/latency Pareto comparison instead of
+  presenting the expensive robust fallback as the only route-level solution.
+
 ## [0.20.0] - 2026-08-12
 
 ### Added

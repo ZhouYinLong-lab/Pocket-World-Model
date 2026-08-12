@@ -467,13 +467,36 @@ translation (`nominal`, `−2 px`, `+2 px`) and speed (`0.75`, `1.25`). The
 budgeted hybrid reaches 100% success in all six conditions; the baseline ranges
 from 33.3% to 77.8%. OOD fallback counts, route-lock steps, budget slack and
 family-level rows are recorded in
-[`evaluation-general-ood-v28-budgeted.json`](artifacts/evaluation-general-ood-v28-budgeted.json).
+[`evaluation-general-ood-v28-budgeted.json`](docs/results/evaluation-general-ood-v28-budgeted.json).
+
+#### v28 fast-vs-robust ablation
+
+The route gate and fallback can be separated from local robustness. The matched
+three-seed holdout compares the same route field and the same fallback schedule:
+
+| Method | Real success | Collisions/episode | A* calls/episode | Planning time |
+| --- | ---: | ---: | ---: | ---: |
+| Learned-field MPC | 80.0% | 1.100 | 0.00 | 1.17 s |
+| Budgeted hybrid + robust MPC | 100.0% | 0.133 | 1.47 | 9.36 s |
+| Budgeted hybrid + ordinary MPC | 100.0% | 0.400 | 1.47 | **0.61 s** |
+
+The fast variant therefore preserves route completion while removing most of
+the robust-MPC latency. In the six-condition OOD smoke matrix it remains at
+100% success, with 0.22–0.67 collisions/episode and 0.13–0.19 s planning time.
+The robust variant remains useful when collision minimization matters more than
+latency; neither result is presented as a pure learned planner because both
+use RGB-triggered A* fallback.
+
+The fast ablation report is
+[`evaluation-general-routes-v28-fast-ablation.json`](docs/results/evaluation-general-routes-v28-fast-ablation.json),
+and its OOD report is
+[`evaluation-general-ood-v28-fast.json`](docs/results/evaluation-general-ood-v28-fast.json).
 
 Reproduce the comparison with:
 
 ```bash
 python -m pocketworld.evaluate_general_routes \
-  --methods distance_field_beam_mpc,distance_field_budgeted_hybrid_mpc \
+  --methods distance_field_beam_mpc,distance_field_budgeted_hybrid_mpc,distance_field_budgeted_hybrid_fast_mpc \
   --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
   --route-budget-margin 1.05 --route-progress-tolerance 1.5
 ```
