@@ -546,6 +546,50 @@ See the [gated calibration report](docs/results/evaluation-gated-hybrid-calibrat
 [final holdout comparison](docs/results/evaluation-general-routes-v28-gated-final.json),
 and [OOD comparison](docs/results/evaluation-general-ood-v28-gated-final.json).
 
+#### Route-completion gate on general obstacle maps
+
+The next comparison asks whether a learned route-completion probability can
+decide when to pay for the RGB/A* fallback. A nine-feature predictor uses only
+the initial RGB wall layout, learned-field route length, direct-wall geometry,
+start clearance, and speed scale. Labels come from real execution of the
+field-MPC candidate on train maps; thresholds are selected on disjoint
+calibration seeds `(53,67)` and the final checkpoint is fixed before the
+holdout.
+
+The standalone gate initially failed: its probabilities saturated near 1.0,
+and a gate-only fallback reached only 83.3% holdout success and 63.2–93.3% OOD
+success. This exposed an important failure mode—an initial route score cannot
+replace closed-loop progress monitoring. The corrected method,
+`distance_field_predicted_gate_hybrid`, keeps the initial probability gate but
+also inherits the established route-progress, remaining-budget, cooldown, and
+route-lock fallback.
+
+| Method | Holdout success | Collisions/episode | A* calls/episode | Planning time |
+| --- | ---: | ---: | ---: | ---: |
+| Learned-field MPC | 81.67% | 0.883 | 0.000 | 849.8 ms |
+| Fast budgeted hybrid | 100.0% | 0.500 | 1.467 | 510.2 ms |
+| Predicted-gate + budgeted hybrid | 100.0% | **0.483** | 1.467 | 507.3 ms |
+
+Across the six OOD speed/map conditions, predicted-gate hybrid remains at
+100% success and matches fast hybrid collision rates exactly. The initial gate
+fires in only 5% of nominal slow episodes and does not reduce A* calls or give
+a stable OOD advantage. The research conclusion is therefore deliberately
+modest: route-completion prediction is a useful diagnostic and a safe
+extension point, but route-progress/budget feedback—not the initial probability
+alone—is doing the reliable obstacle-crossing work.
+
+Run the reproducible experiment with:
+
+```bash
+python -m pocketworld.evaluate_general_route_gate \
+  artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt \
+  --predictor-output artifacts/general-route-gate-v1.pt \
+  --output artifacts/evaluation-general-route-gate-v1.json
+```
+
+See the [holdout result](docs/results/evaluation-general-route-gate-v1-final.json)
+and [corrected OOD result](docs/results/evaluation-general-route-gate-ood-v1-final.json).
+
 Reproduce the comparison with:
 
 ```bash

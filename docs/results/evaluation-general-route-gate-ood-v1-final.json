@@ -1,0 +1,21 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "evaluation_seeds": [11, 23, 41],
+    "episodes_per_seed": 20,
+    "map_shifts": ["nominal", "walls_x_minus2", "walls_x_plus2"],
+    "speed_scales": [0.75, 1.25],
+    "route_gate_threshold": 0.25,
+    "student_evaluation_uses_astar": false,
+    "fallback_method_uses_astar": true
+  },
+  "paired_summary": {
+    "nominal@speed0.75": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.233333, "gate_collision": 0.233333, "fast_astar": 1.566667, "gate_astar": 1.583333},
+    "nominal@speed1.25": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.733333, "gate_collision": 0.733333, "fast_astar": 1.383333, "gate_astar": 1.4},
+    "walls_x_minus2@speed0.75": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.283333, "gate_collision": 0.283333, "fast_astar": 1.85, "gate_astar": 1.85},
+    "walls_x_minus2@speed1.25": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.633333, "gate_collision": 0.633333, "fast_astar": 1.516667, "gate_astar": 1.516667},
+    "walls_x_plus2@speed0.75": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.140351, "gate_collision": 0.140351, "fast_astar": 1.701754, "gate_astar": 1.701754},
+    "walls_x_plus2@speed1.25": {"fast_success": 1.0, "gate_success": 1.0, "fast_collision": 0.684211, "gate_collision": 0.684211, "fast_astar": 1.473684, "gate_astar": 1.473684}
+  },
+  "interpretation": "The corrected predicted gate preserves the budgeted hybrid's OOD robustness but adds no stable collision or A* reduction."
+}
