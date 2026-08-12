@@ -1,0 +1,1289 @@
+{
+  "protocol": {
+    "route_checkpoint": "artifacts/coverage-study-v23-four_family_600-distance-field.pt",
+    "head_checkpoint": "artifacts\\collision-head-v27-final.pt",
+    "train_seeds": [
+      101,
+      103,
+      107
+    ],
+    "train_episodes_per_seed": 24,
+    "calibration_seeds": [
+      53,
+      67
+    ],
+    "calibration_episodes_per_seed": 12,
+    "calibration_holdout_seeds": [
+      29,
+      31,
+      37
+    ],
+    "calibration_holdout_uses_distinct_maps": true,
+    "evaluation_seeds": [
+      11,
+      23,
+      41
+    ],
+    "evaluation_episodes_per_seed": 20,
+    "train_max_steps": 96,
+    "continuation_samples": 4,
+    "sample_stride": 2,
+    "epochs": 160,
+    "horizons": [
+      1,
+      2,
+      4
+    ],
+    "probability_horizon_index": 1,
+    "target_recall": 0.8,
+    "calibrated_threshold": 0.18976625800132751,
+    "raw_threshold": 0.19936981797218323,
+    "temperature_calibration_enabled": true,
+    "threshold_selection_is_disjoint_from_final_holdout": true,
+    "student_evaluation_uses_astar": false
+  },
+  "training": {
+    "epochs": 160,
+    "samples": 13824,
+    "final_loss": 0.21528714895248413,
+    "positive_rate": 0.16283275187015533
+  },
+  "dataset": {
+    "train_features": 13824,
+    "train_positive_rate": [
+      0.08405671268701553,
+      0.14966724812984467,
+      0.2547743022441864
+    ],
+    "calibration_features": 4608,
+    "calibration_positive_rate": [
+      0.0846354141831398,
+      0.1538628488779068,
+      0.2635633647441864
+    ],
+    "calibration_holdout_features": 6912,
+    "calibration_holdout_positive_rate": [
+      0.1102430522441864,
+      0.18941695988178253,
+      0.31644243001937866
+    ]
+  },
+  "calibration": {
+    "threshold": 0.18976625800132751,
+    "raw_probability_mean": 0.1663440763950348,
+    "raw_probability_std": 0.24940496683120728,
+    "calibrated_probability_mean": 0.16545841097831726,
+    "calibrated_probability_std": 0.2501419484615326,
+    "temperature_fit": {
+      "epochs": 200,
+      "samples": 4608,
+      "temperature": 0.9602686762809753,
+      "temperatures": [
+        0.8759556412696838,
+        0.9577741622924805,
+        1.0470763444900513
+      ],
+      "final_loss": 0.24178504943847656
+    },
+    "raw": {
+      "sample_count": 4608,
+      "bin_count": 10,
+      "horizons": [
+        {
+          "horizon_index": 0,
+          "brier": 0.039412525771746414,
+          "ece": 0.008735577699616356,
+          "auroc": 0.9635937556990188,
+          "average_precision": 0.7263698228237804,
+          "positive_rate": 0.08463541666666667,
+          "mean_label": 0.08463541666666667,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 3668,
+              "mean_probability": 0.009332712874862086,
+              "observed_rate": 0.007360959651035987
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 277,
+              "mean_probability": 0.14663325723543064,
+              "observed_rate": 0.08664259927797834
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 137,
+              "mean_probability": 0.24637802140991183,
+              "observed_rate": 0.25547445255474455
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 114,
+              "mean_probability": 0.34973280942230894,
+              "observed_rate": 0.3157894736842105
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 132,
+              "mean_probability": 0.4472144582506382,
+              "observed_rate": 0.4393939393939394
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 61,
+              "mean_probability": 0.5602469747183753,
+              "observed_rate": 0.6065573770491803
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 72,
+              "mean_probability": 0.6498396860228645,
+              "observed_rate": 0.6666666666666666
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 73,
+              "mean_probability": 0.7455534600231746,
+              "observed_rate": 0.8082191780821918
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 53,
+              "mean_probability": 0.8476262823590692,
+              "observed_rate": 0.8490566037735849
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 21,
+              "mean_probability": 0.9252953557741075,
+              "observed_rate": 1.0
+            }
+          ],
+          "threshold": 0.19936981797218323,
+          "collision_recall": 0.8692307692307693,
+          "precision": 0.509009009009009,
+          "false_positive_rate": 0.077524893314367,
+          "predicted_positive_rate": 0.14453125
+        },
+        {
+          "horizon_index": 1,
+          "brier": 0.04350493317357215,
+          "ece": 0.011691981597449637,
+          "auroc": 0.9462134920381036,
+          "average_precision": 0.8280299928370273,
+          "positive_rate": 0.21592881944444445,
+          "mean_label": 0.1538628472222222,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 3112,
+              "mean_probability": 0.015506030236208359,
+              "observed_rate": 0.01333547557840617
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 356,
+              "mean_probability": 0.1432126145600603,
+              "observed_rate": 0.17485955056179775
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 230,
+              "mean_probability": 0.24357429587322732,
+              "observed_rate": 0.23043478260869565
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 194,
+              "mean_probability": 0.35010626574152526,
+              "observed_rate": 0.30541237113402064
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 140,
+              "mean_probability": 0.4496865662080901,
+              "observed_rate": 0.4785714285714286
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 111,
+              "mean_probability": 0.5539963202433543,
+              "observed_rate": 0.5
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 154,
+              "mean_probability": 0.6522001871814975,
+              "observed_rate": 0.685064935064935
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 112,
+              "mean_probability": 0.7538276357310159,
+              "observed_rate": 0.796875
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 126,
+              "mean_probability": 0.8461158015425243,
+              "observed_rate": 0.8333333333333334
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 73,
+              "mean_probability": 0.9331187254761997,
+              "observed_rate": 0.9691780821917808
+            }
+          ],
+          "threshold": 0.19936981797218323,
+          "collision_recall": 0.8,
+          "precision": 0.6964129483814523,
+          "false_positive_rate": 0.09604207030168835,
+          "predicted_positive_rate": 0.248046875
+        },
+        {
+          "horizon_index": 2,
+          "brier": 0.05851163299297735,
+          "ece": 0.01820257672423193,
+          "auroc": 0.8661802763615309,
+          "average_precision": 0.8551207800072793,
+          "positive_rate": 0.431640625,
+          "mean_label": 0.2635633680555556,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 2129,
+              "mean_probability": 0.04430076658171057,
+              "observed_rate": 0.05742132456552372
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 593,
+              "mean_probability": 0.14853158091865543,
+              "observed_rate": 0.13532883642495785
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 393,
+              "mean_probability": 0.2501356365495662,
+              "observed_rate": 0.27162849872773537
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 268,
+              "mean_probability": 0.351639187046841,
+              "observed_rate": 0.3619402985074627
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 265,
+              "mean_probability": 0.4487968598896602,
+              "observed_rate": 0.39811320754716983
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 242,
+              "mean_probability": 0.5449262495375862,
+              "observed_rate": 0.5433884297520661
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 186,
+              "mean_probability": 0.6496679289366609,
+              "observed_rate": 0.6196236559139785
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 233,
+              "mean_probability": 0.7529075375953969,
+              "observed_rate": 0.8036480686695279
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 197,
+              "mean_probability": 0.8523882554872387,
+              "observed_rate": 0.8705583756345178
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 102,
+              "mean_probability": 0.9327100690673379,
+              "observed_rate": 0.9534313725490197
+            }
+          ],
+          "threshold": 0.19936981797218323,
+          "collision_recall": 0.7506284565108094,
+          "precision": 0.7895293495505024,
+          "false_positive_rate": 0.1519663993890798,
+          "predicted_positive_rate": 0.4103732638888889
+        }
+      ]
+    },
+    "calibrated": {
+      "sample_count": 4608,
+      "bin_count": 10,
+      "horizons": [
+        {
+          "horizon_index": 0,
+          "brier": 0.03924823529672967,
+          "ece": 0.004953794774386423,
+          "auroc": 0.9635937556990188,
+          "average_precision": 0.7263698228237804,
+          "positive_rate": 0.08463541666666667,
+          "mean_label": 0.08463541666666667,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 3765,
+              "mean_probability": 0.008113133403131892,
+              "observed_rate": 0.008233731739707836
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 227,
+              "mean_probability": 0.14510108057885443,
+              "observed_rate": 0.14096916299559473
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 115,
+              "mean_probability": 0.2487186523883239,
+              "observed_rate": 0.26956521739130435
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 113,
+              "mean_probability": 0.3529194166175032,
+              "observed_rate": 0.37168141592920356
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 108,
+              "mean_probability": 0.4502795035088504,
+              "observed_rate": 0.4074074074074074
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 53,
+              "mean_probability": 0.5626792401637671,
+              "observed_rate": 0.6415094339622641
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 64,
+              "mean_probability": 0.6507789837196469,
+              "observed_rate": 0.671875
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 80,
+              "mean_probability": 0.7559066094458103,
+              "observed_rate": 0.7625
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 49,
+              "mean_probability": 0.8561289638889079,
+              "observed_rate": 0.7755102040816326
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 34,
+              "mean_probability": 0.9328969050856197,
+              "observed_rate": 1.0
+            }
+          ],
+          "threshold": 0.18976625800132751,
+          "collision_recall": 0.8435897435897436,
+          "precision": 0.5255591054313099,
+          "false_positive_rate": 0.07041251778093884,
+          "predicted_positive_rate": 0.13585069444444445
+        },
+        {
+          "horizon_index": 1,
+          "brier": 0.04351225567662668,
+          "ece": 0.010397413356602986,
+          "auroc": 0.9462134920381036,
+          "average_precision": 0.8280299928370273,
+          "positive_rate": 0.21592881944444445,
+          "mean_label": 0.1538628472222222,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 3147,
+              "mean_probability": 0.01441942079710175,
+              "observed_rate": 0.01390212901175723
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 354,
+              "mean_probability": 0.1434381267655704,
+              "observed_rate": 0.1885593220338983
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 209,
+              "mean_probability": 0.24440117180347443,
+              "observed_rate": 0.23684210526315788
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 191,
+              "mean_probability": 0.349448094349257,
+              "observed_rate": 0.31544502617801046
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 131,
+              "mean_probability": 0.45088988906554595,
+              "observed_rate": 0.47900763358778625
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 107,
+              "mean_probability": 0.554645013586383,
+              "observed_rate": 0.49065420560747663
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 154,
+              "mean_probability": 0.655801641863662,
+              "observed_rate": 0.6801948051948052
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 100,
+              "mean_probability": 0.7534905242919921,
+              "observed_rate": 0.7875
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 137,
+              "mean_probability": 0.8479644003575736,
+              "observed_rate": 0.833941605839416
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 78,
+              "mean_probability": 0.9374747322155879,
+              "observed_rate": 0.9711538461538461
+            }
+          ],
+          "threshold": 0.18976625800132751,
+          "collision_recall": 0.8,
+          "precision": 0.6964129483814523,
+          "false_positive_rate": 0.09604207030168835,
+          "predicted_positive_rate": 0.248046875
+        },
+        {
+          "horizon_index": 2,
+          "brier": 0.05854448518021893,
+          "ece": 0.016298788253051397,
+          "auroc": 0.8661802763615309,
+          "average_precision": 0.8551207800072793,
+          "positive_rate": 0.431640625,
+          "mean_label": 0.2635633680555556,
+          "reliability_bins": [
+            {
+              "lower": 0.0,
+              "upper": 0.1,
+              "count": 2068,
+              "mean_probability": 0.048650421668294405,
+              "observed_rate": 0.0562137330754352
+            },
+            {
+              "lower": 0.1,
+              "upper": 0.2,
+              "count": 605,
+              "mean_probability": 0.1493575383685837,
+              "observed_rate": 0.12851239669421488
+            },
+            {
+              "lower": 0.2,
+              "upper": 0.30000000000000004,
+              "count": 417,
+              "mean_probability": 0.25040808834617945,
+              "observed_rate": 0.26019184652278177
+            },
+            {
+              "lower": 0.30000000000000004,
+              "upper": 0.4,
+              "count": 282,
+              "mean_probability": 0.35140692395098666,
+              "observed_rate": 0.3537234042553192
+            },
+            {
+              "lower": 0.4,
+              "upper": 0.5,
+              "count": 276,
+              "mean_probability": 0.4491509868614916,
+              "observed_rate": 0.3967391304347826
+            },
+            {
+              "lower": 0.5,
+              "upper": 0.6000000000000001,
+              "count": 253,
+              "mean_probability": 0.5453043252583077,
+              "observed_rate": 0.5563241106719368
+            },
+            {
+              "lower": 0.6000000000000001,
+              "upper": 0.7000000000000001,
+              "count": 186,
+              "mean_probability": 0.6492159808835676,
+              "observed_rate": 0.6236559139784946
+            },
+            {
+              "lower": 0.7000000000000001,
+              "upper": 0.8,
+              "count": 238,
+              "mean_probability": 0.7491742149621499,
+              "observed_rate": 0.8077731092436975
+            },
+            {
+              "lower": 0.8,
+              "upper": 0.9,
+              "count": 200,
+              "mean_probability": 0.8511033424735069,
+              "observed_rate": 0.865
+            },
+            {
+              "lower": 0.9,
+              "upper": 1.0,
+              "count": 83,
+              "mean_probability": 0.9320989868727075,
+              "observed_rate": 0.9728915662650602
+            }
+          ],
+          "threshold": 0.18976625800132751,
+          "collision_recall": 0.7717445952740071,
+          "precision": 0.7713567839195979,
+          "false_positive_rate": 0.17373043146239023,
+  …34963 tokens truncated…aptive_risk_max": 0.0,
+        "collision_head_calls": 57,
+        "collision_head_robust_calls": 12,
+        "collision_head_switches": 2,
+        "collision_head_risk_mean": 0.15217295195907354,
+        "collision_head_risk_max": 0.9799149632453918,
+        "planning_time_ms": 480.65090001909994,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-11-l_shapes-o4-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "l_shapes",
+        "obstacle_count": 4,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 2.821586847305298,
+        "collision_count": 0,
+        "executed_actions": 43,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 43,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 43,
+        "collision_head_robust_calls": 0,
+        "collision_head_switches": 0,
+        "collision_head_risk_mean": 0.005445253390948786,
+        "collision_head_risk_max": 0.05424940958619118,
+        "planning_time_ms": 169.89419994933996,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-12-l_shapes-o4-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "l_shapes",
+        "obstacle_count": 4,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.8287439346313477,
+        "collision_count": 0,
+        "executed_actions": 71,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 81,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 71,
+        "collision_head_robust_calls": 10,
+        "collision_head_switches": 6,
+        "collision_head_risk_mean": 0.06439980841405742,
+        "collision_head_risk_max": 0.36181116104125977,
+        "planning_time_ms": 635.2860999613767,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-13-staggered_blocks-o6-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "staggered_blocks",
+        "obstacle_count": 6,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 2.9172778129577637,
+        "collision_count": 0,
+        "executed_actions": 56,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 65,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 56,
+        "collision_head_robust_calls": 9,
+        "collision_head_switches": 2,
+        "collision_head_risk_mean": 0.12387672069209137,
+        "collision_head_risk_max": 0.9878122210502625,
+        "planning_time_ms": 497.46460003370885,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-14-l_shapes-o4-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "l_shapes",
+        "obstacle_count": 4,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.8287439346313477,
+        "collision_count": 0,
+        "executed_actions": 71,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 81,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 71,
+        "collision_head_robust_calls": 10,
+        "collision_head_switches": 6,
+        "collision_head_risk_mean": 0.06439980841405742,
+        "collision_head_risk_max": 0.36181116104125977,
+        "planning_time_ms": 637.0551000727573,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-15-l_shapes-o4-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "l_shapes",
+        "obstacle_count": 4,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 2.821586847305298,
+        "collision_count": 0,
+        "executed_actions": 43,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 43,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 43,
+        "collision_head_robust_calls": 0,
+        "collision_head_switches": 0,
+        "collision_head_risk_mean": 0.005445253390948786,
+        "collision_head_risk_max": 0.05424940958619118,
+        "planning_time_ms": 169.70860004948918,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-16-staggered_blocks-o6-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "staggered_blocks",
+        "obstacle_count": 6,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.626924514770508,
+        "collision_count": 0,
+        "executed_actions": 66,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 76,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 66,
+        "collision_head_robust_calls": 10,
+        "collision_head_switches": 6,
+        "collision_head_risk_mean": 0.11871317857311982,
+        "collision_head_risk_max": 0.9610974788665771,
+        "planning_time_ms": 573.2184999505989,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-17-multi_channel-o6-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "multi_channel",
+        "obstacle_count": 6,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.733933448791504,
+        "collision_count": 0,
+        "executed_actions": 84,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 88,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 84,
+        "collision_head_robust_calls": 4,
+        "collision_head_switches": 6,
+        "collision_head_risk_mean": 0.03652868348650545,
+        "collision_head_risk_max": 0.5942797064781189,
+        "planning_time_ms": 463.1241000024602,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-18-staggered_blocks-o6-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "staggered_blocks",
+        "obstacle_count": 6,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 2.883852481842041,
+        "collision_count": 0,
+        "executed_actions": 55,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 72,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 55,
+        "collision_head_robust_calls": 17,
+        "collision_head_switches": 8,
+        "collision_head_risk_mean": 0.15008933554530482,
+        "collision_head_risk_max": 0.9217119216918945,
+        "planning_time_ms": 796.2337999779265,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      },
+      {
+        "map_id": "holdout-41-19-staggered_blocks-o6-r0",
+        "method": "distance_field_beam_collision_head_mpc",
+        "seed": 41,
+        "family": "staggered_blocks",
+        "obstacle_count": 6,
+        "channel_count": 2,
+        "real_success": 1.0,
+        "final_distance_px": 3.4603042602539062,
+        "collision_count": 0,
+        "executed_actions": 65,
+        "astar_calls": 0,
+        "fallback_triggered": false,
+        "mpc_calls": 77,
+        "robust_mpc_calls": 0,
+        "mpc_override_count": 0,
+        "adaptive_switches": 0,
+        "adaptive_risk_mean": 0.0,
+        "adaptive_risk_max": 0.0,
+        "collision_head_calls": 65,
+        "collision_head_robust_calls": 12,
+        "collision_head_switches": 4,
+        "collision_head_risk_mean": 0.14198973466789958,
+        "collision_head_risk_max": 0.980880856513977,
+        "planning_time_ms": 542.2932999790646,
+        "layout_shift_score": 0.0,
+        "shift_detected": false
+      }
+    ],
+    "summary": {
+      "real_success": {
+        "mean": 0.95,
+        "std": 0.2179449471770337
+      },
+      "final_distance_px": {
+        "mean": 3.8928369700908663,
+        "std": 3.7094882404812752
+      },
+      "collision_count": {
+        "mean": 0.18333333333333332,
+        "std": 0.427849921766448
+      },
+      "executed_actions": {
+        "mean": 79.95,
+        "std": 39.35031766072543
+      },
+      "astar_calls": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "fallback_triggered": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mpc_calls": {
+        "mean": 93.38333333333334,
+        "std": 49.642754310730545
+      },
+      "robust_mpc_calls": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mpc_override_count": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "adaptive_switches": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "adaptive_risk_mean": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "adaptive_risk_max": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "collision_head_calls": {
+        "mean": 79.95,
+        "std": 39.35031766072543
+      },
+      "collision_head_robust_calls": {
+        "mean": 13.433333333333334,
+        "std": 15.22647548041094
+      },
+      "collision_head_switches": {
+        "mean": 6.183333333333334,
+        "std": 5.754684082457429
+      },
+      "collision_head_risk_mean": {
+        "mean": 0.1033063076790813,
+        "std": 0.09257979332482963
+      },
+      "collision_head_risk_max": {
+        "mean": 0.6569349266123027,
+        "std": 0.3408377404457923
+      },
+      "planning_time_ms": {
+        "mean": 679.924230009298,
+        "std": 485.07874000664975
+      },
+      "layout_shift_score": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "shift_detected": {
+        "mean": 0.0,
+        "std": 0.0
+      }
+    },
+    "by_family": {
+      "l_shapes": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 2.970084172028762,
+          "std": 0.5635669180267919
+        },
+        "collision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "executed_actions": {
+          "mean": 84.61538461538461,
+          "std": 48.784515925474146
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 91.84615384615384,
+          "std": 55.403202009445344
+        },
+        "robust_mpc_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_max": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "collision_head_calls": {
+          "mean": 84.61538461538461,
+          "std": 48.784515925474146
+        },
+        "collision_head_robust_calls": {
+          "mean": 7.230769230769231,
+          "std": 7.040037654552338
+        },
+        "collision_head_switches": {
+          "mean": 5.6923076923076925,
+          "std": 6.017725297110138
+        },
+        "collision_head_risk_mean": {
+          "mean": 0.033571752625946645,
+          "std": 0.026651671809596947
+        },
+        "collision_head_risk_max": {
+          "mean": 0.23709703158014095,
+          "std": 0.17743653503362947
+        },
+        "planning_time_ms": {
+          "mean": 563.6688923237111,
+          "std": 397.4563533583946
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "multi_channel": {
+        "real_success": {
+          "mean": 0.9285714285714286,
+          "std": 0.25753937681885636
+        },
+        "final_distance_px": {
+          "mean": 4.3155461464609415,
+          "std": 5.244677229728535
+        },
+        "collision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "executed_actions": {
+          "mean": 80.07142857142857,
+          "std": 38.6420649509504
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 83.21428571428571,
+          "std": 41.30233229566127
+        },
+        "robust_mpc_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_max": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "collision_head_calls": {
+          "mean": 80.07142857142857,
+          "std": 38.6420649509504
+        },
+        "collision_head_robust_calls": {
+          "mean": 3.142857142857143,
+          "std": 2.924212784351246
+        },
+        "collision_head_switches": {
+          "mean": 4.142857142857143,
+          "std": 2.97266457809783
+        },
+        "collision_head_risk_mean": {
+          "mean": 0.03153214661205504,
+          "std": 0.008409094213471224
+        },
+        "collision_head_risk_max": {
+          "mean": 0.383152890418257,
+          "std": 0.15295140270335614
+        },
+        "planning_time_ms": {
+          "mean": 413.2151142953912,
+          "std": 236.865369730037
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "staggered_blocks": {
+        "real_success": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "final_distance_px": {
+          "mean": 3.2000784192766463,
+          "std": 0.502393436534798
+        },
+        "collision_count": {
+          "mean": 0.14285714285714285,
+          "std": 0.34992710611188266
+        },
+        "executed_actions": {
+          "mean": 72.21428571428571,
+          "std": 24.860118869468053
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 93.42857142857143,
+          "std": 44.16804644231633
+        },
+        "robust_mpc_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_max": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "collision_head_calls": {
+          "mean": 72.21428571428571,
+          "std": 24.860118869468053
+        },
+        "collision_head_robust_calls": {
+          "mean": 21.214285714285715,
+          "std": 21.115933629873545
+        },
+        "collision_head_switches": {
+          "mean": 5.571428571428571,
+          "std": 2.4117061451620185
+        },
+        "collision_head_risk_mean": {
+          "mean": 0.18508292538201565,
+          "std": 0.12122916232295065
+        },
+        "collision_head_risk_max": {
+          "mean": 0.9651353359222412,
+          "std": 0.04045389484794567
+        },
+        "planning_time_ms": {
+          "mean": 852.8078214232145,
+          "std": 571.4150034183058
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "staircase": {
+        "real_success": {
+          "mean": 0.8947368421052632,
+          "std": 0.3068922049918579
+        },
+        "final_distance_px": {
+          "mean": 4.723177897302728,
+          "std": 4.58529329845495
+        },
+        "collision_count": {
+          "mean": 0.47368421052631576,
+          "std": 0.5954583420518296
+        },
+        "executed_actions": {
+          "mean": 82.36842105263158,
+          "std": 40.508882101162364
+        },
+        "astar_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "fallback_triggered": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_calls": {
+          "mean": 101.89473684210526,
+          "std": 53.26783836310722
+        },
+        "robust_mpc_calls": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "mpc_override_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_switches": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_mean": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "adaptive_risk_max": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "collision_head_calls": {
+          "mean": 82.36842105263158,
+          "std": 40.508882101162364
+        },
+        "collision_head_robust_calls": {
+          "mean": 19.526315789473685,
+          "std": 13.315477425093393
+        },
+        "collision_head_switches": {
+          "mean": 8.473684210526315,
+          "std": 7.762042738817172
+        },
+        "collision_head_risk_mean": {
+          "mean": 0.14364919308897808,
+          "std": 0.04495580183895297
+        },
+        "collision_head_risk_max": {
+          "mean": 0.9188315272331238,
+          "std": 0.11160318925010543
+        },
+        "planning_time_ms": {
+          "mean": 828.6019526467977,
+          "std": 497.2428452215631
+        },
+        "layout_shift_score": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "shift_detected": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      }
+    }
+  },
+  "ood": null
+}
