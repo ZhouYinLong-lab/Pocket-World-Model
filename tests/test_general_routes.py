@@ -11,6 +11,8 @@ from pocketworld.general_routes import (
 from pocketworld.evaluate_general_routes import GENERAL_DEFAULT_METHODS, train_and_evaluate_general_routes
 from pocketworld.evaluate_mpc_ablation import run_mpc_ablation
 from pocketworld.evaluate_general_ood import run_general_ood
+from pocketworld.evaluate_coverage_study import run_coverage_study
+from pocketworld.evaluate_planner_comparison import run_planner_comparison
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
@@ -40,6 +42,25 @@ def test_general_families_are_valid_and_reachable():
         )
         assert path
         assert channels >= 1
+
+
+def test_balanced_family_sampling_is_reproducible_and_even():
+    cases = sample_general_route_cases(
+        101,
+        8,
+        split="train",
+        families=GENERAL_FAMILIES,
+        balanced=True,
+    )
+    counts = Counter(case.family for case in cases)
+    assert counts == Counter({family: 2 for family in GENERAL_FAMILIES})
+    assert cases == sample_general_route_cases(
+        101,
+        8,
+        split="train",
+        families=GENERAL_FAMILIES,
+        balanced=True,
+    )
 
 
 def test_general_sampling_is_deterministic_and_covers_unseen_shapes():
@@ -197,6 +218,50 @@ def test_general_ood_protocol_keeps_shift_hidden_and_checks_reachability(tmp_pat
     assert report["protocol"]["shift_labels_visible_to_planner"] is False
     assert set(report["results"]) == {"nominal@speed0.75", "walls_x_plus2@speed0.75"}
     assert report["results"]["walls_x_plus2@speed0.75"]["paired_episode_count"] >= 0
+
+
+def test_coverage_study_keeps_sample_count_and_holdout_shared(tmp_path):
+    report = run_coverage_study(
+        train_seeds=(101,),
+        evaluation_seeds=(11,),
+        train_episodes=8,
+        evaluation_episodes=1,
+        max_steps=8,
+        points=3,
+        epochs=1,
+        mpc_horizon=2,
+        mpc_beam_width=4,
+        predictor_root=tmp_path / "coverage",
+    )
+    assert report["protocol"]["holdout_is_shared"] is True
+    assert report["protocol"]["balanced_training_families"] is True
+    assert set(report["conditions"]) == {
+        "two_family_600",
+        "four_family_600",
+        "four_family_1200",
+    }
+    for condition in report["conditions"].values():
+        assert condition["report"]["protocol"]["methods"] == [
+            "distance_field_beam_rgb_projection",
+            "distance_field_beam_mpc",
+        ]
+
+
+def test_planner_comparison_uses_one_shared_holdout_and_explicit_reference(tmp_path):
+    checkpoint = tmp_path / "field.pt"
+    RouteFieldPolicy().save(checkpoint)
+    report = run_planner_comparison(
+        checkpoint=checkpoint,
+        evaluation_seeds=(11,),
+        evaluation_episodes=1,
+        max_steps=1,
+        points=3,
+        methods=("rgb_astar",),
+    )
+    assert report["protocol"]["shared_holdout_cases"] is True
+    assert report["protocol"]["rgb_astar_is_geometric_reference"] is True
+    assert report["protocol"]["selection_on_holdout"] is False
+    assert set(report["evaluation"]) == {"rgb_astar"}
 
 
 def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
