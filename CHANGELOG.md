@@ -2,6 +2,29 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.17.0] - 2026-08-12
+
+### Added
+
+- RGB-only short-horizon inertial MPC for the learned route-field executor.
+- Exact continuous collision geometry shared with `PocketWorldEnv`, avoiding
+  an over-conservative square-dilation safety model.
+- Focused method selection via `--methods` and per-episode MPC call/override
+  metrics for reproducible ablations.
+
+### Results
+
+- On the fixed 600-task train / 60-task holdout protocol, distance-field beam
+  + RGB projection reaches 88.33% success with 2.20 collisions/episode.
+- The new distance-field beam + RGB inertial MPC reaches 91.67% success with
+  0.383 collisions/episode, without A* at evaluation time.
+- The guarded-MPC trigger is retained as a transparent negative ablation:
+  75.00% success and 4.90 collisions/episode. Sparse safety overrides are not
+  enough when the trigger and the replacement controller use different local
+  objectives.
+
+See the [v19 machine-readable report](docs/results/evaluation-general-routes-v19-mpc.json).
+
 ## [0.16.0] - 2026-08-12
 
 ### Added

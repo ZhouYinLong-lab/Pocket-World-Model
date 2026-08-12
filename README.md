@@ -191,6 +191,41 @@ python -m pocketworld.evaluate_general_routes \
   --output artifacts/evaluation-general-routes-v18.json
 ```
 
+### v19 RGB inertial MPC extension
+
+v19 extends the best v18 learned route-field executor with a short-horizon
+RGB-only model-predictive controller. It rolls out the known local inertia for
+four steps, scores a fixed beam of action sequences, and checks each landing
+against the same continuous footprint geometry used by `PocketWorldEnv`.
+This is still a learned-planner experiment: the route distance field is
+learned, the local controller sees only the current RGB wall mask and recent
+frames, and evaluation does not call A*.
+
+| Method | A* during evaluation | Real success | Collisions / episode | Final distance (px) |
+| --- | ---: | ---: | ---: | ---: |
+| v18 distance field + beam + RGB projection | No | 88.33% | 2.200 | 5.282 |
+| v19 distance field + RGB inertial MPC | No | **91.67%** | **0.383** | **4.742** |
+| v19 guarded MPC safety override | No | 75.00% | 4.900 | 11.406 |
+
+The improvement is not attributed to “more search” alone. An earlier MPC
+variant used a square-dilated wall mask and dynamic boundary margin and failed
+because it rejected valid narrow passages. Reusing the simulator's continuous
+collision geometry removed that mismatch. The guarded variant remains in the
+report as a negative ablation: a trigger that occasionally replaces a good
+baseline action is not automatically safer.
+
+The full three-seed result is in the [v19 machine-readable report](docs/results/evaluation-general-routes-v19-mpc.json).
+Run only the focused comparison with:
+
+```bash
+python -m pocketworld.evaluate_general_routes \
+  --train-seeds 101,103,107 --evaluation-seeds 11,23,41 \
+  --train-episodes 200 --evaluation-episodes 20 --max-steps 160 \
+  --points 13 --epochs 360 --mpc-horizon 4 --mpc-beam-width 12 \
+  --methods distance_field_beam_rgb_projection,distance_field_beam_mpc,distance_field_beam_guarded_mpc \
+  --output artifacts/evaluation-general-routes-v19-mpc.json
+```
+
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
 </p>
