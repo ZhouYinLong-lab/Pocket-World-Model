@@ -134,6 +134,8 @@ def run_general_ood(
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
     rgb_shield_margin: int = 4,
+    route_gate_model: object | None = None,
+    route_gate_threshold: float = 0.5,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -184,6 +186,8 @@ def run_general_ood(
                     route_budget_margin=route_budget_margin,
                     route_progress_tolerance=route_progress_tolerance,
                     rgb_shield_margin=rgb_shield_margin,
+                    route_gate_model=route_gate_model,
+                    route_gate_threshold=route_gate_threshold,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -217,6 +221,7 @@ def run_general_ood(
             "route_budget_margin": route_budget_margin,
             "route_progress_tolerance": route_progress_tolerance,
             "rgb_shield_margin": rgb_shield_margin,
+            "route_gate_threshold": route_gate_threshold,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,

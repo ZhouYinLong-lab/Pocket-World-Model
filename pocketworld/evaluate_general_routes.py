@@ -49,6 +49,7 @@ GENERAL_METHODS = (
     "distance_field_budgeted_hybrid_fast_mpc",
     "distance_field_budgeted_hybrid_gated_mpc",
     "distance_field_budgeted_hybrid_shielded_mpc",
+    "distance_field_predicted_gate_hybrid",
 )
 GENERAL_DEFAULT_METHODS = tuple(
     method
@@ -62,6 +63,7 @@ GENERAL_DEFAULT_METHODS = tuple(
         "distance_field_budgeted_hybrid_fast_mpc",
         "distance_field_budgeted_hybrid_gated_mpc",
         "distance_field_budgeted_hybrid_shielded_mpc",
+        "distance_field_predicted_gate_hybrid",
     }
 )
 BUDGETED_HYBRID_METHODS = frozenset(
@@ -189,6 +191,8 @@ def evaluate_general_policy(
     route_progress_tolerance: float = 1.5,
     gated_robust_risk_threshold: float = 0.45,
     rgb_shield_margin: int = 4,
+    route_gate_model: object | None = None,
+    route_gate_threshold: float = 0.5,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -203,6 +207,10 @@ def evaluate_general_policy(
         raise ValueError("gated_robust_risk_threshold must be finite in [0, 1]")
     if rgb_shield_margin < 1:
         raise ValueError("rgb_shield_margin must be positive")
+    if not 0.0 <= route_gate_threshold <= 1.0 or not np.isfinite(route_gate_threshold):
+        raise ValueError("route_gate_threshold must be finite in [0, 1]")
+    if method == "distance_field_predicted_gate_hybrid" and route_gate_model is None:
+        raise ValueError("predicted gate method requires route_gate_model")
     for seed in seeds:
         cases = (
             cases_by_seed[seed]
@@ -239,6 +247,8 @@ def evaluate_general_policy(
             route_points = np.asarray((tuple(position),), dtype=np.float32)
             layout_shift_score = 0.0
             shift_detected = False
+            route_gate_probability = float("nan")
+            route_gate_triggered = False
             if method == "rgb_astar":
                 waypoints = _astar_waypoints(observation, case.goal, position, points)
                 astar_calls += 1
@@ -258,6 +268,7 @@ def evaluate_general_policy(
                 "distance_field_budgeted_hybrid_fast_mpc",
                 "distance_field_budgeted_hybrid_gated_mpc",
                 "distance_field_budgeted_hybrid_shielded_mpc",
+                "distance_field_predicted_gate_hybrid",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -279,6 +290,7 @@ def evaluate_general_policy(
                         "distance_field_budgeted_hybrid_fast_mpc",
                         "distance_field_budgeted_hybrid_gated_mpc",
                         "distance_field_budgeted_hybrid_shielded_mpc",
+                        "distance_field_predicted_gate_hybrid",
                     }
                     else 1,
                 )
@@ -323,6 +335,27 @@ def evaluate_general_policy(
             route_lock_steps = 0
             budget_slack_sum = 0.0
             budget_slack_min = float("inf")
+            if method == "distance_field_predicted_gate_hybrid":
+                from .general_route_gate import extract_general_route_features
+
+                route_features = extract_general_route_features(
+                    observation,
+                    case.goal,
+                    policy,
+                    agent_speed_scale=agent_speed_scale,
+                )
+                route_gate_probability = float(
+                    np.asarray(route_gate_model.predict_proba(route_features[None])).reshape(-1)[0]
+                )
+                if route_gate_probability < route_gate_threshold:
+                    waypoints = _astar_waypoints(observation, case.goal, position, points)
+                    waypoint_index = 0
+                    route_points = np.asarray((tuple(position),) + tuple(waypoints), dtype=np.float32)
+                    astar_calls += 1
+                    budget_fallbacks += 1
+                    route_gate_triggered = True
+                    route_lock_until_step = 24
+                    fallback_triggered = True
             for _ in range(max_steps):
                 step_index = env.steps
                 position = extract_agent_position(observation).astype(np.float32)
@@ -545,6 +578,17 @@ def evaluate_general_policy(
                     robust_mpc_calls += int(used_robust)
                     adaptive_risk_sum += gated_risk
                     adaptive_risk_max = max(adaptive_risk_max, gated_risk)
+                elif method == "distance_field_predicted_gate_hybrid":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
                 elif method in BUDGETED_HYBRID_METHODS:
                     mpc_calls += 1
                     action = local_mpc_action(
@@ -601,6 +645,8 @@ def evaluate_general_policy(
                     "mpc_calls": mpc_calls,
                     "robust_mpc_calls": robust_mpc_calls,
                     "mpc_override_count": mpc_override_count,
+                    "predicted_route_completion_probability": route_gate_probability,
+                    "route_gate_triggered": route_gate_triggered,
                     "adaptive_switches": adaptive_switches,
                     "adaptive_risk_mean": adaptive_risk_sum / max(1, int(env.steps)),
                     "adaptive_risk_max": adaptive_risk_max,
@@ -636,6 +682,8 @@ def evaluate_general_policy(
         "mpc_calls",
         "robust_mpc_calls",
         "mpc_override_count",
+        "predicted_route_completion_probability",
+        "route_gate_triggered",
         "adaptive_switches",
         "adaptive_risk_mean",
         "adaptive_risk_max",
@@ -828,6 +876,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_budgeted_hybrid_fast_mpc": True,
                 "distance_field_budgeted_hybrid_gated_mpc": True,
                 "distance_field_budgeted_hybrid_shielded_mpc": True,
+                "distance_field_predicted_gate_hybrid": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -853,6 +902,7 @@ def train_and_evaluate_general_routes(
             "distance_field_budgeted_hybrid_fast_mpc": "same route-budgeted hybrid gate with ordinary rather than robust RGB MPC after fallback",
             "distance_field_budgeted_hybrid_gated_mpc": "same route-budgeted hybrid gate with risk-triggered robust RGB MPC escalation",
             "distance_field_budgeted_hybrid_shielded_mpc": "same route-budgeted hybrid gate with ordinary RGB MPC followed by a pure action-level RGB safety shield",
+            "distance_field_predicted_gate_hybrid": "learned-field route-completion probability gate that pays for one initial RGB/A* fallback only when the predicted route is unlikely to finish",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),
