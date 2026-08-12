@@ -669,6 +669,51 @@ def guarded_mpc_action(
     )
 
 
+def gated_robust_mpc_action(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    baseline_action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    horizon: int = 6,
+    beam_width: int = 24,
+    robust_threshold: float = 0.45,
+) -> tuple[int, bool, float]:
+    """Escalate ordinary MPC to robust MPC only on observable risk.
+
+    This keeps the route-level planner's fast path cheap.  The escalation score
+    is based on the same RGB/history-only risk signals used by the adaptive MPC
+    study; it never reads simulator collision labels or future state.
+    """
+    ordinary_action = local_mpc_action(
+        observation,
+        target,
+        observation_history,
+        horizon=horizon,
+        beam_width=beam_width,
+        action_history=action_history,
+    )
+    risk = adaptive_mpc_risk_score(
+        observation,
+        target,
+        ordinary_action,
+        observation_history,
+        action_history,
+    )
+    if risk < robust_threshold:
+        return int(ordinary_action), False, float(risk)
+    robust_action = local_mpc_action(
+        observation,
+        target,
+        observation_history,
+        horizon=horizon,
+        beam_width=beam_width,
+        robust=True,
+        action_history=action_history,
+    )
+    return int(robust_action), True, float(risk)
+
+
 def adaptive_mpc_risk_score(
     observation: np.ndarray,
     target: tuple[float, float],
@@ -836,3 +881,4 @@ def collision_head_mpc_decision(
         velocity_source=velocity_source,
     )
     return int(robust_action), True, risk
+
