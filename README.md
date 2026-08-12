@@ -454,7 +454,7 @@ progress regression, or budget infeasibility. After a fallback, the new route
 is locked for a short window to prevent immediately switching sides again.
 
 On an independent three-seed holdout (`11,23,41`), 30 training episodes per
-seed, 15 evaluation episodes per seed, the locked hybrid reaches **100.0%
+seed, 15 evaluation episodes total (5 per seed), the locked hybrid reaches **100.0%
 real success** and **0.067 collisions/episode**, compared with **66.7%** and
 **0.600** for learned-field MPC in the same medium-scale run. A* calls fall to
 **1.33/episode** after cooldown and route locking, but mean planning time is
