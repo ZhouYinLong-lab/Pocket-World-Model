@@ -923,3 +923,4 @@ def collision_head_mpc_decision(
         velocity_source=velocity_source,
     )
     return int(robust_action), True, risk
+
