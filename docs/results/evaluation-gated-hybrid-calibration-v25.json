@@ -1,0 +1,23 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "method": "distance_field_budgeted_hybrid_gated_mpc",
+    "calibration_seeds": [53, 67],
+    "calibration_episodes_per_seed": 8,
+    "threshold_grid": [0.25, 0.35, 0.45, 0.55, 0.65],
+    "minimum_success": 0.9,
+    "selection_rule": "success floor, then collision mean, then planning time",
+    "selected_entry_threshold": 0.25,
+    "selected_exit_threshold": 0.1666666667,
+    "selection_split_is_disjoint_from_final_holdout": true
+  },
+  "candidates": [
+    {"entry_threshold": 0.25, "real_success": 1.0, "collision_count": 0.3125, "robust_mpc_calls": 1.6875, "planning_time_ms": 236.0083},
+    {"entry_threshold": 0.35, "real_success": 1.0, "collision_count": 0.3125, "robust_mpc_calls": 1.6875, "planning_time_ms": 270.5138},
+    {"entry_threshold": 0.45, "real_success": 1.0, "collision_count": 0.3125, "robust_mpc_calls": 1.6875, "planning_time_ms": 270.7672},
+    {"entry_threshold": 0.55, "real_success": 1.0, "collision_count": 0.3125, "robust_mpc_calls": 1.6875, "planning_time_ms": 269.284},
+    {"entry_threshold": 0.65, "real_success": 1.0, "collision_count": 0.3125, "robust_mpc_calls": 1.6875, "planning_time_ms": 268.778}
+  ],
+  "interpretation": "All threshold candidates are behaviorally identical on calibration; no stable risk calibration signal is established."
+}
+
