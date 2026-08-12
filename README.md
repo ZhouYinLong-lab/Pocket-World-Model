@@ -250,7 +250,7 @@ claim is therefore “compute-budget adaptation,” not calibrated safety.
 
 This negative result is useful: the current risk score correlates with nominal
 collisions but loses predictive value under joint map/speed shift. The next
-research target is r…6830 tokens truncated… better search cannot repair an obstacle model that predicts the wrong world. See the [planner tournament protocol and analysis](docs/plans/planner-tournament.md), [open-space result](docs/results/evaluation-planner-tournament-open-v4.json), and [risk-budget barrier ablation](docs/results/evaluation-planner-tournament-barrier-v5-risk-budget.json).
+research target is r…7180 tokens truncated… better search cannot repair an obstacle model that predicts the wrong world. See the [planner tournament protocol and analysis](docs/plans/planner-tournament.md), [open-space result](docs/results/evaluation-planner-tournament-open-v4.json), and [risk-budget barrier ablation](docs/results/evaluation-planner-tournament-barrier-v5-risk-budget.json).
 
 Reproduce the comparison with:
 
