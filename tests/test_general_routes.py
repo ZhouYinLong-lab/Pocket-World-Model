@@ -8,8 +8,9 @@ from pocketworld.general_routes import (
     general_wall_layout,
     sample_general_route_cases,
 )
-from pocketworld.evaluate_general_routes import GENERAL_METHODS, train_and_evaluate_general_routes
+from pocketworld.evaluate_general_routes import GENERAL_DEFAULT_METHODS, train_and_evaluate_general_routes
 from pocketworld.evaluate_mpc_ablation import run_mpc_ablation
+from pocketworld.evaluate_general_ood import run_general_ood
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
@@ -100,7 +101,7 @@ def test_general_evaluation_reports_method_astar_contract(tmp_path):
     assert report["clearance_field_checkpoint"].endswith("-clearance-field.pt")
     assert report["protocol"]["mpc_horizon"] == 6
     assert report["protocol"]["mpc_beam_width"] == 24
-    assert report["protocol"]["methods"] == list(GENERAL_METHODS)
+    assert report["protocol"]["methods"] == list(GENERAL_DEFAULT_METHODS)
     assert report["evaluation"]["distance_field_beam_mpc"]["summary"]["mpc_calls"]["mean"] >= 0
 
 
@@ -165,6 +166,37 @@ def test_mpc_ablation_has_fixed_protocol_and_family_metrics(tmp_path):
     evaluation = report["results"]["smoke"]["evaluation"]
     assert evaluation["by_family"]
     assert "planning_time_ms" in evaluation["summary"]
+
+
+def test_general_ood_protocol_keeps_shift_hidden_and_checks_reachability(tmp_path):
+    cases = sample_general_route_cases(101, 8, split="train")
+    frames = []
+    goals = []
+    for case in cases:
+        frame, _ = PocketWorldEnv(
+            walls=case.walls, agent_start=case.start, goal=case.goal
+        ).reset()
+        frames.append(frame)
+        goals.append(case.goal)
+    policy = RouteFieldPolicy()
+    policy.fit(np.asarray(frames), np.asarray(goals, dtype=np.float32), epochs=1)
+    checkpoint = policy.save(tmp_path / "field.pt")
+    report = run_general_ood(
+        checkpoint,
+        evaluation_seeds=(11,),
+        evaluation_episodes=1,
+        max_steps=8,
+        map_shifts=("nominal", "walls_x_plus2"),
+        speed_scales=(0.75,),
+        methods=("distance_field_mpc_shift_fallback",),
+        mpc_horizon=2,
+        mpc_beam_width=4,
+    )
+    assert report["protocol"]["student_evaluation_uses_astar"] is False
+    assert report["protocol"]["fallback_method_uses_astar"] is True
+    assert report["protocol"]["shift_labels_visible_to_planner"] is False
+    assert set(report["results"]) == {"nominal@speed0.75", "walls_x_plus2@speed0.75"}
+    assert report["results"]["walls_x_plus2@speed0.75"]["paired_episode_count"] >= 0
 
 
 def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
