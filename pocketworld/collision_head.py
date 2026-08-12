@@ -99,12 +99,15 @@ def collect_collision_head_dataset(
     sample_stride: int = 2,
     families: tuple[str, ...] | None = None,
     balanced_families: bool = True,
+    split: str = "train",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Collect simulator-labelled risk examples from train maps only."""
+    """Collect simulator-labelled risk examples from one map split."""
     if not horizons or any(horizon < 1 for horizon in horizons):
         raise ValueError("horizons must contain positive values")
     if continuation_samples < 1 or sample_stride < 1:
         raise ValueError("continuation_samples and sample_stride must be positive")
+    if split not in {"train", "holdout"}:
+        raise ValueError("split must be train or holdout")
     from .general_routes import sample_general_route_cases
     from .route_field import field_waypoints, route_field_targets
 
@@ -114,7 +117,7 @@ def collect_collision_head_dataset(
         cases = sample_general_route_cases(
             seed,
             episodes,
-            split="train",
+            split=split,
             families=families,
             balanced=balanced_families,
         )
@@ -184,6 +187,12 @@ class CollisionProbabilityHead(nn.Module):
         super().__init__()
         self.input_dim = int(input_dim)
         self.horizons = tuple(int(value) for value in horizons)
+        # Temperatures are fitted only on a disjoint calibration split. Keep
+        # them outside the network so raw weights remain available for an
+        # auditable ablation; one value per horizon avoids conflating the
+        # different base rates of 1-, 2-, and 4-step events.
+        self.temperatures = np.ones(len(self.horizons), dtype=np.float32)
+        self.temperature = 1.0
         self.network = nn.Sequential(
             nn.Linear(self.input_dim, hidden_dim),
             nn.ReLU(),
@@ -228,13 +237,66 @@ class CollisionProbabilityHead(nn.Module):
         }
 
     @torch.no_grad()
-    def predict_proba(self, features: np.ndarray) -> np.ndarray:
+    def predict_logits(self, features: np.ndarray) -> np.ndarray:
+        """Return uncalibrated logits without applying the temperature."""
         values = torch.from_numpy(np.asarray(features, dtype=np.float32))
         if values.ndim == 1:
             values = values[None]
         if values.ndim != 2 or values.shape[1] != self.input_dim:
             raise ValueError(f"features must have shape [N, {self.input_dim}]")
-        return torch.sigmoid(self(values)).cpu().numpy().astype(np.float32)
+        return self(values).cpu().numpy().astype(np.float32)
+
+    def fit_temperature(
+        self,
+        features: np.ndarray,
+        labels: np.ndarray,
+        epochs: int = 200,
+        seed: int = 17,
+    ) -> dict[str, float | int]:
+        """Fit one positive scalar temperature on held-out labels.
+
+        This is post-hoc calibration only: network weights stay frozen and
+        the final evaluation split must not be used here. Fractional labels
+        are valid because the data collector averages continuation rollouts.
+        """
+        logits = torch.from_numpy(self.predict_logits(features))
+        targets = torch.from_numpy(np.asarray(labels, dtype=np.float32))
+        if targets.shape != logits.shape:
+            raise ValueError("labels shape must match features and horizons")
+        if len(logits) < 8:
+            raise ValueError("temperature calibration needs at least eight samples")
+        torch.manual_seed(seed)
+        log_temperature = torch.nn.Parameter(
+            torch.zeros(len(self.horizons), dtype=torch.float32)
+        )
+        optimizer = torch.optim.Adam([log_temperature], lr=0.05)
+        losses: list[float] = []
+        for _ in range(max(1, int(epochs))):
+            temperature = torch.exp(log_temperature).clamp(0.05, 20.0)
+            loss = nn.functional.binary_cross_entropy_with_logits(logits / temperature, targets)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            losses.append(float(loss.detach()))
+        fitted = torch.exp(log_temperature).clamp(0.05, 20.0).detach().cpu().numpy()
+        self.temperatures = np.asarray(fitted, dtype=np.float32)
+        self.temperature = float(self.temperatures.mean())
+        return {
+            "epochs": int(epochs),
+            "samples": int(len(logits)),
+            "temperature": self.temperature,
+            "temperatures": self.temperatures.tolist(),
+            "final_loss": losses[-1],
+        }
+
+    @torch.no_grad()
+    def predict_proba(self, features: np.ndarray) -> np.ndarray:
+        logits = torch.from_numpy(self.predict_logits(features))
+        temperatures = np.asarray(getattr(self, "temperatures", (self.temperature,)), dtype=np.float32)
+        if temperatures.shape != (len(self.horizons),):
+            temperatures = np.full(len(self.horizons), float(self.temperature), dtype=np.float32)
+        temperature_tensor = torch.from_numpy(np.clip(temperatures, 0.05, 20.0))
+        return torch.sigmoid(logits / temperature_tensor).cpu().numpy().astype(np.float32)
 
     def save(self, destination: str | Path, metadata: dict[str, Any] | None = None) -> Path:
         path = Path(destination)
@@ -245,6 +307,8 @@ class CollisionProbabilityHead(nn.Module):
                 "metadata": metadata or {},
                 "input_dim": self.input_dim,
                 "horizons": self.horizons,
+                "temperature": float(self.temperature),
+                "temperatures": np.asarray(self.temperatures, dtype=np.float32).tolist(),
             },
             path,
         )
@@ -255,4 +319,13 @@ class CollisionProbabilityHead(nn.Module):
         payload = torch.load(checkpoint, map_location="cpu")
         model = cls(input_dim=int(payload.get("input_dim", 238)), horizons=tuple(payload.get("horizons", COLLISION_HORIZONS)))
         model.load_state_dict(payload["model"], strict=True)
+        fallback_temperature = float(payload.get("temperature", payload.get("metadata", {}).get("temperature", 1.0)))
+        values = payload.get("temperatures", payload.get("metadata", {}).get("temperatures"))
+        if values is None:
+            values = [fallback_temperature] * len(model.horizons)
+        model.temperatures = np.asarray(values, dtype=np.float32)
+        if model.temperatures.shape != (len(model.horizons),):
+            model.temperatures = np.full(len(model.horizons), fallback_temperature, dtype=np.float32)
+        model.temperature = float(model.temperatures.mean())
         return model
+
