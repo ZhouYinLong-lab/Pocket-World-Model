@@ -14,6 +14,41 @@ from .planner import _dilate, extract_agent_position, extract_wall_mask
 FIELD_GRID = 16
 
 
+def estimate_action_velocity(
+    observation_history: list[np.ndarray],
+    action_history: list[int] | None = None,
+    max_speed: float = 2.3,
+) -> np.ndarray:
+    """Fuse RGB finite differences with velocity reconstructed from own actions."""
+    from .planner import estimate_agent_velocity
+
+    rgb_velocity = estimate_agent_velocity(observation_history, max_speed=max_speed)
+    if not action_history:
+        return rgb_velocity
+    if len(observation_history) >= 2:
+        current = extract_agent_position(observation_history[-1]).astype(np.float32)
+        previous = extract_agent_position(observation_history[-2]).astype(np.float32)
+        if np.isfinite(current).all() and np.isfinite(previous).all():
+            # A collision zeroes simulator velocity. RGB exposes this as a
+            # repeated position even though the action history still contains
+            # the old push; reset the latent action velocity before planning.
+            if np.linalg.norm(current - previous) <= 0.15:
+                return np.zeros(2, dtype=np.float32)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    predicted = np.zeros(2, dtype=np.float32)
+    for action in action_history[-16:]:
+        predicted *= 0.84
+        predicted += 0.75 * directions[int(action)]
+        speed = float(np.linalg.norm(predicted))
+        if speed > max_speed:
+            predicted *= max_speed / speed
+    fused = 0.70 * predicted + 0.30 * rgb_velocity
+    speed = float(np.linalg.norm(fused))
+    if speed > max_speed:
+        fused *= max_speed / speed
+    return fused.astype(np.float32)
+
+
 def _coarse_transition_is_safe(
     occupied: np.ndarray,
     start: tuple[int, int],
@@ -57,10 +92,66 @@ def _pixel_distance_field(occupied: np.ndarray, goal: tuple[float, float]) -> np
     return distances
 
 
+def _pixel_clearance_field(occupied: np.ndarray) -> np.ndarray:
+    """Return Manhattan distance to the nearest inflated wall pixel."""
+    height, width = occupied.shape
+    distances = np.full((height, width), np.inf, dtype=np.float32)
+    queue: list[tuple[int, int]] = []
+    for y, x in zip(*np.where(occupied)):
+        distances[y, x] = 0.0
+        queue.append((int(y), int(x)))
+    cursor = 0
+    while cursor < len(queue):
+        y, x = queue[cursor]
+        cursor += 1
+        for next_y, next_x in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+            if not (0 <= next_y < height and 0 <= next_x < width):
+                continue
+            if np.isfinite(distances[next_y, next_x]):
+                continue
+            distances[next_y, next_x] = distances[y, x] + 1.0
+            queue.append((next_y, next_x))
+    return distances
+
+
+def _rgb_kinematic_landing(
+    position: np.ndarray,
+    velocity: np.ndarray,
+    action: int,
+    wall_mask: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, bool]:
+    """Predict one environment step with the exact observable collision rule.
+
+    The RGB controller must not use a stricter square dilation than the
+    simulator when comparing planner variants.  This helper mirrors
+    ``PocketWorldEnv._collides`` in continuous coordinates while keeping the
+    environment state private to the evaluator.
+    """
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    next_velocity = 0.84 * velocity + 0.75 * directions[int(action)]
+    speed = float(np.linalg.norm(next_velocity))
+    if speed > 2.3:
+        next_velocity *= 2.3 / speed
+    next_position = position + next_velocity
+    wall_y, wall_x = np.where(wall_mask)
+    x, y = next_position
+    inside = 3 <= x < 61 and 3 <= y < 61
+    intersects_wall = bool(
+        np.any(
+            (x >= wall_x - 3.0)
+            & (x <= wall_x + 4.0)
+            & (y >= wall_y - 3.0)
+            & (y <= wall_y + 4.0)
+        )
+    )
+    return next_position, next_velocity, bool(inside and not intersects_wall)
+
+
 def route_field_targets(
     observations: np.ndarray,
     goals: np.ndarray,
     grid_size: int = FIELD_GRID,
+    clearance_weight: float = 0.0,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Return normalized coarse distance fields and free-cell masks."""
     frames = np.asarray(observations)
@@ -73,18 +164,27 @@ def route_field_targets(
         raise ValueError("goals must have shape [samples, 2]")
     if 64 % grid_size != 0:
         raise ValueError("grid_size must divide 64")
+    if clearance_weight < 0:
+        raise ValueError("clearance_weight must be non-negative")
     block = 64 // grid_size
     fields = np.ones((len(frames), grid_size, grid_size), dtype=np.float32)
     valid = np.zeros_like(fields)
     for index, (frame, goal) in enumerate(zip(frames, goal_values)):
         occupied = _dilate(extract_wall_mask(frame), radius=4)
         distance = _pixel_distance_field(occupied, tuple(map(float, goal)))
+        clearance = _pixel_clearance_field(occupied) if clearance_weight else None
         for row in range(grid_size):
             for column in range(grid_size):
                 patch = distance[row * block:(row + 1) * block, column * block:(column + 1) * block]
                 finite = patch[np.isfinite(patch)]
                 if len(finite):
-                    fields[index, row, column] = float(np.clip(finite.min() / 128.0, 0.0, 1.0))
+                    cost = finite
+                    if clearance is not None:
+                        clearance_patch = clearance[row * block:(row + 1) * block, column * block:(column + 1) * block]
+                        clearance_values = clearance_patch[np.isfinite(patch)]
+                        risk = np.maximum(0.0, 5.0 - clearance_values)
+                        cost = finite + float(clearance_weight) * risk
+                    fields[index, row, column] = float(np.clip(cost.min() / 128.0, 0.0, 1.0))
                     valid[index, row, column] = 1.0
     return torch.from_numpy(fields), torch.from_numpy(valid)
 
@@ -140,10 +240,13 @@ class RouteFieldPolicy(nn.Module):
         goals: np.ndarray,
         epochs: int = 240,
         seed: int = 7,
+        clearance_weight: float = 0.0,
     ) -> dict[str, float | int]:
         frames = np.asarray(observations, dtype=np.uint8)
         inputs = _field_inputs(frames, goals)
-        targets, valid = route_field_targets(frames, goals)
+        targets, valid = route_field_targets(
+            frames, goals, clearance_weight=clearance_weight
+        )
         if len(frames) < 8:
             raise ValueError("route field training data must contain at least eight samples")
         torch.manual_seed(seed)
@@ -165,6 +268,7 @@ class RouteFieldPolicy(nn.Module):
             "samples": int(len(frames)),
             "final_loss": losses[-1],
             "mean_field_error_px": float(mae * 128.0),
+            "clearance_weight": float(clearance_weight),
         }
 
     @torch.no_grad()
@@ -277,7 +381,10 @@ def conservative_field_action(
     velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.5)
     target_array = np.asarray(target, dtype=np.float32)
     directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
-    occupied = _dilate(extract_wall_mask(observation), radius=3)
+    # The simulator uses an inclusive circular footprint around a 3px agent;
+    # a 4px square dilation is the conservative observable approximation used
+    # by the global planner and prevents boundary-touching false negatives.
+    occupied = _dilate(extract_wall_mask(observation), radius=4)
     preferred = int(np.argmax(directions @ (target_array - position)))
     safe_actions: list[int] = []
     for action, direction in enumerate(directions):
@@ -304,3 +411,192 @@ def conservative_field_action(
             np.linalg.norm(position + directions[action] - target_array)
         ),
     ) if safe_actions else preferred
+
+
+def local_mpc_action(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    observation_history: list[np.ndarray] | None = None,
+    horizon: int = 6,
+    beam_width: int = 24,
+    robust: bool = False,
+    action_history: list[int] | None = None,
+) -> int:
+    """Select the first action of a short RGB-only inertial rollout.
+
+    The controller enumerates a bounded beam of discrete action sequences,
+    simulates the known local kinematics (friction, acceleration, speed cap),
+    rejects swept footprint-wall intersections from the current RGB mask, and
+    scores distance-to-waypoint plus braking speed. It is deliberately local:
+    it has no learned dynamics query and no A* call. The experiment therefore
+    isolates whether the remaining v18 collisions are caused by waypoint
+    tracking rather than by the learned route field.
+    """
+    if horizon < 1 or beam_width < 1:
+        raise ValueError("horizon and beam_width must be positive")
+    position = extract_agent_position(observation).astype(np.float32)
+    # Match the baseline waypoint controller's observable contract. Action
+    # history is used only inside MPC; otherwise the gate rejects normal
+    # baseline actions due to a different velocity estimate.
+    from .planner import estimate_agent_velocity
+
+    velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.3)
+    target_array = np.asarray(target, dtype=np.float32)
+    wall_mask = extract_wall_mask(observation)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    # Keep a small action prior so equal safe trajectories prefer moving toward
+    # the current waypoint and include an explicit braking action when needed.
+    preferred = int(np.argmax(directions @ (target_array - position)))
+    action_order = [preferred, 0, 1, 2, 3]
+    action_order = list(dict.fromkeys(action_order))
+    velocity_scales = (0.75, 1.0, 1.25) if robust else (1.0,)
+    velocity_offsets = (
+        (np.zeros(2, dtype=np.float32),)
+        if not robust
+        else (
+            np.asarray((0.0, 0.0), dtype=np.float32),
+            np.asarray((0.30, 0.0), dtype=np.float32),
+            np.asarray((-0.30, 0.0), dtype=np.float32),
+            np.asarray((0.0, 0.30), dtype=np.float32),
+            np.asarray((0.0, -0.30), dtype=np.float32),
+        )
+    )
+    candidates: list[tuple[float, np.ndarray, np.ndarray, tuple[int, ...]]] = [
+        (0.0, position.copy(), velocity.copy(), ())
+    ]
+    for depth in range(horizon):
+        expanded: list[tuple[float, np.ndarray, np.ndarray, tuple[int, ...]]] = []
+        for _, pose, speed, actions in candidates:
+            for action in action_order:
+                scenario_speeds: list[np.ndarray] = []
+                scenario_scores: list[float] = []
+                nominal_pose: np.ndarray | None = None
+                nominal_speed: np.ndarray | None = None
+                safe = True
+                for scale in velocity_scales:
+                    for offset in velocity_offsets:
+                        scenario_velocity = speed * scale + offset
+                        next_pose, next_speed, landing_safe = _rgb_kinematic_landing(
+                            pose, scenario_velocity, action, wall_mask
+                        )
+                        if not landing_safe:
+                            safe = False
+                            break
+                        scenario_speeds.append(next_speed)
+                        scenario_scores.append(float(np.linalg.norm(next_pose - target_array)))
+                        if scale == 1.0 and float(np.linalg.norm(offset)) == 0.0:
+                            nominal_pose = next_pose
+                            nominal_speed = next_speed
+                    if not safe:
+                        break
+                if not safe:
+                    continue
+                if nominal_pose is None or nominal_speed is None:
+                    continue
+                next_pose = nominal_pose
+                next_speed = nominal_speed
+                remaining = max(scenario_scores)
+                speed_penalty = 0.25 * max(float(np.linalg.norm(value)) for value in scenario_speeds)
+                action_penalty = 0.02 if action != preferred else 0.0
+                score = remaining + speed_penalty + action_penalty
+                expanded.append((score, next_pose, next_speed, actions + (action,)))
+        if not expanded:
+            break
+        expanded.sort(key=lambda item: item[0])
+        candidates = expanded[:beam_width]
+    if not candidates or not candidates[0][3]:
+        # When inertia has already carried the agent into a narrow corner,
+        # every conservative sequence can be blocked. Evaluate the actual
+        # inertial one-step proposals and choose the action with the largest
+        # worst-case RGB clearance; this avoids repeating a target-facing
+        # action that is already pushing into the wall.
+        escape_scores: list[tuple[float, float, int]] = []
+        for action, direction in enumerate(directions):
+            scenario_clearances: list[float] = []
+            valid = True
+            for scale in ((0.75, 1.0, 1.25) if robust else (1.0,)):
+                next_pose, _, landing_safe = _rgb_kinematic_landing(
+                    position, velocity * scale, action, wall_mask
+                )
+                if not (np.isfinite(next_pose).all() and landing_safe):
+                    valid = False
+                    scenario_clearances.append(-100.0)
+                    continue
+                scenario_clearances.append(float(-np.linalg.norm(next_pose - target_array)))
+            target_distance = float(np.linalg.norm(position + direction - target_array))
+            escape_scores.append((min(scenario_clearances), -target_distance, action if valid else action))
+        return max(escape_scores)[2]
+    best_actions = min(candidates, key=lambda item: item[0])[3]
+    return int(best_actions[0]) if best_actions else preferred
+
+
+def rgb_action_is_safe(
+    observation: np.ndarray,
+    action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    margin: int = 5,
+) -> bool:
+    """Check one action using the baseline RGB-only velocity contract."""
+    if margin < 1:
+        raise ValueError("margin must be positive")
+    position = extract_agent_position(observation).astype(np.float32)
+    from .planner import estimate_agent_velocity
+
+    velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.3)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    next_velocity = 0.84 * velocity + 0.75 * directions[int(action)]
+    speed = float(np.linalg.norm(next_velocity))
+    if speed > 2.3:
+        next_velocity *= 2.3 / speed
+    next_position = position + next_velocity
+    if not (margin <= next_position[0] <= 64 - margin and margin <= next_position[1] <= 64 - margin):
+        return False
+    _, _, safe = _rgb_kinematic_landing(
+        position, velocity, int(action), extract_wall_mask(observation)
+    )
+    return safe
+
+
+def guarded_mpc_action(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    baseline_action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    horizon: int = 6,
+    beam_width: int = 24,
+) -> int:
+    """Preserve a safe baseline action and invoke MPC only on unsafe steps."""
+    if rgb_action_is_safe(
+        observation, baseline_action, observation_history, action_history, margin=4
+    ):
+        return int(baseline_action)
+    candidate = local_mpc_action(
+        observation,
+        target,
+        observation_history,
+        horizon=horizon,
+        beam_width=beam_width,
+        action_history=action_history,
+    )
+    if rgb_action_is_safe(
+        observation, candidate, observation_history, action_history, margin=4
+    ):
+        return int(candidate)
+    position = extract_agent_position(observation).astype(np.float32)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    safe_actions = [
+        action
+        for action in range(4)
+        if rgb_action_is_safe(
+            observation, action, observation_history, action_history, margin=4
+        )
+    ]
+    if not safe_actions:
+        return int(candidate)
+    goal = np.asarray(target, dtype=np.float32)
+    return min(
+        safe_actions,
+        key=lambda action: float(np.linalg.norm(position + directions[action] - goal)),
+    )

@@ -17,7 +17,14 @@ from .route_policy import (
     observable_waypoint_action,
     route_sketch_targets,
 )
-from .route_field import RouteFieldPolicy, conservative_field_action, field_waypoints
+from .route_field import (
+    RouteFieldPolicy,
+    conservative_field_action,
+    field_waypoints,
+    guarded_mpc_action,
+    local_mpc_action,
+    rgb_action_is_safe,
+)
 
 GENERAL_METHODS = (
     "learned",
@@ -28,6 +35,10 @@ GENERAL_METHODS = (
     "distance_field_rgb_projection",
     "distance_field_beam_rgb_projection",
     "distance_field_beam_conservative",
+    "distance_field_beam_mpc",
+    "distance_field_beam_robust_mpc",
+    "distance_field_clearance_beam_rgb_projection",
+    "distance_field_beam_guarded_mpc",
 )
 
 
@@ -121,6 +132,8 @@ def evaluate_general_policy(
     max_steps: int,
     points: int,
     method: str,
+    mpc_horizon: int = 6,
+    mpc_beam_width: int = 24,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -130,9 +143,12 @@ def evaluate_general_policy(
             env = PocketWorldEnv(walls=case.walls, agent_start=case.start, goal=case.goal)
             observation, info = env.reset()
             history = [observation]
+            action_history: list[int] = []
             position = extract_agent_position(observation).astype(np.float32)
             astar_calls = 0
             fallback_triggered = False
+            mpc_calls = 0
+            mpc_override_count = 0
             if method == "rgb_astar":
                 waypoints = _astar_waypoints(observation, case.goal, position, points)
                 astar_calls += 1
@@ -141,6 +157,10 @@ def evaluate_general_policy(
                 "distance_field_rgb_projection",
                 "distance_field_beam_rgb_projection",
                 "distance_field_beam_conservative",
+                "distance_field_beam_mpc",
+                "distance_field_beam_robust_mpc",
+                "distance_field_clearance_beam_rgb_projection",
+                "distance_field_beam_guarded_mpc",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -152,6 +172,9 @@ def evaluate_general_policy(
                     if method in {
                         "distance_field_beam_rgb_projection",
                         "distance_field_beam_conservative",
+                        "distance_field_beam_mpc",
+                        "distance_field_beam_robust_mpc",
+                        "distance_field_clearance_beam_rgb_projection",
                     }
                     else 1,
                 )
@@ -199,7 +222,44 @@ def evaluate_general_policy(
                 action = observable_waypoint_action(observation, target, history, damping=1.0)
                 if method == "distance_field_beam_conservative":
                     action = conservative_field_action(observation, target, history)
+                if method == "distance_field_beam_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        action_history=action_history,
+                    )
+                if method == "distance_field_beam_robust_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        robust=True,
+                        action_history=action_history,
+                    )
+                if method == "distance_field_beam_guarded_mpc":
+                    mpc_calls += 1
+                    baseline_action = action
+                    action = guarded_mpc_action(
+                        observation,
+                        target,
+                        action,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                    )
+                    if action != baseline_action:
+                        mpc_override_count += 1
                 observation, _, terminated, truncated, info = env.step(action)
+                action_history.append(int(action))
+                action_history = action_history[-16:]
                 history.append(observation)
                 history = history[-16:]
                 collisions += int(info.get("collision", False))
@@ -219,9 +279,20 @@ def evaluate_general_policy(
                     "executed_actions": int(env.steps),
                     "astar_calls": astar_calls,
                     "fallback_triggered": fallback_triggered,
+                    "mpc_calls": mpc_calls,
+                    "mpc_override_count": mpc_override_count,
                 }
             )
-    metrics = ("real_success", "final_distance_px", "collision_count", "executed_actions", "astar_calls", "fallback_triggered")
+    metrics = (
+        "real_success",
+        "final_distance_px",
+        "collision_count",
+        "executed_actions",
+        "astar_calls",
+        "fallback_triggered",
+        "mpc_calls",
+        "mpc_override_count",
+    )
     values = {key: np.asarray([row[key] for row in rows], dtype=np.float64) for key in metrics}
     return {
         "rows": rows,
@@ -241,7 +312,14 @@ def train_and_evaluate_general_routes(
     points: int = 13,
     epochs: int = 360,
     predictor_output: str | Path = "artifacts/general-route-sketch-v18.pt",
+    mpc_horizon: int = 6,
+    mpc_beam_width: int = 24,
+    methods: tuple[str, ...] | None = None,
 ) -> dict[str, object]:
+    selected_methods = tuple(GENERAL_METHODS if methods is None else methods)
+    unknown_methods = set(selected_methods) - set(GENERAL_METHODS)
+    if unknown_methods:
+        raise ValueError(f"unknown general route methods: {sorted(unknown_methods)}")
     observations, goals, targets = collect_general_route_data(
         train_seeds, train_episodes, "train", points
     )
@@ -249,19 +327,29 @@ def train_and_evaluate_general_routes(
     training = {"route_sketch": policy.fit(observations, goals, targets, epochs=epochs)}
     field_policy = RouteFieldPolicy()
     training["distance_field"] = field_policy.fit(observations, goals, epochs=epochs)
+    clearance_policy = RouteFieldPolicy()
+    training["distance_field_clearance"] = clearance_policy.fit(
+        observations, goals, epochs=epochs, clearance_weight=8.0
+    )
     field_output = Path(predictor_output).with_name(
         f"{Path(predictor_output).stem}-distance-field{Path(predictor_output).suffix}"
     )
     evaluations = {
         method: evaluate_general_policy(
-            field_policy if method.startswith("distance_field") else policy,
+            clearance_policy
+            if method == "distance_field_clearance_beam_rgb_projection"
+            else field_policy
+            if method.startswith("distance_field")
+            else policy,
             evaluation_seeds,
             evaluation_episodes,
             max_steps,
             points,
             method,
+            mpc_horizon,
+            mpc_beam_width,
         )
-        for method in GENERAL_METHODS
+        for method in selected_methods
     }
     policy.save(
         predictor_output,
@@ -279,6 +367,18 @@ def train_and_evaluate_general_routes(
             "rgb_projection_uses_astar": False,
         },
     )
+    clearance_output = Path(predictor_output).with_name(
+        f"{Path(predictor_output).stem}-clearance-field{Path(predictor_output).suffix}"
+    )
+    clearance_policy.save(
+        clearance_output,
+        metadata={
+            "student_evaluation_uses_astar": False,
+            "teacher_labels_use_astar": True,
+            "rgb_projection_uses_astar": False,
+            "clearance_weight": 8.0,
+        },
+    )
     return {
         "protocol": {
             "train_seeds": list(train_seeds),
@@ -287,6 +387,9 @@ def train_and_evaluate_general_routes(
             "evaluation_episodes_per_seed": evaluation_episodes,
             "max_steps": max_steps,
             "route_points": points,
+            "mpc_horizon": mpc_horizon,
+            "mpc_beam_width": mpc_beam_width,
+            "methods": list(selected_methods),
             "families_train": ["staggered_blocks", "multi_channel"],
             "families_holdout": list(GENERAL_FAMILIES),
             "teacher_labels_use_astar": True,
@@ -303,6 +406,10 @@ def train_and_evaluate_general_routes(
                 "distance_field_rgb_projection": False,
                 "distance_field_beam_rgb_projection": False,
                 "distance_field_beam_conservative": False,
+                "distance_field_beam_mpc": False,
+                "distance_field_beam_robust_mpc": False,
+                "distance_field_clearance_beam_rgb_projection": False,
+                "distance_field_beam_guarded_mpc": False,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -317,9 +424,14 @@ def train_and_evaluate_general_routes(
             "distance_field_rgb_projection": "learned distance field with RGB-occupied-cell guard",
             "distance_field_beam_rgb_projection": "fixed-width learned-field beam with RGB-occupied-cell guard",
             "distance_field_beam_conservative": "learned-field beam with RGB guard and conservative local action shield",
+            "distance_field_beam_mpc": "learned-field beam with RGB-only short-horizon inertial MPC",
+            "distance_field_beam_robust_mpc": "learned-field beam with velocity-scale robust RGB-only MPC",
+            "distance_field_clearance_beam_rgb_projection": "clearance-penalized learned field with beam and RGB guard",
+            "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),
+        "clearance_field_checkpoint": str(clearance_output),
     }
 
 
@@ -333,7 +445,14 @@ def main() -> None:
     parser.add_argument("--points", type=int, default=13)
     parser.add_argument("--epochs", type=int, default=360)
     parser.add_argument("--predictor-output", default="artifacts/general-route-sketch-v18.pt")
+    parser.add_argument("--mpc-horizon", type=int, default=6)
+    parser.add_argument("--mpc-beam-width", type=int, default=24)
     parser.add_argument("--output", default="artifacts/evaluation-general-routes-v18.json")
+    parser.add_argument(
+        "--methods",
+        default=",".join(GENERAL_METHODS),
+        help="comma-separated subset of methods for focused ablations",
+    )
     args = parser.parse_args()
     report = train_and_evaluate_general_routes(
         train_seeds=tuple(int(value) for value in args.train_seeds.split(",") if value.strip()),
@@ -344,6 +463,9 @@ def main() -> None:
         points=args.points,
         epochs=args.epochs,
         predictor_output=args.predictor_output,
+        mpc_horizon=args.mpc_horizon,
+        mpc_beam_width=args.mpc_beam_width,
+        methods=tuple(value.strip() for value in args.methods.split(",") if value.strip()),
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
