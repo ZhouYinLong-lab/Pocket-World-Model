@@ -17,21 +17,76 @@ from .planner import (
     extract_agent_position,
     extract_wall_boxes,
     extract_wall_mask,
+    _path_length,
 )
 
 ROUTE_MODES = ("direct", "top", "bottom", "gap")
+ROUTE_SKETCH_POINTS = 5
+MAX_VERTICAL_BARRIERS = 4
 
 
-def wall_grid_features(observations: np.ndarray) -> torch.Tensor:
+def wall_grid_features(observations: np.ndarray, grid_size: int = 8) -> torch.Tensor:
     """Downsample the visible RGB wall mask without using simulator geometry."""
     frames = np.asarray(observations)
     if frames.ndim == 3:
         frames = frames[None]
     if frames.ndim != 4 or frames.shape[1:] != (3, 64, 64):
         raise ValueError("observations must have shape [samples, 3, 64, 64]")
+    if grid_size < 1 or 64 % grid_size != 0:
+        raise ValueError("grid_size must be a positive divisor of 64")
     masks = np.stack([extract_wall_mask(frame) for frame in frames], axis=0)
     tensor = torch.from_numpy(masks.astype(np.float32))[:, None]
-    return F.avg_pool2d(tensor, kernel_size=8, stride=8).flatten(1)
+    return F.avg_pool2d(tensor, kernel_size=64 // grid_size, stride=64 // grid_size).flatten(1)
+
+
+def vertical_barrier_features(
+    observations: np.ndarray,
+    max_barriers: int = MAX_VERTICAL_BARRIERS,
+    include_gap_center: bool = True,
+) -> torch.Tensor:
+    """Extract compact vertical-barrier geometry from RGB wall pixels.
+
+    Each slot contains ``x_center, top_end, bottom_start, gap_center,
+    gap_width, valid`` in normalized pixel coordinates.  This is not a
+    simulator-state shortcut: all values come from the visible wall mask and
+    are exposed as an auditable representation for the learned route policy.
+    """
+    frames = np.asarray(observations)
+    if frames.ndim == 3:
+        frames = frames[None]
+    if frames.ndim != 4 or frames.shape[1:] != (3, 64, 64):
+        raise ValueError("observations must have shape [samples, 3, 64, 64]")
+    if max_barriers < 1:
+        raise ValueError("max_barriers must be positive")
+    output = np.zeros((len(frames), max_barriers, 6), dtype=np.float32)
+    for sample_index, frame in enumerate(frames):
+        boxes = extract_wall_boxes(extract_wall_mask(frame))
+        vertical = [
+            box for box in boxes if (box[3] - box[1]) >= 2.0 * max(1.0, box[2] - box[0])
+        ]
+        groups: list[list[tuple[float, float, float, float]]] = []
+        for box in sorted(vertical, key=lambda item: item[0]):
+            center = (box[0] + box[2]) / 2.0
+            matching = next((group for group in groups if abs((group[0][0] + group[0][2]) / 2.0 - center) <= 4.0), None)
+            if matching is None:
+                groups.append([box])
+            else:
+                matching.append(box)
+        for barrier_index, group in enumerate(groups[:max_barriers]):
+            group.sort(key=lambda item: item[1])
+            x_center = (group[0][0] + group[0][2]) / 2.0
+            top_end = float(group[0][3])
+            bottom_start = float(group[1][1]) if len(group) >= 2 else top_end
+            gap_center = (top_end + bottom_start) / 2.0
+            gap_width = max(0.0, bottom_start - top_end)
+            values = np.asarray(
+                (x_center / 64.0, top_end / 64.0, bottom_start / 64.0, gap_center / 64.0, gap_width / 64.0, 1.0),
+                dtype=np.float32,
+            )
+            if not include_gap_center:
+                values[3] = 0.0
+            output[sample_index, barrier_index] = values
+    return torch.from_numpy(output.reshape(len(frames), -1))
 
 
 def route_mode_label(observation: np.ndarray, goal: tuple[float, float]) -> int:
@@ -159,6 +214,331 @@ def observable_waypoint_action(
     return min(candidates, key=lambda action: float(np.linalg.norm(
         position + directions[action] - np.asarray(target, dtype=np.float32)
     ))) if candidates else preferred
+
+
+def route_sketch_targets(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    points: int = ROUTE_SKETCH_POINTS,
+) -> np.ndarray:
+    """Create a fixed-size teacher route sketch from the visible RGB map."""
+    if points < 1:
+        raise ValueError("points must be positive")
+    position = extract_agent_position(observation).astype(np.float32)
+    if not np.isfinite(position).all():
+        position = np.asarray(goal, dtype=np.float32)
+    path = _astar_path(
+        _dilate(extract_wall_mask(observation), radius=4),
+        tuple(position),
+        goal,
+        allow_diagonal=False,
+    )
+    if not path:
+        return np.repeat(np.asarray(goal, dtype=np.float32)[None], points, axis=0)
+    dense = np.asarray(path, dtype=np.float32)
+    occupied = _dilate(extract_wall_mask(observation), radius=4)
+
+    def visible(first: np.ndarray, second: np.ndarray) -> bool:
+        distance = float(np.linalg.norm(second - first))
+        samples = max(2, int(np.ceil(distance * 2.0)))
+        line = np.linspace(first, second, samples)
+        xs = np.clip(np.rint(line[:, 0]).astype(int), 0, occupied.shape[1] - 1)
+        ys = np.clip(np.rint(line[:, 1]).astype(int), 0, occupied.shape[0] - 1)
+        return not bool(np.any(occupied[ys, xs]))
+
+    # Greedily retain only macro bends.  A uniform index sample can jump over
+    # a one-pixel A* corner and turn a valid detour into a wall-cutting chord.
+    simplified = [dense[0]]
+    anchor = 0
+    while anchor < len(dense) - 1:
+        furthest = anchor + 1
+        for candidate in range(anchor + 1, len(dense)):
+            if visible(dense[anchor], dense[candidate]):
+                furthest = candidate
+        if furthest == anchor:
+            furthest = anchor + 1
+        simplified.append(dense[furthest])
+        anchor = furthest
+    vertices = np.asarray(simplified, dtype=np.float32)
+    if len(vertices) <= points + 1:
+        cumulative = np.concatenate(
+            ([0.0], np.cumsum(np.linalg.norm(np.diff(vertices, axis=0), axis=1)))
+        )
+        total = max(float(cumulative[-1]), 1.0)
+        sample_distances = np.linspace(0.0, total, points + 1)[1:]
+        sampled = np.stack(
+            [np.interp(sample_distances, cumulative, vertices[:, axis]) for axis in range(2)],
+            axis=1,
+        )
+        # Snap the closest samples to every retained bend so interpolation
+        # never erases the route's discrete side changes.
+        for vertex in vertices[1:-1]:
+            index = int(np.argmin(np.linalg.norm(sampled - vertex[None], axis=1)))
+            sampled[index] = vertex
+        return sampled.astype(np.float32)
+    # Extremely tortuous routes exceed the output budget. Keep endpoints and
+    # evenly spaced macro bends; this is reported as a route-compression case.
+    indices = np.linspace(0, len(vertices) - 1, points + 1).round().astype(int)
+    return vertices[indices[1:]].astype(np.float32)
+
+
+def observable_route_sketch_waypoints(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    predicted_points: np.ndarray,
+) -> tuple[tuple[float, float], ...]:
+    """Turn predicted normalized route points into executable RGB waypoints."""
+    points = np.asarray(predicted_points, dtype=np.float32)
+    if points.ndim != 2 or points.shape[1] != 2:
+        raise ValueError("predicted_points must have shape [points, 2]")
+    del observation
+    clipped = np.clip(points, 3.0, 61.0)
+    result = [tuple(float(value) for value in point) for point in clipped]
+    result.append(tuple(float(value) for value in goal))
+    return tuple(result)
+
+
+class RouteSketchPolicy(nn.Module):
+    """Predict a continuous multi-obstacle route sketch from RGB geometry."""
+
+    def __init__(self, points: int = ROUTE_SKETCH_POINTS, hidden_dim: int = 96) -> None:
+        super().__init__()
+        if points < 1:
+            raise ValueError("points must be positive")
+        self.points = int(points)
+        self.grid_size = 16
+        self.geometry_dim = MAX_VERTICAL_BARRIERS * 6
+        self.include_gap_center = False
+        self.encoder = nn.Sequential(
+            nn.Linear(self.grid_size * self.grid_size + self.geometry_dim + 4, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        self.head = nn.Linear(hidden_dim, self.points * 2)
+
+    def forward(self, goals: torch.Tensor, positions: torch.Tensor, wall_features: torch.Tensor) -> torch.Tensor:
+        return self.head(self.encoder(torch.cat((goals, positions, wall_features), dim=-1))).view(-1, self.points, 2)
+
+    def fit(
+        self,
+        observations: np.ndarray,
+        goals: np.ndarray,
+        targets: np.ndarray,
+        epochs: int = 120,
+        seed: int = 7,
+    ) -> dict[str, float | int]:
+        frames = np.asarray(observations, dtype=np.uint8)
+        goal_values = torch.from_numpy(np.asarray(goals, dtype=np.float32)) / 64.0
+        positions = extract_agent_position(frames).astype(np.float32)
+        positions = np.nan_to_num(positions, nan=0.0, posinf=0.0, neginf=0.0)
+        position_values = torch.from_numpy(positions) / 64.0
+        wall_values = torch.cat(
+            (
+                wall_grid_features(frames, grid_size=self.grid_size),
+                vertical_barrier_features(frames, include_gap_center=self.include_gap_center),
+            ),
+            dim=-1,
+        )
+        target_values = torch.from_numpy(np.asarray(targets, dtype=np.float32)) / 64.0
+        if frames.ndim != 4 or frames.shape[1:] != (3, 64, 64):
+            raise ValueError("observations must have shape [samples, 3, 64, 64]")
+        if target_values.shape != (len(frames), self.points, 2):
+            raise ValueError("targets must have shape [samples, points, 2]")
+        if goal_values.shape != position_values.shape or goal_values.shape != (len(frames), 2):
+            raise ValueError("goals must have shape [samples, 2]")
+        if len(frames) < 8:
+            raise ValueError("route sketch training data must contain at least eight samples")
+        torch.manual_seed(seed)
+        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4, weight_decay=1e-5)
+        losses: list[float] = []
+        for _ in range(max(1, int(epochs))):
+            prediction = self(goal_values, position_values, wall_values)
+            loss = nn.functional.smooth_l1_loss(prediction, target_values)
+            # The procedural benchmark is left-to-right. A small structural
+            # penalty preserves route order without exposing a privileged map
+            # coordinate at evaluation; the model still sees only RGB-derived
+            # wall features and the goal.
+            backward = torch.relu(prediction[:, :-1, 0] - prediction[:, 1:, 0])
+            loss = loss + 0.10 * backward.mean()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            losses.append(float(loss.detach()))
+        with torch.no_grad():
+            final = self(goal_values, position_values, wall_values)
+            error = torch.linalg.vector_norm((final - target_values) * 64.0, dim=-1).mean()
+        return {"epochs": int(epochs), "samples": int(len(frames)), "final_loss": losses[-1], "mean_point_error_px": float(error)}
+
+    @torch.no_grad()
+    def predict_points(self, observation: np.ndarray, goal: tuple[float, float]) -> np.ndarray:
+        position = extract_agent_position(observation).astype(np.float32)
+        position = np.nan_to_num(position, nan=0.0, posinf=0.0, neginf=0.0)
+        prediction = self(
+            torch.as_tensor(np.asarray(goal, dtype=np.float32) / 64.0)[None],
+            torch.as_tensor(position / 64.0)[None],
+            torch.cat(
+                (
+                    wall_grid_features(observation, grid_size=self.grid_size),
+                    vertical_barrier_features(observation, include_gap_center=self.include_gap_center),
+                ),
+                dim=-1,
+            ),
+        )
+        return (prediction[0].cpu().numpy() * 64.0).astype(np.float32)
+
+    def save(self, destination: str | Path, metadata: dict[str, Any] | None = None) -> Path:
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"model": self.state_dict(), "metadata": metadata or {"points": self.points}}, path)
+        return path
+
+    @classmethod
+    def load(cls, checkpoint: str | Path) -> "RouteSketchPolicy":
+        payload = torch.load(checkpoint, map_location="cpu")
+        model = cls(points=int(payload.get("metadata", {}).get("points", ROUTE_SKETCH_POINTS)))
+        model.load_state_dict(payload["model"], strict=True)
+        return model
+
+
+def gap_route_targets(observations: np.ndarray) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return visible gap-center labels and validity masks for v17."""
+    features = vertical_barrier_features(observations).view(-1, MAX_VERTICAL_BARRIERS, 6)
+    centers = features[..., 3]
+    valid = features[..., 5]
+    return centers, valid
+
+
+def observable_gap_route_waypoints(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    predicted_gap_centers: np.ndarray,
+    clearance: float = 6.0,
+    project_to_visible_gap: bool = False,
+) -> tuple[tuple[float, float], ...]:
+    """Build an RGB-only multi-barrier route from predicted gap heights."""
+    features = vertical_barrier_features(
+        observation, include_gap_center=False
+    ).view(-1, MAX_VERTICAL_BARRIERS, 6)[0].numpy()
+    valid = np.flatnonzero(features[:, 5] > 0.5)
+    if len(valid) == 0:
+        return (tuple(map(float, goal)),)
+    position = extract_agent_position(observation).astype(np.float32)
+    direction = 1.0 if goal[0] >= position[0] else -1.0
+    ordered = valid[np.argsort(features[valid, 0])]
+    if direction < 0:
+        ordered = ordered[::-1]
+    centers = np.asarray(predicted_gap_centers, dtype=np.float32).reshape(-1)
+    waypoints: list[tuple[float, float]] = []
+    current_x = float(position[0])
+    for index in ordered:
+        x_center = float(features[index, 0] * 64.0)
+        gap_y = float(centers[index] * 64.0)
+        if project_to_visible_gap:
+            top_end = float(features[index, 1] * 64.0)
+            bottom_start = float(features[index, 2] * 64.0)
+            gap_y = float(np.clip(gap_y, top_end + clearance, bottom_start - clearance))
+        gap_y = float(np.clip(gap_y, clearance, 64.0 - clearance))
+        before_x = x_center - direction * clearance
+        # Do not ask an inertial agent to backtrack before the first barrier.
+        # If it is already inside the safe pre-barrier interval, change only
+        # the lateral coordinate and then cross the barrier.
+        if direction > 0:
+            before_x = max(before_x, current_x)
+        else:
+            before_x = min(before_x, current_x)
+        after_x = x_center + direction * clearance + 3.0 * direction
+        waypoints.extend(((before_x, gap_y), (after_x, gap_y)))
+        current_x = after_x
+    waypoints.append(tuple(map(float, goal)))
+    return tuple(waypoints)
+
+
+class GapRoutePolicy(nn.Module):
+    """Predict one traversable gap height per visible vertical barrier."""
+
+    def __init__(self, hidden_dim: int = 96) -> None:
+        super().__init__()
+        self.geometry_dim = MAX_VERTICAL_BARRIERS * 6
+        self.encoder = nn.Sequential(
+            nn.Linear(16 * 16 + self.geometry_dim + 4, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        self.head = nn.Linear(hidden_dim, MAX_VERTICAL_BARRIERS)
+
+    def forward(self, goals: torch.Tensor, positions: torch.Tensor, wall_features: torch.Tensor) -> torch.Tensor:
+        return torch.sigmoid(self.head(self.encoder(torch.cat((goals, positions, wall_features), dim=-1))))
+
+    def fit(
+        self,
+        observations: np.ndarray,
+        goals: np.ndarray,
+        epochs: int = 160,
+        seed: int = 7,
+    ) -> dict[str, float | int]:
+        frames = np.asarray(observations, dtype=np.uint8)
+        goal_values = torch.from_numpy(np.asarray(goals, dtype=np.float32)) / 64.0
+        positions = extract_agent_position(frames).astype(np.float32)
+        positions = np.nan_to_num(positions, nan=0.0, posinf=0.0, neginf=0.0)
+        position_values = torch.from_numpy(positions) / 64.0
+        wall_features = torch.cat(
+            (
+                wall_grid_features(frames, grid_size=16),
+                vertical_barrier_features(frames, include_gap_center=False),
+            ),
+            dim=-1,
+        )
+        targets, valid = gap_route_targets(frames)
+        if frames.ndim != 4 or frames.shape[1:] != (3, 64, 64):
+            raise ValueError("observations must have shape [samples, 3, 64, 64]")
+        if len(frames) < 8:
+            raise ValueError("gap route training data must contain at least eight samples")
+        torch.manual_seed(seed)
+        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4, weight_decay=1e-5)
+        for _ in range(max(1, int(epochs))):
+            prediction = self(goal_values, position_values, wall_features)
+            error = nn.functional.smooth_l1_loss(prediction, targets, reduction="none")
+            loss = (error * valid).sum() / valid.sum().clamp_min(1.0)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        with torch.no_grad():
+            prediction = self(goal_values, position_values, wall_features)
+            mean_error = (torch.abs(prediction - targets) * valid).sum() / valid.sum().clamp_min(1.0)
+        return {"epochs": int(epochs), "samples": int(len(frames)), "mean_gap_error_px": float(mean_error * 64.0)}
+
+    @torch.no_grad()
+    def predict_gap_centers(self, observation: np.ndarray, goal: tuple[float, float]) -> np.ndarray:
+        position = extract_agent_position(observation).astype(np.float32)
+        position = np.nan_to_num(position, nan=0.0, posinf=0.0, neginf=0.0)
+        features = torch.cat(
+            (
+                wall_grid_features(observation, grid_size=16),
+                vertical_barrier_features(observation, include_gap_center=False),
+            ),
+            dim=-1,
+        )
+        prediction = self(
+            torch.as_tensor(np.asarray(goal, dtype=np.float32) / 64.0)[None],
+            torch.as_tensor(position / 64.0)[None],
+            features,
+        )
+        return prediction[0].cpu().numpy().astype(np.float32)
+
+    def save(self, destination: str | Path, metadata: dict[str, Any] | None = None) -> Path:
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"model": self.state_dict(), "metadata": metadata or {}}, path)
+        return path
+
+    @classmethod
+    def load(cls, checkpoint: str | Path) -> "GapRoutePolicy":
+        payload = torch.load(checkpoint, map_location="cpu")
+        model = cls()
+        model.load_state_dict(payload["model"], strict=True)
+        return model
 
 
 class RouteModePolicy(nn.Module):
