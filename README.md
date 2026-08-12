@@ -266,6 +266,47 @@ python -m pocketworld.evaluate_mpc_ablation \
 
 See the [v20 machine-readable ablation](docs/results/evaluation-mpc-ablation-v20.json).
 
+### v21 OOD speed/map shift and shift-aware fallback
+
+v21 evaluates the fixed v19 route-field checkpoint on one paired holdout set
+under three speed scales (`0.75`, `1.0`, `1.25`) and deterministic wall
+translations. The wall shift is applied only after nominal holdout sampling;
+each shifted task is reachability-checked and unreachable shifted tasks are
+excluded from every method in that condition. The shift detector is calibrated
+only from 60 train-split coarse wall signatures with a leave-one-out 99th
+percentile threshold (`0.11328125`).
+
+| Condition | RGB projection | RGB MPC | Shift detector + MPC/A* fallback |
+| --- | ---: | ---: | ---: |
+| nominal, speed 0.75 | 90.0% / 0.833 | 91.7% / 0.300 | 95.0% / 0.250 |
+| nominal, speed 1.00 | 88.3% / 2.200 | 90.0% / 0.333 | 93.3% / 0.550 |
+| nominal, speed 1.25 | 81.7% / 13.883 | **90.0% / 0.717** | 93.3% / 0.800 |
+| walls −2 px, speed 1.25 | 80.0% / 21.833 | 91.7% / 2.700 | **98.3% / 2.567** |
+| walls +1 px, speed 1.00 | 71.9% / 3.018 | 75.4% / 0.596 | **78.9% / 0.404** |
+
+Cells report `real success / collisions per episode`. MPC is robust to speed
+shift without retraining; the route field is the larger OOD bottleneck. The
+fallback improves shifted-map performance, but it is a hybrid reference and
+uses A* when the detector fires, so it is not a pure learned-planner result.
+The detector fires on about 30–38% of cases, including nominal holdout tasks,
+because the training split contains only two obstacle families while nominal
+holdout includes four. Therefore this is a train-family/layout shift monitor,
+not a perfect binary map-shift classifier.
+
+The full paired report is in the [v21 OOD report](docs/results/evaluation-general-ood-v21.json): it records excluded unreachable tasks, family-level metrics, detector scores, fallback calls, and the no-A*-at-student-evaluation contract for the pure methods.
+
+Reproduce it with:
+
+```bash
+python -m pocketworld.evaluate_general_ood \
+  --checkpoint artifacts/general-route-sketch-v19-mpc-distance-field.pt \
+  --train-seeds 101,103,107 --train-episodes 20 \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 20 \
+  --map-shifts nominal,walls_x_minus2,walls_x_plus1 \
+  --speed-scales 0.75,1.0,1.25 \
+  --output artifacts/evaluation-general-ood-v21.json
+```
+
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
 </p>

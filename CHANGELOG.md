@@ -43,6 +43,28 @@ See the [v19 machine-readable report](docs/results/evaluation-general-routes-v19
 
 See the [v20 machine-readable ablation](docs/results/evaluation-mpc-ablation-v20.json).
 
+## [0.19.0] - 2026-08-12
+
+### Added
+
+- General-route OOD evaluator for paired speed and deterministic wall shifts.
+- Train-only coarse wall-signature calibration and explicit shift-aware MPC/A*
+  fallback comparison.
+- Reachability exclusions, shift detection rate, fallback calls, and family
+  breakdowns in the machine-readable report.
+
+### Results
+
+- RGB MPC remains effective under speed 1.25: 90.0% success and 0.717
+  collisions/episode versus 81.7% and 13.883 for the v18 RGB projection
+  baseline.
+- On `walls_x_plus1 @ speed1.0`, pure RGB MPC reaches 75.4% success and 0.596
+  collisions; shift-aware MPC/A* fallback reaches 78.9% and 0.404.
+- The fallback is explicitly hybrid and is not counted as pure learned
+  planning; detector triggers also occur on nominal holdout family shifts.
+
+See the [v21 OOD report](docs/results/evaluation-general-ood-v21.json).
+
 ## [0.16.0] - 2026-08-12
 
 ### Added
