@@ -434,7 +434,7 @@ def evaluate_general_policy(
                         action_history=action_history,
                         velocity_source=mpc_velocity_source,
                     )
-                    robust_mpc_calls += int(method == "distance_field_budgeted_hybrid_mpc")
+                    robust_mpc_calls += 1
                 if method == "distance_field_beam_adaptive_mpc":
                     from .route_field import adaptive_mpc_decision
 
@@ -522,7 +522,7 @@ def evaluate_general_policy(
                         action_history=action_history,
                         velocity_source=mpc_velocity_source,
                     )
-                    robust_mpc_calls += 1
+                    robust_mpc_calls += int(method == "distance_field_budgeted_hybrid_mpc")
                 planning_time_ms += (time.perf_counter() - planning_start) * 1000.0
                 observation, _, terminated, truncated, info = env.step(action)
                 action_history.append(int(action))
