@@ -192,8 +192,7 @@ a reliably executable detour through a narrow or wide opening.
 The result and checkpoints are machine-readable:
 
 - [variant comparison](../results/evaluation-route-variants-v9.json)
-- [baseline 9D predictor](../../artifacts/route-completion-v9-baseline.pt)
-- [map-aware 17D predictor](../../artifacts/route-completion-v9-map-aware.pt)
+- Local checkpoints produced by the command above: `artifacts/route-completion-v9-baseline.pt` and `artifacts/route-completion-v9-map-aware.pt`.
 
 Reproduce with a resumable run:
 
