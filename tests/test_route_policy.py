@@ -8,6 +8,7 @@ from pocketworld.evaluate_learned_route_policy import (
     collect_teacher_data,
     evaluate_action_imitation,
     evaluate_policy,
+    train_and_evaluate_route_mode,
 )
 from pocketworld.route_policy import (
     ROUTE_MODES,
@@ -136,3 +137,23 @@ def test_route_mode_policy_roundtrip(tmp_path):
     assert policy.predict_mode(observation, (55.0, 55.0)) in range(4)
     loaded = RouteModePolicy.load(policy.save(tmp_path / "route-mode.pt"))
     assert loaded.predict_mode(observation, (55.0, 55.0)) in range(4)
+
+
+def test_route_mode_end_to_end_report(tmp_path):
+    report = train_and_evaluate_route_mode(
+        train_seeds=(101,),
+        train_scenarios=("single_barrier", "barrier_narrow_gap"),
+        evaluation_seeds=(11,),
+        evaluation_scenarios=("single_barrier", "barrier_narrow_gap"),
+        validation_seeds=(107,),
+        validation_scenarios=("single_barrier",),
+        train_episodes=4,
+        evaluation_episodes=1,
+        max_steps=8,
+        epochs=2,
+        predictor_output=tmp_path / "route-mode-report.pt",
+    )
+    assert report["protocol"]["student_evaluation_uses_astar"] is False
+    assert report["training"]["samples"] == 8
+    assert report["validation"]["samples"] == 2
+    assert len(report["evaluation"]["rows"]) == 2
