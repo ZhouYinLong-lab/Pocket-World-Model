@@ -289,6 +289,8 @@ def evaluate_general_policy(
             budget_infeasible_events = 0
             wall_block_events = 0
             progress_regression_events = 0
+            wall_block_streak = 0
+            last_budget_fallback_step = -1000
             budget_slack_sum = 0.0
             budget_slack_min = float("inf")
             for _ in range(max_steps):
@@ -334,7 +336,12 @@ def evaluate_general_policy(
                     progress_is_stalled = progress_regression_streak >= 2
                     wall_block_events += int(route_is_blocked)
                     budget_infeasible_events += int(budget_is_infeasible)
-                    if route_is_blocked or budget_is_infeasible or progress_is_stalled:
+                    wall_block_streak = wall_block_streak + 1 if route_is_blocked else 0
+                    fallback_cooldown_elapsed = step_index - last_budget_fallback_step >= 12
+                    fallback_reason_ready = (
+                        wall_block_streak >= 2 or budget_is_infeasible or progress_is_stalled
+                    )
+                    if fallback_reason_ready and fallback_cooldown_elapsed:
                         waypoints = _astar_waypoints(observation, case.goal, position, points)
                         waypoint_index = 0
                         target = waypoints[0]
@@ -344,8 +351,10 @@ def evaluate_general_policy(
                         route_progress = route_progress_metrics(position, route_points)
                         last_route_progress = float(route_progress["progress_px"])
                         progress_regression_streak = 0
+                        wall_block_streak = 0
                         astar_calls += 1
                         budget_fallbacks += 1
+                        last_budget_fallback_step = step_index
                         fallback_triggered = True
                         target_dirty = True
                         planned_target = None
