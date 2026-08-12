@@ -1,0 +1,119 @@
+from collections import Counter
+
+import pytest
+
+from pocketworld.general_routes import (
+    GENERAL_FAMILIES,
+    general_wall_layout,
+    sample_general_route_cases,
+)
+from pocketworld.evaluate_general_routes import train_and_evaluate_general_routes
+from pocketworld.route_field import (
+    RouteFieldPolicy,
+    _coarse_transition_is_safe,
+    conservative_field_action,
+    field_waypoints,
+    route_field_targets,
+)
+from pocketworld.env import PocketWorldEnv
+from pocketworld.planner import _astar_path, _dilate, extract_wall_mask
+
+
+def test_general_families_are_valid_and_reachable():
+    for family in GENERAL_FAMILIES:
+        walls, channels = general_wall_layout(17, family)
+        observation, _ = PocketWorldEnv(
+            walls=walls, agent_start=(7.0, 7.0), goal=(57.0, 57.0)
+        ).reset()
+        path = _astar_path(
+            _dilate(extract_wall_mask(observation), 4),
+            (7.0, 7.0),
+            (57.0, 57.0),
+            allow_diagonal=False,
+        )
+        assert path
+        assert channels >= 1
+
+
+def test_general_sampling_is_deterministic_and_covers_unseen_shapes():
+    first = sample_general_route_cases(11, 20, split="holdout")
+    second = sample_general_route_cases(11, 20, split="holdout")
+    assert first == second
+    assert set(case.family for case in first) >= {"staircase", "l_shapes"}
+    assert all(abs(case.start[0] - case.goal[0]) == 50.0 for case in first)
+    counts = Counter(case.family for case in first)
+    assert sum(counts.values()) == 20
+
+
+def test_general_sampling_validates_inputs():
+    with pytest.raises(ValueError, match="episodes"):
+        sample_general_route_cases(3, 0)
+    with pytest.raises(ValueError, match="split"):
+        sample_general_route_cases(3, 1, split="test")
+    with pytest.raises(ValueError, match="family"):
+        general_wall_layout(3, "unknown")
+
+
+def test_general_evaluation_reports_method_astar_contract(tmp_path):
+    report = train_and_evaluate_general_routes(
+        train_seeds=(101,),
+        evaluation_seeds=(11,),
+        train_episodes=8,
+        evaluation_episodes=1,
+        max_steps=40,
+        points=3,
+        epochs=1,
+        predictor_output=tmp_path / "general.pt",
+    )
+    contract = report["protocol"]["method_astar_contract"]
+    assert contract["learned"] is False
+    assert contract["rgb_projection"] is False
+    assert contract["hybrid_astar"] is True
+    assert contract["rgb_astar"] is True
+    assert contract["distance_field_beam_rgb_projection"] is False
+    assert contract["distance_field_beam_conservative"] is False
+    assert set(report["evaluation"]) == {
+        "learned",
+        "rgb_projection",
+        "hybrid_astar",
+        "rgb_astar",
+        "distance_field",
+        "distance_field_rgb_projection",
+        "distance_field_beam_rgb_projection",
+        "distance_field_beam_conservative",
+    }
+    assert report["distance_field_checkpoint"].endswith("-distance-field.pt")
+
+
+def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
+    cases = sample_general_route_cases(101, 8, split="train")
+    from pocketworld.env import PocketWorldEnv
+    import numpy as np
+
+    frames = []
+    goals = []
+    for case in cases:
+        frame, _ = PocketWorldEnv(walls=case.walls, agent_start=case.start, goal=case.goal).reset()
+        frames.append(frame)
+        goals.append(case.goal)
+    frames = np.asarray(frames, dtype=np.uint8)
+    goals = np.asarray(goals, dtype=np.float32)
+    targets, valid = route_field_targets(frames, goals)
+    assert targets.shape == valid.shape == (8, 16, 16)
+    policy = RouteFieldPolicy()
+    assert policy.fit(frames, goals, epochs=1)["samples"] == 8
+    predicted = policy.predict_field(frames[0], tuple(goals[0]))
+    assert predicted.shape == (16, 16)
+    assert field_waypoints(frames[0], tuple(goals[0]), predicted)
+    assert field_waypoints(frames[0], tuple(goals[0]), predicted, beam_width=4)
+    assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
+    assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
+
+
+def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
+    import numpy as np
+
+    occupied = np.zeros((64, 64), dtype=bool)
+    occupied[28:36, 20:44] = True
+    assert not _coarse_transition_is_safe(occupied, (4, 7), (5, 7), 4)
+    assert _coarse_transition_is_safe(occupied, (4, 4), (4, 5), 4)
