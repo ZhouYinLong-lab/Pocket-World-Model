@@ -2,6 +2,39 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.20.0] - 2026-08-12
+
+### Added
+
+- Balanced route-family coverage controls and a three-condition density study:
+  two families/600 total samples, four families/600, and four families/1200.
+- A paired planner-comparison runner with one shared holdout, RGB/A* geometric
+  reference, learned field projection, MPC, robust MPC, and guarded MPC.
+- Explicit negative-result reporting for clearance-field and guarded-MPC
+  variants instead of selecting only the best method.
+
+### Results
+
+- Four-family/600 training is the strongest learned setting in the paired
+  coverage study: distance-field MPC reaches 95.0% real success with 0.367
+  collisions per episode.
+- Robust MPC keeps the same 95.0% success and reduces collisions to 0.150,
+  but raises mean planning time to 2.80 seconds versus 255 ms for MPC.
+- Increasing the same four-family training budget to 1200 total samples does
+  not improve success (93.3%); coverage and per-family density interact, so
+  this is not evidence for monotonic scaling.
+- Under speed 1.25, ordinary MPC keeps 95.0% nominal success and 78.9% under
+  walls-x-plus-one, while robust MPC reduces nominal/OOD collisions to 0.433 /
+  1.053 but reaches 93.3% / 73.7% success. Robustness is therefore a risk
+  trade-off, not a uniformly stronger planner.
+- The guarded-MPC ablation falls to 66.7% success, while clearance training is
+  indistinguishable from the base field on this holdout.
+
+See the [v23 coverage report](docs/results/evaluation-coverage-study-v23.json)
+and [v23 planner comparison](docs/results/evaluation-planner-comparison-v23.json).
+The paired OOD matrix is in
+[evaluation-coverage-study-v23-ood.json](docs/results/evaluation-coverage-study-v23-ood.json).
+
 ## [0.17.0] - 2026-08-12
 
 ### Added
