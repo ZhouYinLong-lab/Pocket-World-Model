@@ -590,6 +590,33 @@ python -m pocketworld.evaluate_general_route_gate \
 See the [holdout result](docs/results/evaluation-general-route-gate-v1-final.json)
 and [corrected OOD result](docs/results/evaluation-general-route-gate-ood-v1-final.json).
 
+### v0.30 calibrated route-gate feature study
+
+The next gate iteration fixes a feature-contract bug found by auditing the
+actual route geometry: the old `field_route_distance_norm` was always zero
+because the generated route ended at the goal. The predictor now uses twelve
+visible features, including route turns, minimum wall clearance, blocked
+fraction, and waypoint count. A scalar temperature is fitted on the disjoint
+calibration split. Brier score improves from **0.0333 to 0.0266**, ECE from
+**0.0320 to 0.0269**, and AUROC is **0.9773**.
+
+On the fixed three-seed holdout, the calibrated gate preserves 100% success
+but has **0.500 collisions/episode** versus 0.500 for fast hybrid, and makes
+1.517 versus 1.467 A* calls. In the six-condition paired OOD matrix, collision
+rate improves in three conditions, worsens in one, and ties in two; success is
+100% everywhere and A* calls do not decrease. This is a calibrated risk
+diagnostic, not yet a universally better planner.
+
+```bash
+python -m pocketworld.evaluate_general_route_gate \
+  artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt \
+  --predictor-output artifacts/general-route-gate-v2-calibrated.pt \
+  --output artifacts/evaluation-general-route-gate-v2-calibrated.json
+```
+
+See the [calibrated holdout result](docs/results/evaluation-general-route-gate-v2-calibrated-final.json)
+and [paired OOD result](docs/results/evaluation-general-route-gate-v2-calibrated-ood.json).
+
 Reproduce the comparison with:
 
 ```bash
