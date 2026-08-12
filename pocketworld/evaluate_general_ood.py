@@ -134,6 +134,8 @@ def run_general_ood(
     route_budget_margin: float = 1.05,
     route_progress_tolerance: float = 1.5,
     rgb_shield_margin: int = 4,
+    route_gate_model: object | None = None,
+    route_gate_threshold: float = 0.5,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -184,6 +186,8 @@ def run_general_ood(
                     route_budget_margin=route_budget_margin,
                     route_progress_tolerance=route_progress_tolerance,
                     rgb_shield_margin=rgb_shield_margin,
+                    route_gate_model=route_gate_model,
+                    route_gate_threshold=route_gate_threshold,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -217,6 +221,7 @@ def run_general_ood(
             "route_budget_margin": route_budget_margin,
             "route_progress_tolerance": route_progress_tolerance,
             "rgb_shield_margin": rgb_shield_margin,
+            "route_gate_threshold": route_gate_threshold,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
@@ -263,13 +268,21 @@ def main() -> None:
     parser.add_argument("--route-budget-margin", type=float, default=1.05)
     parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
     parser.add_argument("--rgb-shield-margin", type=int, default=4)
+    parser.add_argument("--route-gate-checkpoint", default="")
+    parser.add_argument("--route-gate-threshold", type=float, default=0.25)
     parser.add_argument("--output", default="artifacts/evaluation-general-ood-v21.json")
     args = parser.parse_args()
     from .collision_head import CollisionProbabilityHead
+    from .route_completion import RouteCompletionPredictor
 
     collision_head = (
         CollisionProbabilityHead.load(args.collision_head_checkpoint)
         if args.collision_head_checkpoint
+        else None
+    )
+    route_gate_model = (
+        RouteCompletionPredictor.load(args.route_gate_checkpoint)
+        if args.route_gate_checkpoint
         else None
     )
     report = run_general_ood(
@@ -296,6 +309,8 @@ def main() -> None:
         route_budget_margin=args.route_budget_margin,
         route_progress_tolerance=args.route_progress_tolerance,
         rgb_shield_margin=args.rgb_shield_margin,
+        route_gate_model=route_gate_model,
+        route_gate_threshold=args.route_gate_threshold,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
