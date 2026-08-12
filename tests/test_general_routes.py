@@ -20,6 +20,11 @@ from pocketworld.collision_head import (
     collect_collision_head_dataset,
     collision_head_features,
 )
+from pocketworld.general_route_gate import (
+    GENERAL_ROUTE_FEATURE_NAMES,
+    extract_general_route_features,
+    make_general_route_predictor,
+)
 from pocketworld.route_field import (
     RouteFieldPolicy,
     _coarse_transition_is_safe,
@@ -228,6 +233,25 @@ def test_budgeted_hybrid_method_is_explicit_and_not_default():
     assert "distance_field_budgeted_hybrid_gated_mpc" not in GENERAL_DEFAULT_METHODS
     assert "distance_field_budgeted_hybrid_shielded_mpc" in GENERAL_METHODS
     assert "distance_field_budgeted_hybrid_shielded_mpc" not in GENERAL_DEFAULT_METHODS
+    assert "distance_field_predicted_gate_hybrid" in GENERAL_METHODS
+    assert "distance_field_predicted_gate_hybrid" not in GENERAL_DEFAULT_METHODS
+
+
+def test_general_route_gate_feature_contract_and_predictor():
+    case = sample_general_route_cases(101, 1, split="holdout")[0]
+    observation, _ = PocketWorldEnv(
+        walls=case.walls, agent_start=case.start, goal=case.goal
+    ).reset()
+    features = extract_general_route_features(
+        observation, case.goal, RouteFieldPolicy()
+    )
+    assert features.shape == (len(GENERAL_ROUTE_FEATURE_NAMES),)
+    assert np.isfinite(features).all()
+    predictor = make_general_route_predictor()
+    train_features = np.stack((features, features + 0.01, features + 0.02, features + 0.03))
+    labels = np.asarray((0.0, 1.0, 0.0, 1.0), dtype=np.float32)
+    assert predictor.fit(train_features, labels, epochs=1)["samples"] == 4
+    assert predictor.predict_proba(features[None]).shape == (1,)
 
 
 def test_gated_hybrid_threshold_calibration_is_selectable(tmp_path):
