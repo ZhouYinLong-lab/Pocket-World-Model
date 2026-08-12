@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 2.8 seconds
-Output:
 from collections import Counter
 
 import numpy as np
