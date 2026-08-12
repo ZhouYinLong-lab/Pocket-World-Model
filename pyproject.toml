@@ -39,6 +39,7 @@ pocketworld-evaluate-gap-route = "pocketworld.evaluate_gap_route_policy:main"
 pocketworld-evaluate-general-routes = "pocketworld.evaluate_general_routes:main"
 pocketworld-evaluate-planner-comparison = "pocketworld.evaluate_planner_comparison:main"
 pocketworld-evaluate-adaptive-calibration = "pocketworld.evaluate_adaptive_calibration:main"
+pocketworld-evaluate-collision-head = "pocketworld.evaluate_collision_head:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]

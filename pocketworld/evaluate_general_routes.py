@@ -39,6 +39,7 @@ GENERAL_METHODS = (
     "distance_field_beam_mpc",
     "distance_field_beam_robust_mpc",
     "distance_field_beam_adaptive_mpc",
+    "distance_field_beam_collision_head_mpc",
     "distance_field_clearance_beam_rgb_projection",
     "distance_field_beam_guarded_mpc",
     "distance_field_mpc_shift_fallback",
@@ -46,7 +47,11 @@ GENERAL_METHODS = (
 GENERAL_DEFAULT_METHODS = tuple(
     method
     for method in GENERAL_METHODS[:-1]
-    if method != "distance_field_beam_adaptive_mpc"
+    if method
+    not in {
+        "distance_field_beam_adaptive_mpc",
+        "distance_field_beam_collision_head_mpc",
+    }
 )
 
 
@@ -157,6 +162,10 @@ def evaluate_general_policy(
     shift_threshold: float = 0.0,
     adaptive_risk_threshold: float = 0.45,
     adaptive_risk_exit_threshold: float = 0.30,
+    collision_head: object | None = None,
+    collision_head_risk_threshold: float = 0.35,
+    collision_head_risk_exit_threshold: float = 0.25,
+    collision_head_horizon_index: int = 1,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
@@ -189,6 +198,12 @@ def evaluate_general_policy(
             adaptive_risk_sum = 0.0
             adaptive_risk_max = 0.0
             adaptive_robust_active = False
+            collision_head_active = False
+            collision_head_calls = 0
+            collision_head_robust_calls = 0
+            collision_head_switches = 0
+            collision_head_risk_sum = 0.0
+            collision_head_risk_max = 0.0
             planning_time_ms = 0.0
             layout_shift_score = 0.0
             shift_detected = False
@@ -203,6 +218,7 @@ def evaluate_general_policy(
                 "distance_field_beam_mpc",
                 "distance_field_beam_robust_mpc",
                 "distance_field_beam_adaptive_mpc",
+                "distance_field_beam_collision_head_mpc",
                 "distance_field_clearance_beam_rgb_projection",
                 "distance_field_beam_guarded_mpc",
                 "distance_field_mpc_shift_fallback",
@@ -220,6 +236,7 @@ def evaluate_general_policy(
                         "distance_field_beam_mpc",
                         "distance_field_beam_robust_mpc",
                         "distance_field_beam_adaptive_mpc",
+                        "distance_field_beam_collision_head_mpc",
                         "distance_field_clearance_beam_rgb_projection",
                         "distance_field_mpc_shift_fallback",
                     }
@@ -351,6 +368,38 @@ def evaluate_general_policy(
                     adaptive_robust_active = use_robust
                     if use_robust:
                         robust_mpc_calls += 1
+                if method == "distance_field_beam_collision_head_mpc":
+                    if collision_head is None:
+                        raise ValueError(
+                            "collision_head method requires a trained collision_head"
+                        )
+                    from .route_field import collision_head_mpc_decision
+
+                    collision_head_calls += 1
+                    mpc_calls += 1
+                    action, use_robust, risk_score = collision_head_mpc_decision(
+                        collision_head,
+                        observation,
+                        case.goal,
+                        target,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        velocity_source=mpc_velocity_source,
+                        risk_threshold=collision_head_risk_threshold,
+                        risk_exit_threshold=collision_head_risk_exit_threshold,
+                        robust_active=collision_head_active,
+                        probability_horizon_index=collision_head_horizon_index,
+                    )
+                    collision_head_risk_sum += risk_score
+                    collision_head_risk_max = max(collision_head_risk_max, risk_score)
+                    if use_robust:
+                        mpc_calls += 1
+                        collision_head_robust_calls += 1
+                    if use_robust != collision_head_active:
+                        collision_head_switches += 1
+                    collision_head_active = use_robust
                 if method == "distance_field_beam_guarded_mpc":
                     mpc_calls += 1
                     baseline_action = action
@@ -394,6 +443,11 @@ def evaluate_general_policy(
                     "adaptive_switches": adaptive_switches,
                     "adaptive_risk_mean": adaptive_risk_sum / max(1, int(env.steps)),
                     "adaptive_risk_max": adaptive_risk_max,
+                    "collision_head_calls": collision_head_calls,
+                    "collision_head_robust_calls": collision_head_robust_calls,
+                    "collision_head_switches": collision_head_switches,
+                    "collision_head_risk_mean": collision_head_risk_sum / max(1, int(env.steps)),
+                    "collision_head_risk_max": collision_head_risk_max,
                     "planning_time_ms": planning_time_ms,
                     "layout_shift_score": layout_shift_score,
                     "shift_detected": shift_detected,
@@ -412,6 +466,11 @@ def evaluate_general_policy(
         "adaptive_switches",
         "adaptive_risk_mean",
         "adaptive_risk_max",
+        "collision_head_calls",
+        "collision_head_robust_calls",
+        "collision_head_switches",
+        "collision_head_risk_mean",
+        "collision_head_risk_max",
         "planning_time_ms",
         "layout_shift_score",
         "shift_detected",
@@ -566,6 +625,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_beam_mpc": False,
                 "distance_field_beam_robust_mpc": False,
                 "distance_field_beam_adaptive_mpc": False,
+                "distance_field_beam_collision_head_mpc": False,
                 "distance_field_clearance_beam_rgb_projection": False,
                 "distance_field_beam_guarded_mpc": False,
                 "distance_field_mpc_shift_fallback": True,
@@ -586,6 +646,7 @@ def train_and_evaluate_general_routes(
             "distance_field_beam_mpc": "learned-field beam with RGB-only short-horizon inertial MPC",
             "distance_field_beam_robust_mpc": "learned-field beam with velocity-scale robust RGB-only MPC",
             "distance_field_beam_adaptive_mpc": "learned-field beam with fixed-threshold online ordinary/robust MPC switching",
+            "distance_field_beam_collision_head_mpc": "learned-field beam with simulator-labelled short-horizon collision probability gate",
             "distance_field_clearance_beam_rgb_projection": "clearance-penalized learned field with beam and RGB guard",
             "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
             "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
