@@ -1,6 +1,13 @@
 import numpy as np
 
-from pocketworld.evaluate_planners import evaluate_planner_tournament
+from pocketworld.evaluate_planners import (
+    NARROW_GAP_WALLS,
+    SHIFTED_BARRIER_WALLS,
+    WIDE_GAP_WALLS,
+    _scenario_walls,
+    evaluate_planner_tournament,
+    PLANNER_SEED_OFFSETS,
+)
 from pocketworld.model import PocketWorldModel
 
 
@@ -75,3 +82,60 @@ def test_fixed_predictor_safety_entrypoint_reports_all_methods(tmp_path):
 
     assert "route_completion_soft" in report["summary"]
     assert "paired_soft_comparison" in report
+
+
+def test_safety_sweep_scenarios_have_distinct_wall_protocols():
+    assert _scenario_walls("single_barrier") != _scenario_walls("barrier_shifted")
+    assert _scenario_walls("barrier_narrow_gap") == NARROW_GAP_WALLS
+    assert _scenario_walls("barrier_wide_gap") == WIDE_GAP_WALLS
+    assert _scenario_walls("barrier_shifted") == SHIFTED_BARRIER_WALLS
+
+
+def test_planner_seed_offsets_are_name_stable():
+    assert PLANNER_SEED_OFFSETS["learned_collision"] == 0
+    assert PLANNER_SEED_OFFSETS["route_completion_soft"] == 4
+    assert len(set(PLANNER_SEED_OFFSETS.values())) == len(PLANNER_SEED_OFFSETS)
+
+
+def test_subset_tournament_preserves_planner_random_stream():
+    from pocketworld.evaluate_planners import evaluate_planner_tournament
+
+    model = PocketWorldModel()
+    single = evaluate_planner_tournament(
+        model,
+        seeds=(5,),
+        episodes=1,
+        horizon=4,
+        candidates=8,
+        scenario="open",
+        planners=("learned_collision",),
+        include_rows=True,
+    )
+    subset = evaluate_planner_tournament(
+        model,
+        seeds=(5,),
+        episodes=1,
+        horizon=4,
+        candidates=8,
+        scenario="open",
+        planners=("random_shooting", "learned_collision"),
+        include_rows=True,
+    )
+    assert single["rows"]["5"]["learned_collision"] == subset["rows"]["5"]["learned_collision"]
+
+
+def test_gap_cases_start_on_opposite_sides_of_the_wall():
+    for scenario in ("barrier_narrow_gap", "barrier_wide_gap"):
+        walls = _scenario_walls(scenario)
+        for start, goal in __import__("pocketworld.evaluate_planners", fromlist=["_episode_cases"])._episode_cases(8, 11, scenario):
+            assert start[0] < 20.0 and goal[0] > 44.0
+            assert not any(
+                wall.x - 3 <= start[0] <= wall.x + wall.width + 3
+                and wall.y - 3 <= start[1] <= wall.y + wall.height + 3
+                for wall in walls
+            )
+            assert not any(
+                wall.x - 3 <= goal[0] <= wall.x + wall.width + 3
+                and wall.y - 3 <= goal[1] <= wall.y + wall.height + 3
+                for wall in walls
+            )
