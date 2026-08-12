@@ -17,6 +17,7 @@ DEFAULT_METHODS = (
     "distance_field_clearance_beam_rgb_projection",
     "distance_field_beam_mpc",
     "distance_field_beam_robust_mpc",
+    "distance_field_beam_adaptive_mpc",
     "distance_field_beam_guarded_mpc",
 )
 
@@ -31,6 +32,8 @@ def run_planner_comparison(
     mpc_horizon: int = 4,
     mpc_beam_width: int = 8,
     mpc_velocity_source: str = "rgb",
+    adaptive_risk_threshold: float = 0.45,
+    adaptive_risk_exit_threshold: float = 0.30,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     cases_by_seed = {
@@ -49,6 +52,8 @@ def run_planner_comparison(
             mpc_beam_width=mpc_beam_width,
             mpc_velocity_source=mpc_velocity_source,
             cases_by_seed=cases_by_seed,
+            adaptive_risk_threshold=adaptive_risk_threshold,
+            adaptive_risk_exit_threshold=adaptive_risk_exit_threshold,
         )
         for method in methods
     }
@@ -63,6 +68,8 @@ def run_planner_comparison(
             "mpc_horizon": mpc_horizon,
             "mpc_beam_width": mpc_beam_width,
             "mpc_velocity_source": mpc_velocity_source,
+            "adaptive_risk_threshold": adaptive_risk_threshold,
+            "adaptive_risk_exit_threshold": adaptive_risk_exit_threshold,
             "shared_holdout_cases": True,
             "student_evaluation_uses_astar": False,
             "rgb_astar_is_geometric_reference": True,
@@ -86,6 +93,8 @@ def main() -> None:
     parser.add_argument("--mpc-horizon", type=int, default=4)
     parser.add_argument("--mpc-beam-width", type=int, default=8)
     parser.add_argument("--mpc-velocity-source", choices=("rgb", "action_fused"), default="rgb")
+    parser.add_argument("--adaptive-risk-threshold", type=float, default=0.45)
+    parser.add_argument("--adaptive-risk-exit-threshold", type=float, default=0.30)
     parser.add_argument("--output", default="artifacts/evaluation-planner-comparison-v23.json")
     args = parser.parse_args()
     report = run_planner_comparison(
@@ -98,6 +107,8 @@ def main() -> None:
         mpc_horizon=args.mpc_horizon,
         mpc_beam_width=args.mpc_beam_width,
         mpc_velocity_source=args.mpc_velocity_source,
+        adaptive_risk_threshold=args.adaptive_risk_threshold,
+        adaptive_risk_exit_threshold=args.adaptive_risk_exit_threshold,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
