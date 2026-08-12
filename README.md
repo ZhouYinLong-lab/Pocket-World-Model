@@ -128,7 +128,9 @@ per-barrier gap-center student (v17):
 The v17 result uses 600 training tasks and 60 held-out tasks across three
 evaluation seeds (`11,23,41`, 20 each). The student does **not** receive the
 target gap center: its input is the initial RGB frame plus the goal, while the
-gap center is only a teacher label. Evaluation makes no A* calls. The
+gap center is only a teacher label. A* is used only as a data-quality filter to
+discard disconnected procedural samples; labels, student inference, and
+evaluation make no A* calls. The
 projection is a separate RGB feasibility layer that clamps each prediction to
 the visible gap interval; therefore the 100% number is a hybrid safety result,
 not pure end-to-end learned obstacle navigation. The raw-vs-projected paired

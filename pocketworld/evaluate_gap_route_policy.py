@@ -86,7 +86,6 @@ def train_and_evaluate_gap_policy(
     max_steps: int = 140,
     epochs: int = 320,
     predictor_output: str | Path = "artifacts/gap-route-policy-v17.pt",
-    project_to_visible_gap: bool = True,
 ) -> dict[str, object]:
     observations, goals = collect_gap_data(train_seeds, train_episodes, "train")
     policy = GapRoutePolicy()
@@ -104,6 +103,7 @@ def train_and_evaluate_gap_policy(
         "protocol": {
             "teacher": "visible RGB vertical-barrier gap geometry",
             "teacher_uses_astar_for_labels": False,
+            "data_quality_filter_uses_astar": True,
             "student_inputs": ["initial RGB observation", "goal coordinates"],
             "student_input_gap_center": False,
             "student_output": "one normalized gap center per visible vertical barrier",
@@ -150,7 +150,6 @@ def main() -> None:
         max_steps=args.max_steps,
         epochs=args.epochs,
         predictor_output=args.predictor_output,
-        project_to_visible_gap=True,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)

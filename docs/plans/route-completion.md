@@ -178,9 +178,10 @@ this map family.
 
 The student input is restricted to the initial RGB observation, goal
 coordinates, RGB-derived wall-grid features, and RGB-derived barrier geometry
-with the target gap-center field zeroed. Gap centers are labels only. The
-evaluation executor uses RGB barrier geometry and waypoint control; neither
-raw nor projected student evaluation invokes A*.
+with the target gap-center field zeroed. Gap centers are labels only. A* is
+used only to reject disconnected procedural samples during data construction;
+the evaluation executor uses RGB barrier geometry and waypoint control, and
+neither raw nor projected student evaluation invokes A*.
 
 | Variant | Real success | Final distance (px) | Collisions / episode | 4-barrier success |
 | --- | ---: | ---: | ---: | ---: |

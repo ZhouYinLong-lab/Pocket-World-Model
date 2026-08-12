@@ -10,6 +10,7 @@ from pocketworld.evaluate_learned_route_policy import (
     evaluate_policy,
     train_and_evaluate_route_mode,
 )
+from pocketworld.evaluate_gap_route_policy import train_and_evaluate_gap_policy
 from pocketworld.route_policy import (
     ROUTE_MODES,
     GapRoutePolicy,
@@ -228,3 +229,20 @@ def test_route_sketch_and_gap_policy_roundtrip(tmp_path):
     assert gap_policy.fit(frames, goal_values, epochs=1)["samples"] == 8
     assert gap_policy.predict_gap_centers(frames[0], tuple(goal_values[0])).shape == (4,)
     assert GapRoutePolicy.load(gap_policy.save(tmp_path / "gap.pt")).geometry_dim == 24
+
+
+def test_gap_route_report_separates_label_and_data_quality_astar(tmp_path):
+    report = train_and_evaluate_gap_policy(
+        train_seeds=(101,),
+        evaluation_seeds=(11,),
+        train_episodes=8,
+        evaluation_episodes=1,
+        max_steps=40,
+        epochs=2,
+        predictor_output=tmp_path / "gap-report.pt",
+    )
+    assert report["protocol"]["teacher_uses_astar_for_labels"] is False
+    assert report["protocol"]["data_quality_filter_uses_astar"] is True
+    assert report["protocol"]["student_evaluation_uses_astar"] is False
+    assert len(report["ablation"]["raw_prediction"]["rows"]) == 1
+    assert len(report["ablation"]["visible_gap_projection"]["rows"]) == 1
