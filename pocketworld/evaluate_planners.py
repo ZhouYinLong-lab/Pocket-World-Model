@@ -18,6 +18,7 @@ from .planner import beam_search, cem_shooting, random_shooting, receding_horizo
 SINGLE_BARRIER_WALLS = (Rect(29, 10, 5, 44),)
 COLLISION_RISK_BUDGET = 0.15
 ROUTE_COMPLETION_WEIGHT = 64.0
+ROUTE_MPC_COMPLETION_WEIGHT = 10.0
 DEFAULT_PLANNERS = (
     "random_shooting",
     "cem",
@@ -26,7 +27,7 @@ DEFAULT_PLANNERS = (
     "cem_collision",
     "route_aware_hybrid",
 )
-SUPPORTED_PLANNERS = DEFAULT_PLANNERS + ("ensemble_collision", "conformal_collision", "route_completion")
+SUPPORTED_PLANNERS = DEFAULT_PLANNERS + ("ensemble_collision", "conformal_collision", "route_completion", "route_completion_mpc")
 
 
 def _nominal_queries(planner: str, horizon: int, candidates: int) -> int:
@@ -182,10 +183,14 @@ def evaluate_planner_tournament(
         for episode, (start, goal) in enumerate(_episode_cases(episodes, seed, scenario)):
             for planner_index, planner in enumerate(planners):
                 torch.manual_seed(seed * 100_000 + episode * 100 + planner_index)
+                route_model = None if route_models is None else route_models.get(planner)
                 walls = () if scenario == "open" else SINGLE_BARRIER_WALLS
                 env = PocketWorldEnv(walls=walls, agent_start=start, goal=goal)
                 observation, info = env.reset()
-                if planner == "route_aware_hybrid":
+                if planner in {"route_aware_hybrid", "route_completion_mpc"}:
+                    if planner == "route_completion_mpc" and route_model is None:
+                        raise ValueError("route_completion_mpc requires a route_models['route_completion_mpc'] predictor")
+                    route_mpc = planner == "route_completion_mpc"
                     closed = receding_horizon_plan(
                         model,
                         observation,
@@ -198,7 +203,7 @@ def evaluate_planner_tournament(
                         preserve_route=True,
                         route_tolerance=6.0,
                         learned_collision=True,
-                        hybrid_collision=True,
+                        hybrid_collision=not route_mpc,
                         use_history_velocity=True,
                         use_learned_velocity=True,
                         probabilistic_uncertainty=True,
@@ -206,7 +211,10 @@ def evaluate_planner_tournament(
                         route_objective=True,
                         route_execution_horizon=min(12, horizon),
                         alignment_fallback_threshold=4.0,
-                        wall_aware_route=True,
+                        wall_aware_route=not route_mpc,
+                        collision_risk_budget=COLLISION_RISK_BUDGET if route_mpc else None,
+                        route_completion_model=route_model if route_mpc else None,
+                        route_completion_weight=ROUTE_MPC_COMPLETION_WEIGHT if route_mpc else ROUTE_COMPLETION_WEIGHT,
                     )
                     rows[planner].append(
                         {
@@ -292,6 +300,7 @@ def evaluate_planner_tournament(
             "beam_budget_policy": "beam width is floor(candidates / (4 * horizon)); one full four-action branch is retained for small budgets",
             "collision_risk_budget": COLLISION_RISK_BUDGET,
             "route_completion_weight": ROUTE_COMPLETION_WEIGHT,
+            "route_mpc_completion_weight": ROUTE_MPC_COMPLETION_WEIGHT,
             "risk_model_metadata": risk_model_metadata or {},
         },
         "runs": runs,

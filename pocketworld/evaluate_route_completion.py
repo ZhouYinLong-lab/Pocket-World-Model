@@ -372,8 +372,8 @@ def evaluate_route_completion(
         horizon=horizon,
         candidates=candidates,
         scenario="single_barrier",
-        planners=("learned_collision", "route_completion", "route_aware_hybrid"),
-        route_models={"route_completion": predictor},
+        planners=("learned_collision", "route_completion", "route_completion_mpc", "route_aware_hybrid"),
+        route_models={"route_completion": predictor, "route_completion_mpc": predictor},
         risk_model_metadata={
             "route_predictor": str(predictor_output),
             "route_features": list(ROUTE_FEATURE_NAMES),
@@ -399,6 +399,9 @@ def evaluate_route_completion(
     }
     report["paired_route_comparison"] = _paired_success_delta(
         report["rows"], "learned_collision", "route_completion"
+    )
+    report["paired_mpc_comparison"] = _paired_success_delta(
+        report["rows"], "learned_collision", "route_completion_mpc"
     )
     return report
 

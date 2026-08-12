@@ -1288,6 +1288,9 @@ def receding_horizon_plan(
     route_execution_horizon: int | None = None,
     alignment_fallback_threshold: float | None = None,
     wall_aware_route: bool = False,
+    collision_risk_budget: float | None = None,
+    route_completion_model: object | None = None,
+    route_completion_weight: float = 10.0,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -1360,6 +1363,9 @@ def receding_horizon_plan(
                 wall_aware_route=fallback_active,
                 wall_route_preference=fallback_route_preference if fallback_active else None,
                 wall_route_best_remaining_px=fallback_route_best_remaining_px if fallback_active else None,
+                collision_risk_budget=collision_risk_budget,
+                route_completion_model=route_completion_model if not fallback_active else None,
+                route_completion_weight=route_completion_weight,
             )
             pending_index = 0
         plan = pending_plan
