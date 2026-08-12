@@ -25,6 +25,7 @@ DEFAULT_METHODS = (
     "distance_field_beam_rgb_projection",
     "distance_field_beam_mpc",
     "distance_field_mpc_shift_fallback",
+    "distance_field_budgeted_hybrid_mpc",
 )
 DEFAULT_MAP_SHIFTS = ("nominal", "walls_x_minus2", "walls_x_plus1")
 
@@ -130,6 +131,8 @@ def run_general_ood(
     collision_head_risk_threshold: float = 0.35,
     collision_head_risk_exit_threshold: float = 0.25,
     collision_head_horizon_index: int = 1,
+    route_budget_margin: float = 1.05,
+    route_progress_tolerance: float = 1.5,
 ) -> dict[str, object]:
     policy = RouteFieldPolicy.load(checkpoint)
     nominal_cases = {
@@ -177,6 +180,8 @@ def run_general_ood(
                     collision_head_risk_threshold=collision_head_risk_threshold,
                     collision_head_risk_exit_threshold=collision_head_risk_exit_threshold,
                     collision_head_horizon_index=collision_head_horizon_index,
+                    route_budget_margin=route_budget_margin,
+                    route_progress_tolerance=route_progress_tolerance,
                 )
             results[condition] = {
                 "map_shift": map_shift,
@@ -207,6 +212,8 @@ def run_general_ood(
             "collision_head_risk_threshold": collision_head_risk_threshold,
             "collision_head_risk_exit_threshold": collision_head_risk_exit_threshold,
             "collision_head_horizon_index": collision_head_horizon_index,
+            "route_budget_margin": route_budget_margin,
+            "route_progress_tolerance": route_progress_tolerance,
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
@@ -242,6 +249,8 @@ def main() -> None:
     parser.add_argument("--collision-head-risk-exit-threshold", type=float, default=0.25)
     parser.add_argument("--collision-head-horizon-index", type=int, default=1)
     parser.add_argument("--shift-threshold-quantile", type=float, default=0.99)
+    parser.add_argument("--route-budget-margin", type=float, default=1.05)
+    parser.add_argument("--route-progress-tolerance", type=float, default=1.5)
     parser.add_argument("--output", default="artifacts/evaluation-general-ood-v21.json")
     args = parser.parse_args()
     from .collision_head import CollisionProbabilityHead
@@ -272,6 +281,8 @@ def main() -> None:
         collision_head_risk_exit_threshold=args.collision_head_risk_exit_threshold,
         collision_head_horizon_index=args.collision_head_horizon_index,
         shift_threshold_quantile=args.shift_threshold_quantile,
+        route_budget_margin=args.route_budget_margin,
+        route_progress_tolerance=args.route_progress_tolerance,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
