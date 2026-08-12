@@ -12,12 +12,19 @@ from pocketworld.evaluate_learned_route_policy import (
 )
 from pocketworld.route_policy import (
     ROUTE_MODES,
+    GapRoutePolicy,
     LearnedRoutePolicy,
+    RouteSketchPolicy,
     RouteModePolicy,
+    gap_route_targets,
     observable_route_waypoints,
+    observable_gap_route_waypoints,
     observable_waypoint_action,
+    route_sketch_targets,
     route_mode_label,
+    vertical_barrier_features,
 )
+from pocketworld.procedural_routes import procedural_wall_layout, sample_procedural_route_cases
 
 
 def test_learned_route_policy_predicts_valid_actions_and_roundtrips(tmp_path):
@@ -157,3 +164,67 @@ def test_route_mode_end_to_end_report(tmp_path):
     assert report["training"]["samples"] == 8
     assert report["validation"]["samples"] == 2
     assert len(report["evaluation"]["rows"]) == 2
+
+
+def test_procedural_routes_are_reproducible_and_reachable():
+    first = sample_procedural_route_cases(11, 3, split="holdout")
+    second = sample_procedural_route_cases(11, 3, split="holdout")
+    assert first == second
+    assert {case.barrier_count for case in first} <= {3, 4}
+    assert all(len(case.walls) >= case.barrier_count for case in first)
+    with pytest.raises(ValueError):
+        procedural_wall_layout(1, barrier_count=5)
+
+
+def test_vertical_features_can_hide_gap_center_from_student():
+    case = sample_procedural_route_cases(23, 1, split="holdout")[0]
+    observation, _ = PocketWorldEnv(
+        walls=case.walls, agent_start=case.start, goal=case.goal
+    ).reset()
+    visible = vertical_barrier_features(observation, include_gap_center=True)
+    strict = vertical_barrier_features(observation, include_gap_center=False)
+    assert visible.shape == strict.shape == (1, 24)
+    assert torch.any(visible[:, 3::6] > 0)
+    assert torch.all(strict[:, 3::6] == 0)
+    centers, valid = gap_route_targets(observation)
+    assert centers.shape == valid.shape == (1, 4)
+    assert torch.all(valid[:, :case.barrier_count] == 1)
+
+
+def test_gap_waypoint_projection_stays_inside_visible_gap():
+    case = sample_procedural_route_cases(41, 1, split="holdout")[0]
+    observation, _ = PocketWorldEnv(
+        walls=case.walls, agent_start=case.start, goal=case.goal
+    ).reset()
+    predicted = np.zeros(4, dtype=np.float32)
+    raw = observable_gap_route_waypoints(observation, case.goal, predicted)
+    projected = observable_gap_route_waypoints(
+        observation, case.goal, predicted, project_to_visible_gap=True
+    )
+    assert len(raw) == len(projected) == 2 * case.barrier_count + 1
+    assert all(6.0 <= point[1] <= 58.0 for point in projected[:-1])
+    assert all(projected[index][0] <= projected[index + 1][0] for index in range(len(projected) - 2))
+
+
+def test_route_sketch_and_gap_policy_roundtrip(tmp_path):
+    cases = sample_procedural_route_cases(101, 8, split="train")
+    observations = []
+    goals = []
+    sketches = []
+    for case in cases:
+        observation, _ = PocketWorldEnv(
+            walls=case.walls, agent_start=case.start, goal=case.goal
+        ).reset()
+        observations.append(observation)
+        goals.append(case.goal)
+        sketches.append(route_sketch_targets(observation, case.goal, points=3))
+    frames = np.asarray(observations, dtype=np.uint8)
+    goal_values = np.asarray(goals, dtype=np.float32)
+    sketch_policy = RouteSketchPolicy(points=3)
+    assert sketch_policy.fit(frames, goal_values, np.asarray(sketches), epochs=1)["samples"] == 8
+    assert sketch_policy.predict_points(frames[0], tuple(goal_values[0])).shape == (3, 2)
+    assert RouteSketchPolicy.load(sketch_policy.save(tmp_path / "sketch.pt")).points == 3
+    gap_policy = GapRoutePolicy()
+    assert gap_policy.fit(frames, goal_values, epochs=1)["samples"] == 8
+    assert gap_policy.predict_gap_centers(frames[0], tuple(goal_values[0])).shape == (4,)
+    assert GapRoutePolicy.load(gap_policy.save(tmp_path / "gap.pt")).geometry_dim == 24
