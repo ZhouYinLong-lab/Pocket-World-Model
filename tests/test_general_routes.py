@@ -30,6 +30,7 @@ from pocketworld.route_field import (
     rgb_action_is_safe,
     estimate_action_velocity,
     guarded_mpc_action,
+    rgb_action_shield,
     field_waypoints,
     route_field_targets,
     route_progress_metrics,
@@ -196,6 +197,11 @@ def test_route_field_policy_roundtrip_and_waypoints(tmp_path):
     assert estimate_action_velocity([frames[0]], [0, 1, 3]).shape == (2,)
     assert isinstance(rgb_action_is_safe(frames[0], 0, [frames[0]], [0]), bool)
     assert guarded_mpc_action(frames[0], tuple(goals[0]), 0, [frames[0]], [0], horizon=2, beam_width=4) in range(4)
+    shield_action, shielded = rgb_action_shield(
+        frames[0], tuple(goals[0]), 0, [frames[0]], [0]
+    )
+    assert shield_action in range(4)
+    assert isinstance(shielded, bool)
     assert conservative_field_action(frames[0], tuple(goals[0]), [frames[0]]) in range(4)
     assert RouteFieldPolicy.load(policy.save(tmp_path / "field.pt")).grid_size == 16
 
@@ -220,6 +226,8 @@ def test_budgeted_hybrid_method_is_explicit_and_not_default():
     assert "distance_field_budgeted_hybrid_mpc" not in GENERAL_DEFAULT_METHODS
     assert "distance_field_budgeted_hybrid_fast_mpc" not in GENERAL_DEFAULT_METHODS
     assert "distance_field_budgeted_hybrid_gated_mpc" not in GENERAL_DEFAULT_METHODS
+    assert "distance_field_budgeted_hybrid_shielded_mpc" in GENERAL_METHODS
+    assert "distance_field_budgeted_hybrid_shielded_mpc" not in GENERAL_DEFAULT_METHODS
 
 
 def test_gated_hybrid_threshold_calibration_is_selectable(tmp_path):
