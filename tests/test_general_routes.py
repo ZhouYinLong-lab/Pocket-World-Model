@@ -216,8 +216,30 @@ def test_budgeted_hybrid_method_is_explicit_and_not_default():
 
     assert "distance_field_budgeted_hybrid_mpc" in GENERAL_METHODS
     assert "distance_field_budgeted_hybrid_fast_mpc" in GENERAL_METHODS
+    assert "distance_field_budgeted_hybrid_gated_mpc" in GENERAL_METHODS
     assert "distance_field_budgeted_hybrid_mpc" not in GENERAL_DEFAULT_METHODS
     assert "distance_field_budgeted_hybrid_fast_mpc" not in GENERAL_DEFAULT_METHODS
+    assert "distance_field_budgeted_hybrid_gated_mpc" not in GENERAL_DEFAULT_METHODS
+
+
+def test_gated_hybrid_threshold_calibration_is_selectable(tmp_path):
+    from pocketworld.evaluate_adaptive_calibration import run_adaptive_calibration
+
+    policy = RouteFieldPolicy()
+    checkpoint = policy.save(tmp_path / "field.pt")
+    report = run_adaptive_calibration(
+        checkpoint,
+        calibration_seeds=(53,),
+        calibration_episodes=1,
+        max_steps=4,
+        points=3,
+        thresholds=(0.35, 0.55),
+        mpc_horizon=1,
+        mpc_beam_width=2,
+        method="distance_field_budgeted_hybrid_gated_mpc",
+    )
+    assert report["protocol"]["method"] == "distance_field_budgeted_hybrid_gated_mpc"
+    assert len(report["candidates"]) == 2
 
 
 def test_collision_head_temperature_roundtrip_and_calibration(tmp_path):
