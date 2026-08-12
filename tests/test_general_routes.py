@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 2.8 seconds
+Output:
 from collections import Counter
 
 import numpy as np
@@ -215,7 +218,9 @@ def test_budgeted_hybrid_method_is_explicit_and_not_default():
     from pocketworld.evaluate_general_routes import GENERAL_METHODS
 
     assert "distance_field_budgeted_hybrid_mpc" in GENERAL_METHODS
+    assert "distance_field_budgeted_hybrid_fast_mpc" in GENERAL_METHODS
     assert "distance_field_budgeted_hybrid_mpc" not in GENERAL_DEFAULT_METHODS
+    assert "distance_field_budgeted_hybrid_fast_mpc" not in GENERAL_DEFAULT_METHODS
 
 
 def test_collision_head_temperature_roundtrip_and_calibration(tmp_path):
@@ -415,3 +420,4 @@ def test_route_field_rgb_guard_checks_the_edge_not_only_centers():
     occupied[28:36, 20:44] = True
     assert not _coarse_transition_is_safe(occupied, (4, 7), (5, 7), 4)
     assert _coarse_transition_is_safe(occupied, (4, 4), (4, 5), 4)
+
