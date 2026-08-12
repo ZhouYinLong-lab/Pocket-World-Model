@@ -18,6 +18,9 @@ from pocketworld.planner import (
     predictive_shift_score,
     wall_context_shift_score,
     route_following_action,
+    route_detour_ratio,
+    route_geometry_allow_diagonal,
+    route_controller_parameters,
 )
 
 
@@ -81,6 +84,72 @@ def test_route_following_action_matches_continuous_wall_boundary_at_cross_corner
     action, _ = route_following_action(observation, (7.3, 11.0), [observation])
     _, _, _, _, info = env.step(action)
     assert not info["collision"]
+
+
+def test_route_following_action_accepts_explicit_controller_parameters():
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    action, remaining = route_following_action(
+        observation,
+        (54, 32),
+        [observation],
+        clearance_radius=3,
+        damping=0.5,
+        lookahead_distance=5.0,
+        allow_diagonal=True,
+    )
+    assert action in {0, 1, 2, 3}
+    assert remaining > 0.0
+
+
+def test_route_following_action_adapts_diagonal_search_to_detour_geometry():
+    env = PocketWorldEnv(walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32))
+    observation, _ = env.reset()
+    action, remaining = route_following_action(
+        observation,
+        (54, 32),
+        [observation],
+        adaptive_diagonal=True,
+        diagonal_detour_ratio_threshold=1.7,
+    )
+    assert action in {0, 1, 2, 3}
+    assert remaining > 0.0
+
+
+def test_route_geometry_mode_is_stable_for_barrier_and_gap_geometry():
+    barrier = PocketWorldEnv(
+        walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32)
+    )
+    barrier_observation, _ = barrier.reset()
+    gap = PocketWorldEnv(
+        walls=(Rect(29, 3, 5, 22), Rect(29, 39, 5, 22)),
+        agent_start=(10, 15),
+        goal=(54, 15),
+    )
+    gap_observation, _ = gap.reset()
+    assert route_detour_ratio(barrier_observation, (54, 32)) > 1.7
+    assert not route_geometry_allow_diagonal(barrier_observation, (54, 32))
+    assert route_detour_ratio(gap_observation, (54, 15)) < 1.7
+    assert route_geometry_allow_diagonal(gap_observation, (54, 15))
+
+
+def test_route_controller_parameters_commit_to_geometry_specific_control():
+    barrier = PocketWorldEnv(
+        walls=(Rect(29, 10, 5, 44),), agent_start=(10, 32), goal=(54, 32)
+    )
+    barrier_observation, _ = barrier.reset()
+    gap = PocketWorldEnv(
+        walls=(Rect(29, 3, 5, 22), Rect(29, 39, 5, 22)),
+        agent_start=(10, 15),
+        goal=(54, 15),
+    )
+    gap_observation, _ = gap.reset()
+    barrier_params = route_controller_parameters(barrier_observation, (54, 32))
+    gap_params = route_controller_parameters(gap_observation, (54, 15))
+    assert barrier_params["allow_diagonal"] is False
+    assert barrier_params["damping"] == 1.0
+    assert gap_params["allow_diagonal"] is True
+    assert gap_params["lookahead_distance"] == 5.0
 
 
 def test_path_waypoints_keep_bends_when_downsampling_dense_grid_route():
@@ -174,6 +243,33 @@ def test_receding_horizon_result_exposes_executed_trace():
     result = receding_horizon_plan(PocketWorldModel(), observation, (16, 16), env.step, max_steps=2, rollout_horizon=2, candidates=4)
     assert result.actions.ndim == 1
     assert result.final_observation.shape == observation.shape
+    assert result.geometry_planning_calls == 0
+    assert result.learned_planning_calls >= 1
+
+
+def test_receding_horizon_supports_locked_adaptive_route_geometry():
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import receding_horizon_plan
+
+    env = PocketWorldEnv(
+        walls=(Rect(29, 3, 5, 22), Rect(29, 39, 5, 22)),
+        agent_start=(10, 15),
+        goal=(54, 15),
+    )
+    observation, _ = env.reset()
+    result = receding_horizon_plan(
+        PocketWorldModel(),
+        observation,
+        (54, 15),
+        env.step,
+        max_steps=64,
+        rollout_horizon=12,
+        candidates=8,
+        wall_aware_route=True,
+        route_adaptive_geometry=True,
+    )
+    assert result.geometry_planning_calls >= 1
+    assert result.final_info["distance_to_goal"] <= env.goal_radius
 
 
 def test_learned_waypoint_templates_include_both_sides_of_direct_route():

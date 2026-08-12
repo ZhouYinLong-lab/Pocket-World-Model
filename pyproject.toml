@@ -32,6 +32,7 @@ pocketworld-evaluate-route-completion = "pocketworld.evaluate_route_completion:m
 pocketworld-evaluate-safety-methods = "pocketworld.evaluate_safety_methods:main"
 pocketworld-evaluate-safety-sweep = "pocketworld.evaluate_safety_sweep:main"
 pocketworld-evaluate-route-variants = "pocketworld.evaluate_route_variants:main"
+pocketworld-evaluate-route-controller = "pocketworld.evaluate_route_controller:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]

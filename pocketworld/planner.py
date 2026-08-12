@@ -50,6 +50,8 @@ class RecedingHorizonResult:
     wall_route_remaining_px: float = 0.0
     wall_route_regression_count: int = 0
     wall_route_side_switch_count: int = 0
+    geometry_planning_calls: int = 0
+    learned_planning_calls: int = 0
 
 
 def _rect_wall_mask() -> np.ndarray:
@@ -224,6 +226,70 @@ def _path_length(path: list[tuple[int, int]]) -> float:
         return 0.0
     points = np.asarray(path, dtype=np.float32)
     return float(np.linalg.norm(np.diff(points, axis=0), axis=1).sum())
+
+
+def route_detour_ratio(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    clearance_radius: int = 4,
+) -> float:
+    """Measure visible cardinal-route length relative to the direct distance."""
+    if clearance_radius < 1:
+        raise ValueError("clearance_radius must be positive")
+    position = extract_agent_position(observation).astype(np.float32)
+    wall_mask = extract_wall_mask(observation)
+    path = _astar_path(
+        _dilate(wall_mask, radius=int(clearance_radius)),
+        tuple(position),
+        goal,
+        allow_diagonal=False,
+    )
+    direct_distance = max(1.0, float(np.linalg.norm(np.asarray(goal, dtype=np.float32) - position)))
+    return _path_length(path) / direct_distance if path else float("inf")
+
+
+def route_geometry_allow_diagonal(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    clearance_radius: int = 4,
+    detour_ratio_threshold: float = 1.7,
+) -> bool:
+    """Choose diagonal route search only for short visible detours."""
+    if detour_ratio_threshold <= 1.0 or not np.isfinite(detour_ratio_threshold):
+        raise ValueError("detour_ratio_threshold must be finite and greater than 1")
+    return route_detour_ratio(observation, goal, clearance_radius) <= detour_ratio_threshold
+
+
+def route_controller_parameters(
+    observation: np.ndarray,
+    goal: tuple[float, float],
+    clearance_radius: int = 4,
+    detour_ratio_threshold: float = 1.7,
+    cardinal_damping: float = 1.0,
+    cardinal_lookahead_distance: float = 3.0,
+    diagonal_damping: float = 0.75,
+    diagonal_lookahead_distance: float = 5.0,
+) -> dict[str, float | bool | int]:
+    """Select one route-control mode from initial visible geometry.
+
+    The decision is intentionally made once per task by callers that want
+    route commitment.  A long cardinal detour keeps conservative braking;
+    short visible detours can use diagonal A* and a longer lookahead.
+    """
+    allow_diagonal = route_geometry_allow_diagonal(
+        observation,
+        goal,
+        clearance_radius=clearance_radius,
+        detour_ratio_threshold=detour_ratio_threshold,
+    )
+    return {
+        "clearance_radius": int(clearance_radius),
+        "damping": float(diagonal_damping if allow_diagonal else cardinal_damping),
+        "lookahead_distance": float(
+            diagonal_lookahead_distance if allow_diagonal else cardinal_lookahead_distance
+        ),
+        "allow_diagonal": allow_diagonal,
+    }
 
 
 def extract_wall_boxes(mask: np.ndarray, min_area: int = 8) -> tuple[tuple[float, float, float, float], ...]:
@@ -587,6 +653,10 @@ def route_following_action(
     observation_history: Sequence[np.ndarray] | None = None,
     clearance_radius: int = 4,
     damping: float = 1.0,
+    lookahead_distance: float = 3.0,
+    allow_diagonal: bool = False,
+    adaptive_diagonal: bool = False,
+    diagonal_detour_ratio_threshold: float = 1.7,
 ) -> tuple[int, float]:
     """Choose one safe cardinal action from the visible wall route.
 
@@ -597,14 +667,29 @@ def route_following_action(
     four actions; recent RGB frames provide the velocity term needed to brake
     before a bend or a goal.
     """
+    if clearance_radius < 1:
+        raise ValueError("clearance_radius must be positive")
+    if damping < 0.0 or not np.isfinite(damping):
+        raise ValueError("damping must be finite and non-negative")
+    if lookahead_distance < 1.0 or not np.isfinite(lookahead_distance):
+        raise ValueError("lookahead_distance must be finite and at least 1")
+    if diagonal_detour_ratio_threshold <= 1.0 or not np.isfinite(diagonal_detour_ratio_threshold):
+        raise ValueError("diagonal_detour_ratio_threshold must be finite and greater than 1")
     position = extract_agent_position(observation).astype(np.float32)
     wall_mask = extract_wall_mask(observation)
     occupied = _dilate(wall_mask, radius=max(3, int(clearance_radius)))
-    path = _astar_path(occupied, tuple(position), goal, allow_diagonal=False)
+    if adaptive_diagonal:
+        allow_diagonal = route_geometry_allow_diagonal(
+            observation,
+            goal,
+            clearance_radius=clearance_radius,
+            detour_ratio_threshold=diagonal_detour_ratio_threshold,
+        )
+    path = _astar_path(occupied, tuple(position), goal, allow_diagonal=allow_diagonal)
     if not path:
         # A one-pixel tighter route is a recoverable emergency path.  The
         # environment still performs the final collision check.
-        path = _astar_path(_dilate(wall_mask, radius=3), tuple(position), goal, allow_diagonal=False)
+        path = _astar_path(_dilate(wall_mask, radius=3), tuple(position), goal, allow_diagonal=allow_diagonal)
     if not path:
         delta = np.asarray(goal, dtype=np.float32) - position
         action = 3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0 else 2 if abs(delta[0]) >= abs(delta[1]) else 1 if delta[1] >= 0 else 0
@@ -612,7 +697,7 @@ def route_following_action(
 
     points = np.asarray(path, dtype=np.float32)
     distances = np.linalg.norm(points - position[None], axis=1)
-    farther = np.flatnonzero(distances >= 3.0)
+    farther = np.flatnonzero(distances >= float(lookahead_distance))
     target = points[int(farther[0])] if len(farther) else points[-1]
     velocity = estimate_agent_velocity(observation_history or [observation], max_speed=2.5)
     control = target - position - float(damping) * velocity
@@ -1354,6 +1439,12 @@ def receding_horizon_plan(
     collision_risk_budget: float | None = None,
     route_completion_model: object | None = None,
     route_completion_weight: float = 10.0,
+    route_clearance_radius: int = 4,
+    route_damping: float = 1.0,
+    route_lookahead_distance: float = 3.0,
+    route_allow_diagonal: bool = False,
+    route_adaptive_geometry: bool = False,
+    route_detour_ratio_threshold: float = 1.7,
 ) -> RecedingHorizonResult:
     """Replan after every real action and return the closed-loop execution trace."""
     current_observation = observation
@@ -1384,14 +1475,41 @@ def receding_horizon_plan(
     fallback_route_best_remaining_px: float | None = None
     wall_route_regression_count = 0
     wall_route_side_switch_count = 0
+    geometry_planning_calls = 0
+    learned_planning_calls = 0
+    locked_route_parameters: dict[str, float | bool | int] | None = None
     for step in range(max_steps):
         route_override = wall_aware_route and bool(np.any(extract_wall_mask(current_observation)))
         if route_override:
             replans += 1
+            geometry_planning_calls += 1
+            if route_adaptive_geometry and locked_route_parameters is None:
+                locked_route_parameters = route_controller_parameters(
+                    current_observation,
+                    goal,
+                    clearance_radius=route_clearance_radius,
+                    detour_ratio_threshold=route_detour_ratio_threshold,
+                    cardinal_damping=route_damping,
+                    cardinal_lookahead_distance=route_lookahead_distance,
+                    diagonal_damping=0.75,
+                    diagonal_lookahead_distance=5.0,
+                )
+            route_parameters = {
+                "clearance_radius": route_clearance_radius,
+                "damping": route_damping,
+                "lookahead_distance": route_lookahead_distance,
+                "allow_diagonal": route_allow_diagonal,
+            }
+            if locked_route_parameters is not None:
+                route_parameters.update(locked_route_parameters)
             route_action, route_remaining = route_following_action(
                 current_observation,
                 goal,
-                observation_history=observation_history if use_history_velocity else None,
+                # The visible-route controller needs recent RGB positions to
+                # brake at bends even when learned-velocity initialization is
+                # disabled for the model-based branch.
+                observation_history=observation_history,
+                **route_parameters,
             )
             current_position = extract_agent_position(current_observation)
             pending_plan = PlanResult(
@@ -1404,6 +1522,7 @@ def receding_horizon_plan(
             pending_index = 0
         elif pending_plan is None or pending_index >= len(pending_plan.actions):
             replans += 1
+            learned_planning_calls += 1
             pending_plan = random_shooting(
                 model,
                 current_observation,
@@ -1557,4 +1676,6 @@ def receding_horizon_plan(
         wall_route_remaining_px=fallback_route_best_remaining_px or 0.0,
         wall_route_regression_count=wall_route_regression_count,
         wall_route_side_switch_count=wall_route_side_switch_count,
+        geometry_planning_calls=geometry_planning_calls,
+        learned_planning_calls=learned_planning_calls,
     )

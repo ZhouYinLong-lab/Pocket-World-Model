@@ -334,6 +334,7 @@ def evaluate_planner_tournament(
                         route_execution_horizon=min(12, horizon),
                         alignment_fallback_threshold=4.0,
                         wall_aware_route=not route_mpc,
+                        route_adaptive_geometry=not route_mpc,
                         collision_risk_budget=COLLISION_RISK_BUDGET if route_mpc else None,
                         route_completion_model=route_model if route_mpc else None,
                         route_completion_weight=ROUTE_MPC_COMPLETION_WEIGHT if route_mpc else ROUTE_COMPLETION_WEIGHT,
@@ -355,7 +356,9 @@ def evaluate_planner_tournament(
                             "rgb_route_collision": None,
                             "predicted_route_completion_probability": float(closed.first_plan_route_completion_probability),
                             "planning_calls": float(max(1, closed.replans)),
-                            "estimated_model_queries": float(max(1, closed.replans) * candidates),
+                            "geometry_planning_calls": float(closed.geometry_planning_calls),
+                            "learned_planning_calls": float(closed.learned_planning_calls),
+                            "estimated_model_queries": float(closed.learned_planning_calls * candidates),
                         }
                     )
                     continue
