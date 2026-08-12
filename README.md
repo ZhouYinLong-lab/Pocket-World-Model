@@ -226,6 +226,46 @@ python -m pocketworld.evaluate_general_routes \
   --output artifacts/evaluation-general-routes-v19-mpc.json
 ```
 
+### v20 execution-layer ablation
+
+v20 keeps the v19 distance-field checkpoint and all 60 holdout tasks fixed,
+then varies only the local executor. This separates route representation from
+control design. The success interval is a normal-approximation 95% interval
+over the 60 episodes; collision intervals use the episode-level sample
+variance.
+
+| Executor | Success | Collisions / episode | Planning time / episode |
+| --- | ---: | ---: | ---: |
+| v18 beam + RGB projection | 88.3% ± 8.1% | 2.200 ± 2.238 | 15.4 ms |
+| RGB MPC, H=2, B=8 | 90.0% ± 7.6% | 0.517 ± 0.226 | 78.8 ms |
+| RGB MPC, H=4, B=8 | 90.0% ± 7.6% | 0.333 ± 0.184 | 232.5 ms |
+| RGB MPC, H=4, B=12 | 91.7% ± 7.0% | 0.383 ± 0.209 | 301.6 ms |
+| RGB MPC, H=6, B=12 | **93.3% ± 6.3%** | 0.467 ± 0.158 | 532.6 ms |
+| Action-fused velocity, H=4, B=12 | 90.0% ± 7.6% | **0.250 ± 0.145** | 309.9 ms |
+| Robust velocity envelope, H=4, B=12 | 88.3% ± 8.1% | **0.117 ± 0.082** | 3,416.0 ms |
+
+The result is a Pareto frontier rather than one universally best setting. The
+planning-time column is a CPU observation from the reproducibility run, not a
+hardware-independent throughput claim:
+H=6 gives the highest success, action-fused velocity gives the lowest useful
+collision rate at moderate cost, and the robust envelope is a safety-oriented
+option with a large CPU penalty. The family breakdown shows that the gain is
+not confined to one obstacle family: on `multi_channel`, the baseline has
+5.714 collisions/episode versus 0.214 for H=4/B=8 RGB MPC; on `staircase`, it
+has 2.105 versus 0.368 for action-fused H=4/B=12. Robustness is not free,
+however: robust MPC reduces `multi_channel` success to 71.4%.
+
+Reproduce the fixed-checkpoint study with:
+
+```bash
+python -m pocketworld.evaluate_mpc_ablation \
+  --checkpoint artifacts/general-route-sketch-v19-mpc-distance-field.pt \
+  --evaluation-seeds 11,23,41 --evaluation-episodes 20 \
+  --output artifacts/evaluation-mpc-ablation-v20.json
+```
+
+See the [v20 machine-readable ablation](docs/results/evaluation-mpc-ablation-v20.json).
+
 <p align="center">
   <img src="docs/assets/pocketworld-demo.gif" alt="PocketWorld real simulator and model imagination running side by side" width="900" />
 </p>

@@ -25,6 +25,24 @@ All notable changes to PocketWorld are documented here. The format follows [Keep
 
 See the [v19 machine-readable report](docs/results/evaluation-general-routes-v19-mpc.json).
 
+## [0.18.0] - 2026-08-12
+
+### Added
+
+- Fixed-checkpoint MPC ablation runner covering horizon, beam width, RGB vs
+  action-fused velocity, and robust velocity-envelope conditions.
+- Family-level summaries, planning-time metrics, and 95% episode-level
+  uncertainty intervals.
+
+### Results
+
+- H=6/B=12 RGB MPC reaches 93.3% success on the fixed 60-task holdout.
+- Action-fused H=4/B=12 reaches 90.0% success with 0.250 collisions/episode.
+- Robust H=4/B=12 reaches 0.117 collisions/episode but costs about 3.4 seconds
+  of CPU planning per episode and lowers multi-channel success to 71.4%.
+
+See the [v20 machine-readable ablation](docs/results/evaluation-mpc-ablation-v20.json).
+
 ## [0.16.0] - 2026-08-12
 
 ### Added
