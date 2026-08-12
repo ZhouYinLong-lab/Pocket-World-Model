@@ -22,4 +22,3 @@
   },
   "interpretation": "Initial route-completion probability adds a small nominal holdout improvement but does not change A* usage; closed-loop route progress and remaining-budget fallback remain the reliable contributor."
 }
-

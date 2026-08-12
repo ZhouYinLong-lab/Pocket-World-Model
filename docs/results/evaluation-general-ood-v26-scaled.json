@@ -9,4 +9,3 @@
   },
   "interpretation": "Scaled OOD replication supports 100% route completion for fast hybrid, with an explicit A* fallback and collision/latency trade-off."
 }
-

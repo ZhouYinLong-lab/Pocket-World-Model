@@ -1,0 +1,29 @@
+{
+  "protocol": {
+    "checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+    "train_seeds": [101, 103, 107],
+    "calibration_seeds": [53, 67],
+    "evaluation_seeds": [11, 23, 41],
+    "episodes": {"train": 20, "calibration": 12, "evaluation": 20},
+    "feature_count": 12,
+    "feature_change": "route turns, minimum clearance, blocked fraction, waypoint count; removed degenerate route-distance feature",
+    "student_evaluation_uses_astar": false,
+    "fallback_method_uses_astar": true
+  },
+  "calibration": {
+    "selected_threshold": 0.4,
+    "temperature": 1.879292,
+    "positive_rate": 0.916667,
+    "brier_before": 0.033257,
+    "brier_after": 0.026563,
+    "ece_10bin_before": 0.031989,
+    "ece_10bin_after": 0.026887,
+    "auroc": 0.977273
+  },
+  "holdout_summary": {
+    "distance_field_beam_mpc": {"real_success": 0.816667, "collision_count": 0.883333, "astar_calls": 0.0, "planning_time_ms": 849.44},
+    "distance_field_budgeted_hybrid_fast_mpc": {"real_success": 1.0, "collision_count": 0.5, "astar_calls": 1.466667, "planning_time_ms": 508.90},
+    "distance_field_predicted_gate_hybrid": {"real_success": 1.0, "collision_count": 0.5, "astar_calls": 1.516667, "planning_time_ms": 500.36, "route_gate_triggered": 0.116667}
+  },
+  "interpretation": "Geometry features fixed the degenerate route-distance signal and temperature scaling improved probability calibration. The gate remains a diagnostic extension: it does not improve nominal holdout collision rate or A* usage versus fast hybrid."
+}

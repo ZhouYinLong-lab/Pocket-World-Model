@@ -3,4 +3,3 @@
   "summary": {"all_methods_real_success": 1.0, "conditions": 6, "gated_improves_conditions": 1, "gated_tied_or_worse_conditions": 5},
   "interpretation": "Both fast and gated hybrid retain 100% OOD success; gated collision reduction is not stable."
 }
-

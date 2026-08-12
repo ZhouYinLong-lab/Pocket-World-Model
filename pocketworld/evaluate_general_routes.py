@@ -441,7 +441,126 @@ def evaluate_general_policy(
                     target_dirty = True
                     planned_target = None
                     last_route_check = step_index
-                elif metho…1494 tokens truncated…
+                elif method == "rgb_astar" and route_check_due and _segment_hits_wall(observation, position, target):
+                    waypoints = _astar_waypoints(observation, case.goal, position, points)
+                    waypoint_index = 0
+                    target = waypoints[0]
+                    astar_calls += 1
+                    target_dirty = True
+                    last_route_check = step_index
+                elif method in {"hybrid_astar", "rgb_astar"} and route_check_due:
+                    last_route_check = step_index
+                planning_start = time.perf_counter()
+                action = observable_waypoint_action(observation, target, history, damping=1.0)
+                if method == "distance_field_beam_conservative":
+                    action = conservative_field_action(observation, target, history)
+                if method == "distance_field_beam_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
+                if method == "distance_field_mpc_shift_fallback":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
+                if method == "distance_field_beam_robust_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        robust=True,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
+                    robust_mpc_calls += 1
+                if method == "distance_field_beam_adaptive_mpc":
+                    from .route_field import adaptive_mpc_decision
+
+                    mpc_calls += 1
+                    action, use_robust, risk_score = adaptive_mpc_decision(
+                        observation,
+                        target,
+                        action,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        velocity_source=mpc_velocity_source,
+                        risk_threshold=adaptive_risk_threshold,
+                        risk_exit_threshold=adaptive_risk_exit_threshold,
+                        robust_active=adaptive_robust_active,
+                    )
+                    adaptive_risk_sum += risk_score
+                    adaptive_risk_max = max(adaptive_risk_max, risk_score)
+                    if use_robust:
+                        # The decision first evaluates an ordinary MPC
+                        # candidate, then runs robust MPC when the risk gate is
+                        # active. Count both actual planner calls.
+                        mpc_calls += 1
+                    if use_robust != adaptive_robust_active:
+                        adaptive_switches += 1
+                    adaptive_robust_active = use_robust
+                    if use_robust:
+                        robust_mpc_calls += 1
+                if method == "distance_field_beam_collision_head_mpc":
+                    if collision_head is None:
+                        raise ValueError(
+                            "collision_head method requires a trained collision_head"
+                        )
+                    from .route_field import collision_head_mpc_decision
+
+                    collision_head_calls += 1
+                    mpc_calls += 1
+                    action, use_robust, risk_score = collision_head_mpc_decision(
+                        collision_head,
+                        observation,
+                        case.goal,
+                        target,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        robust_threshold=gated_robust_risk_threshold,
+                        velocity_source=mpc_velocity_source,
+                        risk_threshold=collision_head_risk_threshold,
+                        risk_exit_threshold=collision_head_risk_exit_threshold,
+                        robust_active=collision_head_active,
+                        probability_horizon_index=collision_head_horizon_index,
+                    )
+                    collision_head_risk_sum += risk_score
+                    collision_head_risk_max = max(collision_head_risk_max, risk_score)
+                    if use_robust:
+                        mpc_calls += 1
+                        collision_head_robust_calls += 1
+                    if use_robust != collision_head_active:
+                        collision_head_switches += 1
+                    collision_head_active = use_robust
+                if method == "distance_field_beam_guarded_mpc":
+                    mpc_calls += 1
+                    baseline_action = action
+                    action = guarded_mpc_action(
+                        observation,
+                        target,
+                        action,
+                        history,
+                        action_history,
+                        horizon=mpc_horizon,
                         beam_width=mpc_beam_width,
                     )
                     if action != baseline_action:
@@ -845,4 +964,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

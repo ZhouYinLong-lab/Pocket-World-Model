@@ -7,4 +7,3 @@
   "by_family_fast_success": {"l_shapes": 1.0, "multi_channel": 1.0, "staggered_blocks": 1.0, "staircase": 1.0},
   "interpretation": "Scaled holdout confirms route budget plus sparse RGB/A* fallback closes the route completion gap at low local-MPC latency."
 }
-

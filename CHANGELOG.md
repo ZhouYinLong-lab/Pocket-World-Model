@@ -2,6 +2,33 @@
 
 All notable changes to PocketWorld are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
+## [0.30.0] - 2026-08-12
+
+### Changed
+
+- Audited and expanded the general route-completion feature contract from nine
+  features to twelve. The degenerate always-zero route-distance feature was
+  removed and replaced by route turns, minimum clearance, blocked fraction,
+  and waypoint count.
+- Added disjoint-split scalar temperature scaling with Brier/ECE/AUROC
+  reporting. Brier improves from 0.0333 to 0.0266 and ECE from 0.0320 to
+  0.0269 on calibration maps.
+- Changed the route-gate evaluator defaults to the calibrated v2 checkpoint
+  and report names.
+
+### Results
+
+- Three-seed holdout remains at 100% success and 0.500 collisions/episode for
+  both fast hybrid and calibrated predicted-gate hybrid. The gate uses 1.517
+  versus 1.467 A* calls, so no nominal planning advantage is claimed.
+- In six paired OOD speed/map conditions, collision rate improves in 3,
+  worsens in 1, and ties in 2. Success remains 100% in every condition and
+  A* usage is unchanged. The result supports calibrated risk measurement,
+  not a claim that the gate is a universally superior planner.
+
+See [the calibrated holdout result](docs/results/evaluation-general-route-gate-v2-calibrated-final.json)
+and [the paired OOD result](docs/results/evaluation-general-route-gate-v2-calibrated-ood.json).
+
 ## [0.29.0] - 2026-08-12
 
 ### Added
@@ -587,4 +614,3 @@ learned general obstacle navigation is solved.
 [0.3.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/v0.1.0
-

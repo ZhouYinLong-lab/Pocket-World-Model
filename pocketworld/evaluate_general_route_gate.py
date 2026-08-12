@@ -55,6 +55,35 @@ def _labels_from_report(
     return np.asarray([rows[key] for key in keys], dtype=np.float32)
 
 
+def _probability_metrics(
+    probabilities: np.ndarray, labels: np.ndarray
+) -> dict[str, float]:
+    """Compute Brier score, 10-bin ECE, and AUROC without extra dependencies."""
+    probabilities = np.asarray(probabilities, dtype=np.float64).reshape(-1)
+    labels = np.asarray(labels, dtype=np.float64).reshape(-1)
+    if probabilities.shape != labels.shape:
+        raise ValueError("probabilities and labels must be aligned")
+    brier = float(np.mean((probabilities - labels) ** 2))
+    bins = np.linspace(0.0, 1.0, 11)
+    ece = 0.0
+    for lower, upper in zip(bins[:-1], bins[1:]):
+        selected = (probabilities >= lower) & (
+            probabilities < upper if upper < 1.0 else probabilities <= upper
+        )
+        if selected.any():
+            ece += float(selected.mean()) * abs(
+                float(probabilities[selected].mean()) - float(labels[selected].mean())
+            )
+    positives = probabilities[labels >= 0.5]
+    negatives = probabilities[labels < 0.5]
+    if len(positives) and len(negatives):
+        comparisons = positives[:, None] - negatives[None, :]
+        auroc = float((comparisons > 0).mean() + 0.5 * (comparisons == 0).mean())
+    else:
+        auroc = float("nan")
+    return {"brier": brier, "ece_10bin": float(ece), "auroc": auroc}
+
+
 def _select_threshold(
     predictor: object,
     field_policy: RouteFieldPolicy,
@@ -104,7 +133,7 @@ def _select_threshold(
 
 def train_and_evaluate_general_route_gate(
     field_checkpoint: str | Path,
-    predictor_output: str | Path = "artifacts/general-route-gate-v1.pt",
+    predictor_output: str | Path = "artifacts/general-route-gate-v2-calibrated.pt",
     train_seeds: tuple[int, ...] = (101, 103, 107),
     calibration_seeds: tuple[int, ...] = (53, 67),
     evaluation_seeds: tuple[int, ...] = (11, 23, 41),
@@ -133,22 +162,40 @@ def train_and_evaluate_general_route_gate(
     }
 
     train_features, train_keys = _features_for_cases(field_policy, train_cases)
-    train_labels = _labels_from_report(
-        evaluate_general_policy(
-            field_policy,
-            train_seeds,
-            train_episodes,
-            max_steps,
-            points,
-            "distance_field_beam_mpc",
-            mpc_horizon=mpc_horizon,
-            mpc_beam_width=mpc_beam_width,
-            cases_by_seed=train_cases,
-        ),
-        train_keys,
+    train_report = evaluate_general_policy(
+        field_policy,
+        train_seeds,
+        train_episodes,
+        max_steps,
+        points,
+        "distance_field_beam_mpc",
+        mpc_horizon=mpc_horizon,
+        mpc_beam_width=mpc_beam_width,
+        cases_by_seed=train_cases,
     )
+    train_labels = _labels_from_report(train_report, train_keys)
     predictor = make_general_route_predictor()
     training = predictor.fit(train_features, train_labels, epochs=epochs)
+    calibration_features, calibration_keys = _features_for_cases(
+        field_policy, calibration_cases
+    )
+    calibration_report = evaluate_general_policy(
+        field_policy,
+        tuple(calibration_cases),
+        calibration_episodes,
+        max_steps,
+        points,
+        "distance_field_beam_mpc",
+        mpc_horizon=mpc_horizon,
+        mpc_beam_width=mpc_beam_width,
+        cases_by_seed=calibration_cases,
+    )
+    calibration_labels = _labels_from_report(calibration_report, calibration_keys)
+    raw_probabilities = predictor.predict_proba(calibration_features)
+    temperature = predictor.fit_temperature(
+        calibration_features, calibration_labels, epochs=200
+    )
+    calibrated_probabilities = predictor.predict_proba(calibration_features)
     predictor.save(
         predictor_output,
         metadata={
@@ -156,6 +203,7 @@ def train_and_evaluate_general_route_gate(
             "label_method": "distance_field_beam_mpc",
             "student_evaluation_uses_astar": False,
             "train_seeds": list(train_seeds),
+            "calibration_seeds": list(calibration_seeds),
         },
     )
     calibration_threshold, calibration_audit = _select_threshold(
@@ -208,6 +256,14 @@ def train_and_evaluate_general_route_gate(
             "selected_threshold": calibration_threshold,
             "selection_rule": "maximize success, then minimize A* calls, then collisions",
             "audit": calibration_audit,
+            "temperature": temperature,
+            "probability_metrics_before": _probability_metrics(
+                raw_probabilities, calibration_labels
+            ),
+            "probability_metrics_after": _probability_metrics(
+                calibrated_probabilities, calibration_labels
+            ),
+            "positive_rate": float(calibration_labels.mean()),
         },
         "evaluation": {
             method: {
@@ -222,8 +278,12 @@ def train_and_evaluate_general_route_gate(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("field_checkpoint")
-    parser.add_argument("--predictor-output", default="artifacts/general-route-gate-v1.pt")
-    parser.add_argument("--output", default="artifacts/evaluation-general-route-gate-v1.json")
+    parser.add_argument(
+        "--predictor-output", default="artifacts/general-route-gate-v2-calibrated.pt"
+    )
+    parser.add_argument(
+        "--output", default="artifacts/evaluation-general-route-gate-v2-calibrated.json"
+    )
     args = parser.parse_args()
     report = train_and_evaluate_general_route_gate(
         field_checkpoint=args.field_checkpoint,
@@ -235,4 +295,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

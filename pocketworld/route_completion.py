@@ -238,6 +238,7 @@ class RouteCompletionPredictor(nn.Module):
         )
         self.register_buffer("feature_mean", torch.zeros(input_dim))
         self.register_buffer("feature_scale", torch.ones(input_dim))
+        self.temperature = 1.0
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         normalized = (features - self.feature_mean) / self.feature_scale.clamp_min(1e-5)
@@ -246,7 +247,9 @@ class RouteCompletionPredictor(nn.Module):
     @torch.no_grad()
     def predict_proba(self, features: np.ndarray) -> np.ndarray:
         tensor = torch.from_numpy(np.asarray(features, dtype=np.float32))
-        return torch.sigmoid(self(tensor)).cpu().numpy()
+        return torch.sigmoid(
+            self(tensor) / max(0.05, float(self.temperature))
+        ).cpu().numpy()
 
     def fit(
         self,
@@ -295,6 +298,47 @@ class RouteCompletionPredictor(nn.Module):
             "train_accuracy": float(accuracy),
         }
 
+    def fit_temperature(
+        self,
+        features: np.ndarray,
+        labels: np.ndarray,
+        epochs: int = 200,
+        seed: int = 17,
+    ) -> dict[str, float | int]:
+        """Fit a scalar probability temperature on disjoint labels."""
+        values = torch.from_numpy(np.asarray(features, dtype=np.float32))
+        targets = torch.from_numpy(np.asarray(labels, dtype=np.float32).reshape(-1))
+        if values.ndim != 2 or values.shape[1] != self.feature_mean.numel():
+            raise ValueError("features do not match the route predictor contract")
+        if targets.shape != (len(values),) or len(values) < 8:
+            raise ValueError("temperature calibration needs at least eight examples")
+        if not torch.all((targets == 0) | (targets == 1)):
+            raise ValueError("route calibration labels must be binary")
+        if targets.min() == targets.max():
+            raise ValueError("route calibration needs both success and failure labels")
+        torch.manual_seed(seed)
+        with torch.no_grad():
+            logits = self(values)
+        log_temperature = torch.nn.Parameter(torch.zeros(()))
+        optimizer = torch.optim.Adam([log_temperature], lr=0.05)
+        for _ in range(max(1, int(epochs))):
+            temperature = torch.exp(log_temperature).clamp(0.05, 20.0)
+            loss = nn.functional.binary_cross_entropy_with_logits(
+                logits / temperature, targets
+            )
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        self.temperature = float(
+            torch.exp(log_temperature).clamp(0.05, 20.0).detach()
+        )
+        return {
+            "epochs": int(epochs),
+            "samples": int(len(values)),
+            "temperature": self.temperature,
+            "final_loss": float(loss.detach()),
+        }
+
     def save(self, destination: str | Path, metadata: dict[str, Any] | None = None) -> Path:
         path = Path(destination)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -303,6 +347,7 @@ class RouteCompletionPredictor(nn.Module):
                 "model": self.state_dict(),
                 "feature_names": list(self.feature_names),
                 "metadata": metadata or {},
+                "temperature": float(self.temperature),
             },
             path,
         )
@@ -314,4 +359,5 @@ class RouteCompletionPredictor(nn.Module):
         feature_names = tuple(payload.get("feature_names", ROUTE_FEATURE_NAMES))
         model = cls(feature_names=feature_names)
         model.load_state_dict(payload["model"], strict=True)
+        model.temperature = float(payload.get("temperature", 1.0))
         return model

@@ -20,7 +20,10 @@ GENERAL_ROUTE_FEATURE_NAMES = (
     "direct_distance_norm",
     "field_route_length_norm",
     "field_route_ratio_norm",
-    "field_route_distance_norm",
+    "field_route_turns_norm",
+    "field_route_min_clearance_norm",
+    "field_route_blocked_fraction",
+    "field_route_waypoint_count_norm",
     "wall_fraction",
     "direct_wall_fraction",
     "direct_wall_blocked",
@@ -43,6 +46,34 @@ def _wall_clearance(mask: np.ndarray, point: np.ndarray) -> float:
     return float(np.sqrt(((x - point[0]) ** 2 + (y - point[1]) ** 2).min()))
 
 
+def _route_geometry(
+    route: np.ndarray, occupied: np.ndarray
+) -> tuple[float, float, float, float]:
+    """Measure visible route geometry without simulator execution."""
+    if len(route) < 2:
+        return 0.0, 0.0, 1.0, 0.0
+    samples: list[np.ndarray] = []
+    for start, end in zip(route[:-1], route[1:]):
+        count = max(2, int(np.ceil(np.linalg.norm(end - start) * 2.0)))
+        samples.extend(np.linspace(start, end, count))
+    points = np.asarray(samples, dtype=np.float32)
+    xs = np.clip(np.rint(points[:, 0]).astype(int), 0, occupied.shape[1] - 1)
+    ys = np.clip(np.rint(points[:, 1]).astype(int), 0, occupied.shape[0] - 1)
+    blocked = occupied[ys, xs]
+    clearances = np.asarray(
+        [_wall_clearance(occupied, point) for point in points], dtype=np.float32
+    )
+    headings = np.diff(route, axis=0)
+    angles = np.arctan2(headings[:, 1], headings[:, 0])
+    turns = float(np.count_nonzero(np.abs(np.diff(np.unwrap(angles))) > 0.35))
+    return (
+        min(1.0, turns / 8.0),
+        min(1.0, float(clearances.min()) / 16.0),
+        float(blocked.mean()),
+        min(1.0, len(route) / 32.0),
+    )
+
+
 def _direct_wall_fraction(
     mask: np.ndarray, start: np.ndarray, goal: np.ndarray
 ) -> tuple[float, float]:
@@ -61,7 +92,7 @@ def extract_general_route_features(
     field_policy: RouteFieldPolicy,
     agent_speed_scale: float = 1.0,
 ) -> np.ndarray:
-    """Return the nine-feature, planner-visible general-route contract."""
+    """Return the twelve-feature, planner-visible general-route contract."""
     frame = np.asarray(observation)
     start = extract_agent_position(frame).astype(np.float32)
     goal_array = np.asarray(goal, dtype=np.float32)
@@ -79,16 +110,21 @@ def extract_general_route_features(
     route = np.asarray((tuple(start),) + tuple(waypoints), dtype=np.float32)
     route_length = _polyline_length(route)
     direct_distance = max(1.0, float(np.linalg.norm(goal_array - start)))
-    route_distance = float(np.linalg.norm(route[-1] - goal_array))
     wall = extract_wall_mask(frame)
     occupied = _dilate(wall, radius=4)
     direct_fraction, direct_blocked = _direct_wall_fraction(occupied, start, goal_array)
+    turns, min_clearance, blocked_fraction, waypoint_count = _route_geometry(
+        route, occupied
+    )
     return np.asarray(
         (
             direct_distance / 64.0,
             route_length / 128.0,
             min(4.0, route_length / direct_distance) / 4.0,
-            route_distance / 64.0,
+            turns,
+            min_clearance,
+            blocked_fraction,
+            waypoint_count,
             float(occupied.mean()),
             direct_fraction,
             direct_blocked,
@@ -102,5 +138,3 @@ def extract_general_route_features(
 def make_general_route_predictor() -> RouteCompletionPredictor:
     """Construct the predictor with the explicit general-route contract."""
     return RouteCompletionPredictor(feature_names=GENERAL_ROUTE_FEATURE_NAMES)
-
-

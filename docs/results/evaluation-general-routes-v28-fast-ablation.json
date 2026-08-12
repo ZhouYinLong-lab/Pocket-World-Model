@@ -37,4 +37,3 @@
     "interpretation": "The route-level gate preserves completion; robust local MPC mainly buys lower collision count at higher latency."
   }
 }
-
