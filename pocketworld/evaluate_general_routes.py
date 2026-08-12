@@ -24,6 +24,7 @@ from .route_field import (
     field_waypoints,
     guarded_mpc_action,
     local_mpc_action,
+    rgb_action_shield,
     rgb_action_is_safe,
     route_progress_metrics,
 )
@@ -47,6 +48,7 @@ GENERAL_METHODS = (
     "distance_field_budgeted_hybrid_mpc",
     "distance_field_budgeted_hybrid_fast_mpc",
     "distance_field_budgeted_hybrid_gated_mpc",
+    "distance_field_budgeted_hybrid_shielded_mpc",
 )
 GENERAL_DEFAULT_METHODS = tuple(
     method
@@ -59,6 +61,7 @@ GENERAL_DEFAULT_METHODS = tuple(
         "distance_field_budgeted_hybrid_mpc",
         "distance_field_budgeted_hybrid_fast_mpc",
         "distance_field_budgeted_hybrid_gated_mpc",
+        "distance_field_budgeted_hybrid_shielded_mpc",
     }
 )
 BUDGETED_HYBRID_METHODS = frozenset(
@@ -66,6 +69,7 @@ BUDGETED_HYBRID_METHODS = frozenset(
         "distance_field_budgeted_hybrid_mpc",
         "distance_field_budgeted_hybrid_fast_mpc",
         "distance_field_budgeted_hybrid_gated_mpc",
+        "distance_field_budgeted_hybrid_shielded_mpc",
     }
 )
 
@@ -250,6 +254,7 @@ def evaluate_general_policy(
                 "distance_field_budgeted_hybrid_mpc",
                 "distance_field_budgeted_hybrid_fast_mpc",
                 "distance_field_budgeted_hybrid_gated_mpc",
+                "distance_field_budgeted_hybrid_shielded_mpc",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -270,6 +275,7 @@ def evaluate_general_policy(
                         "distance_field_budgeted_hybrid_mpc",
                         "distance_field_budgeted_hybrid_fast_mpc",
                         "distance_field_budgeted_hybrid_gated_mpc",
+                        "distance_field_budgeted_hybrid_shielded_mpc",
                     }
                     else 1,
                 )
@@ -549,6 +555,16 @@ def evaluate_general_policy(
                         velocity_source=mpc_velocity_source,
                     )
                     robust_mpc_calls += int(method == "distance_field_budgeted_hybrid_mpc")
+                    if method == "distance_field_budgeted_hybrid_shielded_mpc":
+                        action, shielded = rgb_action_shield(
+                            observation,
+                            target,
+                            action,
+                            history,
+                            action_history,
+                            margin=4,
+                        )
+                        mpc_override_count += int(shielded)
                 planning_time_ms += (time.perf_counter() - planning_start) * 1000.0
                 observation, _, terminated, truncated, info = env.step(action)
                 action_history.append(int(action))
@@ -805,6 +821,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_budgeted_hybrid_mpc": True,
                 "distance_field_budgeted_hybrid_fast_mpc": True,
                 "distance_field_budgeted_hybrid_gated_mpc": True,
+                "distance_field_budgeted_hybrid_shielded_mpc": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -829,6 +846,7 @@ def train_and_evaluate_general_routes(
             "distance_field_budgeted_hybrid_mpc": "learned field with route-progress/remaining-budget gate and explicit RGB/A* hybrid fallback",
             "distance_field_budgeted_hybrid_fast_mpc": "same route-budgeted hybrid gate with ordinary rather than robust RGB MPC after fallback",
             "distance_field_budgeted_hybrid_gated_mpc": "same route-budgeted hybrid gate with risk-triggered robust RGB MPC escalation",
+            "distance_field_budgeted_hybrid_shielded_mpc": "same route-budgeted hybrid gate with ordinary RGB MPC followed by a pure action-level RGB safety shield",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),

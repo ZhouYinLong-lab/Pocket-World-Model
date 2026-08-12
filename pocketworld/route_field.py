@@ -625,6 +625,48 @@ def rgb_action_is_safe(
     return safe
 
 
+def rgb_action_shield(
+    observation: np.ndarray,
+    target: tuple[float, float],
+    baseline_action: int,
+    observation_history: list[np.ndarray] | None = None,
+    action_history: list[int] | None = None,
+    margin: int = 4,
+) -> tuple[int, bool]:
+    """Apply a cheap RGB-only safety shield to one proposed action.
+
+    The shield does not call a planner and never reads simulator labels.  If
+    the baseline action is unsafe, it chooses the safe one-step action whose
+    nominal landing point is closest to ``target``.  This isolates the value
+    of an action-level safety filter from the extra compute of MPC or A*.
+    """
+    if not 0 <= int(baseline_action) < 4:
+        raise ValueError("baseline_action must be one of the four discrete actions")
+    if rgb_action_is_safe(
+        observation, baseline_action, observation_history, action_history, margin=margin
+    ):
+        return int(baseline_action), False
+    safe_actions = [
+        action
+        for action in range(4)
+        if rgb_action_is_safe(
+            observation, action, observation_history, action_history, margin=margin
+        )
+    ]
+    if not safe_actions:
+        return int(baseline_action), False
+    position = extract_agent_position(observation).astype(np.float32)
+    directions = np.asarray(((0, -1), (0, 1), (-1, 0), (1, 0)), dtype=np.float32)
+    goal = np.asarray(target, dtype=np.float32)
+    action = min(
+        safe_actions,
+        key=lambda candidate: float(
+            np.linalg.norm(position + directions[candidate] - goal)
+        ),
+    )
+    return int(action), True
+
+
 def guarded_mpc_action(
     observation: np.ndarray,
     target: tuple[float, float],
