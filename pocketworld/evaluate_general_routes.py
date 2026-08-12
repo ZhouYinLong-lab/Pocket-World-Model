@@ -25,6 +25,7 @@ from .route_field import (
     guarded_mpc_action,
     local_mpc_action,
     rgb_action_is_safe,
+    route_progress_metrics,
 )
 
 GENERAL_METHODS = (
@@ -43,14 +44,16 @@ GENERAL_METHODS = (
     "distance_field_clearance_beam_rgb_projection",
     "distance_field_beam_guarded_mpc",
     "distance_field_mpc_shift_fallback",
+    "distance_field_budgeted_hybrid_mpc",
 )
 GENERAL_DEFAULT_METHODS = tuple(
     method
-    for method in GENERAL_METHODS[:-1]
+    for method in GENERAL_METHODS[:-2]
     if method
     not in {
         "distance_field_beam_adaptive_mpc",
         "distance_field_beam_collision_head_mpc",
+        "distance_field_budgeted_hybrid_mpc",
     }
 )
 
@@ -166,12 +169,18 @@ def evaluate_general_policy(
     collision_head_risk_threshold: float = 0.35,
     collision_head_risk_exit_threshold: float = 0.25,
     collision_head_horizon_index: int = 1,
+    route_budget_margin: float = 1.05,
+    route_progress_tolerance: float = 1.5,
 ) -> dict[str, object]:
     if method not in GENERAL_METHODS:
         raise ValueError(f"method must be one of {GENERAL_METHODS}")
     rows: list[dict[str, object]] = []
     if agent_speed_scale <= 0.0 or not np.isfinite(agent_speed_scale):
         raise ValueError("agent_speed_scale must be finite and positive")
+    if route_budget_margin < 0.0 or not np.isfinite(route_budget_margin):
+        raise ValueError("route_budget_margin must be finite and non-negative")
+    if route_progress_tolerance < 0.0 or not np.isfinite(route_progress_tolerance):
+        raise ValueError("route_progress_tolerance must be finite and non-negative")
     for seed in seeds:
         cases = (
             cases_by_seed[seed]
@@ -205,6 +214,7 @@ def evaluate_general_policy(
             collision_head_risk_sum = 0.0
             collision_head_risk_max = 0.0
             planning_time_ms = 0.0
+            route_points = np.asarray((tuple(position),), dtype=np.float32)
             layout_shift_score = 0.0
             shift_detected = False
             if method == "rgb_astar":
@@ -222,6 +232,7 @@ def evaluate_general_policy(
                 "distance_field_clearance_beam_rgb_projection",
                 "distance_field_beam_guarded_mpc",
                 "distance_field_mpc_shift_fallback",
+                "distance_field_budgeted_hybrid_mpc",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -239,9 +250,11 @@ def evaluate_general_policy(
                         "distance_field_beam_collision_head_mpc",
                         "distance_field_clearance_beam_rgb_projection",
                         "distance_field_mpc_shift_fallback",
+                        "distance_field_budgeted_hybrid_mpc",
                     }
                     else 1,
                 )
+                route_points = np.asarray((tuple(position),) + tuple(waypoints), dtype=np.float32)
                 if method == "distance_field_mpc_shift_fallback":
                     if reference_signatures is None or shift_threshold <= 0.0:
                         raise ValueError(
@@ -259,17 +272,47 @@ def evaluate_general_policy(
                         astar_calls += 1
                         fallback_triggered = True
                         shift_detected = True
+                        route_points = np.asarray((tuple(position),) + tuple(waypoints), dtype=np.float32)
             else:
                 predicted = policy.predict_points(observation, case.goal)
                 waypoints = observable_route_sketch_waypoints(observation, case.goal, predicted)
+            route_points = np.asarray((tuple(position),) + tuple(waypoints), dtype=np.float32)
             waypoint_index = 0
             collisions = 0
             target_dirty = True
             planned_target: tuple[float, float] | None = None
             last_route_check = -100
+            route_progress = route_progress_metrics(position, route_points)
+            last_route_progress = float(route_progress["progress_px"])
+            progress_regression_streak = 0
+            budget_fallbacks = 0
+            budget_infeasible_events = 0
+            wall_block_events = 0
+            progress_regression_events = 0
+            budget_slack_sum = 0.0
+            budget_slack_min = float("inf")
             for _ in range(max_steps):
                 step_index = env.steps
                 position = extract_agent_position(observation).astype(np.float32)
+                route_progress = route_progress_metrics(position, route_points)
+                progress_delta = float(route_progress["progress_px"] - last_route_progress)
+                if method == "distance_field_budgeted_hybrid_mpc":
+                    if progress_delta < -route_progress_tolerance:
+                        progress_regression_streak += 1
+                        progress_regression_events += 1
+                    else:
+                        progress_regression_streak = max(0, progress_regression_streak - 1)
+                    remaining_steps = max(1, max_steps - step_index)
+                    reachable_distance = (
+                        remaining_steps * PocketWorldEnv.max_speed * agent_speed_scale
+                    )
+                    budget_slack = reachable_distance - (
+                        route_budget_margin * float(route_progress["remaining_px"])
+                    )
+                    budget_slack_sum += budget_slack
+                    budget_slack_min = min(budget_slack_min, budget_slack)
+                else:
+                    budget_slack = float("nan")
                 target = waypoints[min(waypoint_index, len(waypoints) - 1)]
                 if np.isfinite(position).all() and np.linalg.norm(position - np.asarray(target)) <= 5.0:
                     waypoint_index = min(waypoint_index + 1, len(waypoints) - 1)
@@ -282,6 +325,31 @@ def evaluate_general_policy(
                 elif method == "rgb_projection" and planned_target is not None:
                     target = planned_target
                 route_check_due = target_dirty or step_index - last_route_check >= 8
+                if method == "distance_field_budgeted_hybrid_mpc" and (
+                    target_dirty or step_index - last_route_check >= 4
+                ):
+                    route_check_due = True
+                    route_is_blocked = _segment_hits_wall(observation, position, target)
+                    budget_is_infeasible = budget_slack < 0.0
+                    progress_is_stalled = progress_regression_streak >= 2
+                    wall_block_events += int(route_is_blocked)
+                    budget_infeasible_events += int(budget_is_infeasible)
+                    if route_is_blocked or budget_is_infeasible or progress_is_stalled:
+                        waypoints = _astar_waypoints(observation, case.goal, position, points)
+                        waypoint_index = 0
+                        target = waypoints[0]
+                        route_points = np.asarray(
+                            (tuple(position),) + tuple(waypoints), dtype=np.float32
+                        )
+                        route_progress = route_progress_metrics(position, route_points)
+                        last_route_progress = float(route_progress["progress_px"])
+                        progress_regression_streak = 0
+                        astar_calls += 1
+                        budget_fallbacks += 1
+                        fallback_triggered = True
+                        target_dirty = True
+                        planned_target = None
+                        last_route_check = step_index
                 if method == "hybrid_astar" and route_check_due and _segment_hits_wall(observation, position, target):
                     waypoints = _astar_waypoints(observation, case.goal, position, points)
                     waypoint_index = 0
@@ -414,6 +482,19 @@ def evaluate_general_policy(
                     )
                     if action != baseline_action:
                         mpc_override_count += 1
+                if method == "distance_field_budgeted_hybrid_mpc":
+                    mpc_calls += 1
+                    action = local_mpc_action(
+                        observation,
+                        target,
+                        history,
+                        horizon=mpc_horizon,
+                        beam_width=mpc_beam_width,
+                        robust=True,
+                        action_history=action_history,
+                        velocity_source=mpc_velocity_source,
+                    )
+                    robust_mpc_calls += 1
                 planning_time_ms += (time.perf_counter() - planning_start) * 1000.0
                 observation, _, terminated, truncated, info = env.step(action)
                 action_history.append(int(action))
@@ -421,6 +502,12 @@ def evaluate_general_policy(
                 history.append(observation)
                 history = history[-16:]
                 collisions += int(info.get("collision", False))
+                last_route_progress = max(
+                    last_route_progress,
+                    float(route_progress_metrics(
+                        extract_agent_position(observation).astype(np.float32), route_points
+                    )["progress_px"]),
+                )
                 if terminated or truncated:
                     break
             rows.append(
@@ -451,6 +538,17 @@ def evaluate_general_policy(
                     "planning_time_ms": planning_time_ms,
                     "layout_shift_score": layout_shift_score,
                     "shift_detected": shift_detected,
+                    "budget_fallbacks": budget_fallbacks,
+                    "budget_infeasible_events": budget_infeasible_events,
+                    "wall_block_events": wall_block_events,
+                    "progress_regression_events": progress_regression_events,
+                    "progress_regressions": int(progress_regression_streak),
+                    "route_progress_norm": float(route_progress["progress_norm"]),
+                    "route_remaining_px": float(route_progress["remaining_px"]),
+                    "route_budget_slack_mean": budget_slack_sum / max(1, int(env.steps)),
+                    "route_budget_slack_min": (
+                        float(budget_slack_min) if np.isfinite(budget_slack_min) else 0.0
+                    ),
                 }
             )
     metrics = (
@@ -474,6 +572,15 @@ def evaluate_general_policy(
         "planning_time_ms",
         "layout_shift_score",
         "shift_detected",
+        "budget_fallbacks",
+        "budget_infeasible_events",
+        "wall_block_events",
+        "progress_regression_events",
+        "progress_regressions",
+        "route_progress_norm",
+        "route_remaining_px",
+        "route_budget_slack_mean",
+        "route_budget_slack_min",
     )
     values = {key: np.asarray([row[key] for row in rows], dtype=np.float64) for key in metrics}
     by_family: dict[str, dict[str, dict[str, float]]] = {}
@@ -629,6 +736,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_clearance_beam_rgb_projection": False,
                 "distance_field_beam_guarded_mpc": False,
                 "distance_field_mpc_shift_fallback": True,
+                "distance_field_budgeted_hybrid_mpc": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -650,6 +758,7 @@ def train_and_evaluate_general_routes(
             "distance_field_clearance_beam_rgb_projection": "clearance-penalized learned field with beam and RGB guard",
             "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
             "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
+            "distance_field_budgeted_hybrid_mpc": "learned field with route-progress/remaining-budget gate and explicit RGB/A* hybrid fallback",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),

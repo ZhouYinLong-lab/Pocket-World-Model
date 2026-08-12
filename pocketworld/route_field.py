@@ -14,6 +14,44 @@ from .planner import _dilate, extract_agent_position, extract_wall_mask
 FIELD_GRID = 16
 
 
+def route_progress_metrics(
+    position: np.ndarray | tuple[float, float],
+    route_points: np.ndarray | list[tuple[float, float]],
+) -> dict[str, float]:
+    """Project a position onto a fixed route polyline.
+
+    The projection is purely geometric and uses only the route already handed
+    to the controller.  It is therefore suitable for an evaluation-time
+    progress/budget gate without reading simulator state or wall labels.
+    """
+    points = np.asarray(route_points, dtype=np.float32)
+    if points.ndim != 2 or points.shape[1] != 2 or len(points) < 2:
+        raise ValueError("route_points must have shape [N, 2] with N >= 2")
+    current = np.asarray(position, dtype=np.float32)
+    if current.shape != (2,) or not np.isfinite(current).all():
+        raise ValueError("position must be a finite point with shape [2]")
+    starts = points[:-1]
+    vectors = points[1:] - starts
+    lengths = np.linalg.norm(vectors, axis=1)
+    safe_lengths = np.maximum(lengths, 1e-6)
+    offsets = current[None] - starts
+    fractions = np.clip(np.sum(offsets * vectors, axis=1) / (safe_lengths**2), 0.0, 1.0)
+    projections = starts + fractions[:, None] * vectors
+    distances = np.linalg.norm(projections - current[None], axis=1)
+    segment = int(np.argmin(distances))
+    cumulative = np.concatenate(([0.0], np.cumsum(lengths)))
+    progress = float(cumulative[segment] + fractions[segment] * lengths[segment])
+    total = float(cumulative[-1])
+    return {
+        "progress_px": progress,
+        "progress_norm": progress / max(total, 1e-6),
+        "remaining_px": max(0.0, total - progress),
+        "total_px": total,
+        "route_distance_px": float(distances[segment]),
+        "segment_index": float(segment),
+    }
+
+
 def coarse_wall_signature(observation: np.ndarray, grid_size: int = FIELD_GRID) -> np.ndarray:
     """Encode only coarse RGB wall occupancy for layout-shift monitoring."""
     if grid_size < 1 or 64 % grid_size != 0:
