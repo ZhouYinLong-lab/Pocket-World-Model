@@ -255,6 +255,41 @@ short-horizon collision probability head. See the [calibration report](docs/resu
 [v25 nominal comparison](docs/results/evaluation-planner-comparison-v25.json),
 and [v25 OOD matrix](docs/results/evaluation-planner-comparison-v25-ood.json).
 
+### v26 learned route-conditioned collision head
+
+The heuristic adaptive gate could save compute but did not reliably predict
+which ordinary MPC actions would collide. v26 replaces that score with a small
+MLP trained on simulator-labelled short rollouts. Each input contains only the
+current RGB wall crop, position, velocity history, goal/route waypoint, action,
+and speed scale. Labels record whether a collision occurs within 1, 2, or 4
+steps under randomized continuations. The head is trained on `101,103,107`,
+calibrated on disjoint `53,67`, and evaluated on `11,23,41`.
+
+| Condition | Real success | Collisions / episode | Planning time |
+| --- | ---: | ---: | ---: |
+| Nominal, speed 1.0 | **95.0%** | **0.317** | 544 ms |
+| Nominal, speed 1.25 | **95.0%** | **0.400** | 449 ms |
+| Walls +1, speed 1.0 | 73.7% | **0.404** | 782 ms |
+| Walls +1, speed 1.25 | 77.2% | **0.754** | 658 ms |
+
+The learned head reduces collisions relative to ordinary MPC in all four
+conditions and improves the heuristic adaptive gate under the joint shift, but
+it does not dominate every metric: walls+1/speed1.0 success is 73.7% versus
+78.9% for ordinary MPC. This is a calibrated risk/success trade-off, not a
+claim of solved obstacle navigation.
+
+Reproduce it with:
+
+```bash
+python -m pocketworld.evaluate_collision_head \
+  --route-checkpoint artifacts/coverage-study-v23-four_family_600-distance-field.pt \
+  --train-seeds 101,103,107 --calibration-seeds 53,67 \
+  --evaluation-seeds 11,23,41 --run-ood
+```
+
+See the [v26 nominal report](docs/results/evaluation-collision-head-v26-corrected.json)
+and [v26 OOD report](docs/results/evaluation-collision-head-v26-ood.json).
+
 Reproduce the full comparison with:
 
 ```bash
