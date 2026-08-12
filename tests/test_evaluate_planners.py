@@ -41,9 +41,14 @@ def test_closed_loop_route_planner_does_not_fake_imagination_metrics():
 
 
 def test_fixed_predictor_safety_entrypoint_reports_all_methods(tmp_path):
+    import torch
+
     from pocketworld.evaluate_safety_methods import evaluate_safety_methods
+    from pocketworld.model import PocketWorldModel
     from pocketworld.route_completion import RouteCompletionPredictor
 
+    checkpoint_path = tmp_path / "world-model.pt"
+    torch.save({"model": PocketWorldModel().state_dict()}, checkpoint_path)
     predictor_path = tmp_path / "route-predictor.pt"
     predictor = RouteCompletionPredictor()
     features = np.asarray(
@@ -60,7 +65,7 @@ def test_fixed_predictor_safety_entrypoint_reports_all_methods(tmp_path):
     predictor.save(predictor_path)
 
     report = evaluate_safety_methods(
-        "artifacts/pocketworld-map-suite-v3-final.pt",
+        checkpoint_path,
         predictor_path,
         evaluation_seeds=(5,),
         evaluation_episodes=1,
