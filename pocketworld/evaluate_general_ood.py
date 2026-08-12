@@ -217,7 +217,13 @@ def run_general_ood(
             "reference_signature_count": len(reference_signatures),
             "task_generation": "one nominal holdout sample per seed, deterministic wall translation, reachability checked teacher-side",
             "student_evaluation_uses_astar": False,
-            "fallback_method_uses_astar": "distance_field_mpc_shift_fallback" in methods,
+            "fallback_method_uses_astar": any(
+                method in {
+                    "distance_field_mpc_shift_fallback",
+                    "distance_field_budgeted_hybrid_mpc",
+                }
+                for method in methods
+            ),
             "shift_labels_visible_to_planner": False,
         },
         "results": results,
