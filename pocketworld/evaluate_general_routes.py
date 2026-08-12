@@ -45,15 +45,24 @@ GENERAL_METHODS = (
     "distance_field_beam_guarded_mpc",
     "distance_field_mpc_shift_fallback",
     "distance_field_budgeted_hybrid_mpc",
+    "distance_field_budgeted_hybrid_fast_mpc",
 )
 GENERAL_DEFAULT_METHODS = tuple(
     method
-    for method in GENERAL_METHODS[:-2]
+    for method in GENERAL_METHODS
     if method
     not in {
         "distance_field_beam_adaptive_mpc",
         "distance_field_beam_collision_head_mpc",
+        "distance_field_mpc_shift_fallback",
         "distance_field_budgeted_hybrid_mpc",
+        "distance_field_budgeted_hybrid_fast_mpc",
+    }
+)
+BUDGETED_HYBRID_METHODS = frozenset(
+    {
+        "distance_field_budgeted_hybrid_mpc",
+        "distance_field_budgeted_hybrid_fast_mpc",
     }
 )
 
@@ -233,6 +242,7 @@ def evaluate_general_policy(
                 "distance_field_beam_guarded_mpc",
                 "distance_field_mpc_shift_fallback",
                 "distance_field_budgeted_hybrid_mpc",
+                "distance_field_budgeted_hybrid_fast_mpc",
             }:
                 field = policy.predict_field(observation, case.goal)
                 waypoints = field_waypoints(
@@ -251,6 +261,7 @@ def evaluate_general_policy(
                         "distance_field_clearance_beam_rgb_projection",
                         "distance_field_mpc_shift_fallback",
                         "distance_field_budgeted_hybrid_mpc",
+                        "distance_field_budgeted_hybrid_fast_mpc",
                     }
                     else 1,
                 )
@@ -298,11 +309,11 @@ def evaluate_general_policy(
             for _ in range(max_steps):
                 step_index = env.steps
                 position = extract_agent_position(observation).astype(np.float32)
-                if method == "distance_field_budgeted_hybrid_mpc" and step_index < route_lock_until_step:
+                if method in BUDGETED_HYBRID_METHODS and step_index < route_lock_until_step:
                     route_lock_steps += 1
                 route_progress = route_progress_metrics(position, route_points)
                 progress_delta = float(route_progress["progress_px"] - last_route_progress)
-                if method == "distance_field_budgeted_hybrid_mpc":
+                if method in BUDGETED_HYBRID_METHODS:
                     if progress_delta < -route_progress_tolerance:
                         progress_regression_streak += 1
                         progress_regression_events += 1
@@ -331,7 +342,7 @@ def evaluate_general_policy(
                 elif method == "rgb_projection" and planned_target is not None:
                     target = planned_target
                 route_check_due = target_dirty or step_index - last_route_check >= 8
-                if method == "distance_field_budgeted_hybrid_mpc" and (
+                if method in BUDGETED_HYBRID_METHODS and (
                     target_dirty or step_index - last_route_check >= 4
                 ):
                     route_check_due = True
@@ -423,7 +434,7 @@ def evaluate_general_policy(
                         action_history=action_history,
                         velocity_source=mpc_velocity_source,
                     )
-                    robust_mpc_calls += 1
+                    robust_mpc_calls += int(method == "distance_field_budgeted_hybrid_mpc")
                 if method == "distance_field_beam_adaptive_mpc":
                     from .route_field import adaptive_mpc_decision
 
@@ -499,7 +510,7 @@ def evaluate_general_policy(
                     )
                     if action != baseline_action:
                         mpc_override_count += 1
-                if method == "distance_field_budgeted_hybrid_mpc":
+                if method in BUDGETED_HYBRID_METHODS:
                     mpc_calls += 1
                     action = local_mpc_action(
                         observation,
@@ -507,7 +518,7 @@ def evaluate_general_policy(
                         history,
                         horizon=mpc_horizon,
                         beam_width=mpc_beam_width,
-                        robust=True,
+                        robust=method == "distance_field_budgeted_hybrid_mpc",
                         action_history=action_history,
                         velocity_source=mpc_velocity_source,
                     )
@@ -763,6 +774,7 @@ def train_and_evaluate_general_routes(
                 "distance_field_beam_guarded_mpc": False,
                 "distance_field_mpc_shift_fallback": True,
                 "distance_field_budgeted_hybrid_mpc": True,
+                "distance_field_budgeted_hybrid_fast_mpc": True,
             },
             "representation_comparison": ["route_sketch", "coarse_distance_field"],
         },
@@ -785,6 +797,7 @@ def train_and_evaluate_general_routes(
             "distance_field_beam_guarded_mpc": "baseline waypoint controller with RGB-triggered local MPC safety override",
             "distance_field_mpc_shift_fallback": "learned field with coarse RGB shift detector and one A* fallback",
             "distance_field_budgeted_hybrid_mpc": "learned field with route-progress/remaining-budget gate and explicit RGB/A* hybrid fallback",
+            "distance_field_budgeted_hybrid_fast_mpc": "same route-budgeted hybrid gate with ordinary rather than robust RGB MPC after fallback",
         },
         "checkpoint": str(predictor_output),
         "distance_field_checkpoint": str(field_output),
