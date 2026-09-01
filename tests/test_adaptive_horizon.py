@@ -122,6 +122,25 @@ def test_paired_cases_and_action_banks_are_deterministic():
     assert (first == second).all()
 
 
+def test_random_shooting_accepts_shared_candidate_action_prefix():
+    from pocketworld.env import PocketWorldEnv
+    from pocketworld.model import PocketWorldModel
+    from pocketworld.planner import random_shooting
+
+    observation, _ = PocketWorldEnv(agent_start=(7.0, 7.0), goal=(57.0, 57.0)).reset()
+    candidate_actions = _candidate_bank(11, 0, 0, (7.0, 7.0), (57.0, 57.0), 4, 16)
+    result = random_shooting(
+        PocketWorldModel(),
+        observation,
+        (57.0, 57.0),
+        horizon=8,
+        candidates=4,
+        candidate_actions=candidate_actions,
+    )
+    assert len(result.actions) == 8
+    assert any(np.array_equal(result.actions, row[:8]) for row in candidate_actions)
+
+
 def test_evaluator_audit_helpers_are_finite_and_json_safe():
     assert _strict_float(1.25, "value") == 1.25
     with pytest.raises(ValueError, match="finite"):
