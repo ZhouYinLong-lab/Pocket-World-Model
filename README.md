@@ -109,6 +109,9 @@ python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-hori
 The formal result is intentionally not pre-declared: reducing model queries
 alone would be reported as computation-budget adaptation, not safety gain.
 
+For a concise account of the current evidence, limitations, resource needs, and
+12-week next stage, see the [帮扶申请材料包](docs/application/README.md).
+
 ### Learned route-level planning comparison
 
 The obstacle-navigation study now compares three distinct levels of abstraction:
