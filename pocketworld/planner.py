@@ -874,6 +874,7 @@ def random_shooting(
     visual_safety_gate: bool = False,
     visual_safety_mode: str = "off",
     visual_safety_penalty: float = 64.0,
+    candidate_actions: torch.Tensor | np.ndarray | None = None,
 ) -> PlanResult:
     if visual_safety_gate:
         if visual_safety_mode not in {"off", "joint"}:
@@ -889,11 +890,21 @@ def random_shooting(
     risk_model = model if collision_model is None else collision_model
     risk_model.eval()
     start = torch.from_numpy(observation[None]).float().to(device) / 255.0
-    actions = torch.randint(0, 4, (candidates, horizon), device=device)
-    delta = np.asarray(goal, dtype=np.float32) - extract_agent_position(observation)
-    preferred_action = 3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0 else 2 if abs(delta[0]) >= abs(delta[1]) else 1 if delta[1] >= 0 else 0
-    guided = torch.rand((candidates, horizon), device=device) < guided_fraction
-    actions = torch.where(guided, torch.full_like(actions, preferred_action), actions)
+    if candidate_actions is None:
+        actions = torch.randint(0, 4, (candidates, horizon), device=device)
+        delta = np.asarray(goal, dtype=np.float32) - extract_agent_position(observation)
+        preferred_action = 3 if abs(delta[0]) >= abs(delta[1]) and delta[0] >= 0 else 2 if abs(delta[0]) >= abs(delta[1]) else 1 if delta[1] >= 0 else 0
+        guided = torch.rand((candidates, horizon), device=device) < guided_fraction
+        actions = torch.where(guided, torch.full_like(actions, preferred_action), actions)
+    else:
+        actions = torch.as_tensor(candidate_actions, dtype=torch.long, device=device)
+        if actions.ndim != 2 or actions.shape[0] < candidates or actions.shape[1] < horizon:
+            raise ValueError(
+                "candidate_actions must have shape [at least candidates, at least horizon]"
+            )
+        if torch.any((actions < 0) | (actions >= 4)):
+            raise ValueError("candidate_actions must contain action ids in [0, 3]")
+        actions = actions[:candidates, :horizon].clone()
     starts = start.expand(candidates, -1, -1, -1)
     start_position = extract_agent_position(observation).astype(np.float32)
     normalized_start_positions = torch.as_tensor(start_position / 64.0, device=device, dtype=start.dtype).expand(candidates, -1)

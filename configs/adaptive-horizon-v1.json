@@ -1,0 +1,28 @@
+{
+  "version": "adaptive-horizon-v1",
+  "world_model_checkpoint": "artifacts/pocketworld-map-suite-v3-final.pt",
+  "route_field_checkpoint": "artifacts/general-route-sketch-v28-budgeted-locked-distance-field.pt",
+  "train_seeds": [101, 103, 107],
+  "calibration_seeds": [53, 67],
+  "final_holdout_seeds": [11, 23, 41],
+  "episodes_per_seed": 20,
+  "calibration_episodes_per_seed": 12,
+  "max_steps": 48,
+  "candidate_count": 256,
+  "horizons": [8, 16, 24, 32],
+  "commit_steps": 4,
+  "uncertainty_budget_px": 6.0,
+  "uncertainty_samples": 8,
+  "risk_budget": 0.45,
+  "entry_threshold": 0.55,
+  "exit_threshold": 0.35,
+  "solver_horizon": 16,
+  "solver_risk_threshold": 0.45,
+  "solver_risk_exit_threshold": 0.30,
+  "conditions": [
+    {"name": "id", "map_shift": "nominal", "speed_scale": 1.0},
+    {"name": "ood_map_minus2", "map_shift": "walls_x_minus2", "speed_scale": 1.0},
+    {"name": "ood_speed_fast", "map_shift": "nominal", "speed_scale": 1.25},
+    {"name": "ood_joint", "map_shift": "walls_x_minus2", "speed_scale": 1.25}
+  ]
+}

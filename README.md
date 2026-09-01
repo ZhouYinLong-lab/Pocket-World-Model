@@ -85,6 +85,30 @@ The formal imagination-gap evaluator fixes candidate sampling per seed and repor
 
 The implementation details and current three-seed diagnostic slice are tracked in the [temporal/probabilistic experiment plan](docs/plans/learnable-temporal-probability.md), [v3 maturity matrix](docs/results/evaluation-maturity-v3-final-3seed.json), and [formal imagination-gap result](docs/results/evaluation-imagination-gap-v3-final.json).
 
+## New study: calibrated adaptive imagination horizon
+
+The next study asks whether online calibrated uncertainty can shorten the
+world-model imagination horizon before model error causes a real planning
+failure. This is distinct from the historical v25 adaptive solver gate: v25
+kept the horizon fixed and switched ordinary/robust MPC, while
+`AdaptiveHorizonPolicy` selects among 8/16/24/32 imagined steps. Fixed ordinary
+and fixed robust MPC remain separate baselines, and robust MPC plus adaptive
+horizon is an explicit ablation.
+
+The locked paired evaluator uses calibration seeds `53,67`, final holdout
+seeds `11,23,41`, shared action banks, ID plus map/velocity OOD conditions,
+and separate pure-learning versus explicit A* fallback reports. Every horizon
+decision logs its uncertainty, collision risk, alignment, shift score, all
+candidate risks, and hysteresis reason. See the [adaptive-horizon research
+note](docs/research/adaptive-horizon-v1.md) and run the smoke protocol with:
+
+```bash
+python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --smoke
+```
+
+The formal result is intentionally not pre-declared: reducing model queries
+alone would be reported as computation-budget adaptation, not safety gain.
+
 ### Learned route-level planning comparison
 
 The obstacle-navigation study now compares three distinct levels of abstraction:

@@ -41,6 +41,7 @@ pocketworld-evaluate-general-route-gate = "pocketworld.evaluate_general_route_ga
 pocketworld-evaluate-planner-comparison = "pocketworld.evaluate_planner_comparison:main"
 pocketworld-evaluate-adaptive-calibration = "pocketworld.evaluate_adaptive_calibration:main"
 pocketworld-evaluate-collision-head = "pocketworld.evaluate_collision_head:main"
+pocketworld-evaluate-adaptive-horizon = "pocketworld.evaluate_adaptive_horizon:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]
