@@ -3,7 +3,8 @@
   "repository": {
     "remote": "https://github.com/ZhouYinLong-lab/Pocket-World-Model",
     "local_branch": "codex/v23-sync",
-    "local_head": "90689c00a026cfaa7be5a6592520dbba1cba22a5",
+    "evidence_revision": "91dcb4c9fb9a76025881d433d6085a50d73ca15b",
+    "revision_note": "This evidence snapshot predates the material-package commit that contains this manifest.",
     "working_tree_clean": true,
     "new_commits_pushed": false,
     "push_note": "Two push attempts were reset by the GitHub connection; local commits are retained."
