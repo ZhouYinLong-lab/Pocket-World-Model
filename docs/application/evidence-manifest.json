@@ -1,0 +1,65 @@
+{
+  "observed_at": "2026-09-02",
+  "repository": {
+    "remote": "https://github.com/ZhouYinLong-lab/Pocket-World-Model",
+    "local_branch": "codex/v23-sync",
+    "local_head": "90689c00a026cfaa7be5a6592520dbba1cba22a5",
+    "working_tree_clean": true,
+    "new_commits_pushed": false,
+    "push_note": "Two push attempts were reset by the GitHub connection; local commits are retained."
+  },
+  "verified_execution": {
+    "full_tests": {
+      "command": "pytest -q",
+      "result": "140 passed"
+    },
+    "coverage": {
+      "command": "pytest --cov=pocketworld --cov-report=term-missing",
+      "result": "140 passed; total coverage 70%"
+    },
+    "adaptive_horizon_smoke": {
+      "command": "python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --smoke --output artifacts/evaluation-adaptive-horizon-smoke.json",
+      "result": "completed; strict JSON; selected horizons included 32 and 8",
+      "interpretation": "pipeline validation only; not a formal three-seed result"
+    },
+    "formal_adaptive_horizon": {
+      "command": "python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --output artifacts/evaluation-adaptive-horizon-v1.json",
+      "status_at_last_check": "running; no final report file yet",
+      "formal_result_claim_allowed": false
+    }
+  },
+  "frozen_protocol": {
+    "train_seeds": [101, 103, 107],
+    "calibration_seeds": [53, 67],
+    "final_holdout_seeds": [11, 23, 41],
+    "episodes_per_final_seed": 20,
+    "interaction_budget_steps": 48,
+    "candidate_horizons": [8, 16, 24, 32],
+    "conditions": ["id", "map_shift", "speed_shift", "joint_map_and_speed_shift"],
+    "thresholds_selected_on_final_holdout": false,
+    "calibration_and_final_disjoint": true
+  },
+  "historical_results": {
+    "source": [
+      "README.md",
+      "docs/evaluation-2026-08.md",
+      "docs/results/evaluation-imagination-gap-v3-final.json"
+    ],
+    "v3_final_24_step_imagined_real_success": "100.0% / 95.3%",
+    "v3_final_32_step_imagined_real_success": "100.0% / 93.3%",
+    "interpretation": "longer imagined horizons expose a measurable gap; this is not a robot safety guarantee",
+    "v25_adaptive_solver_gate": "fixed-horizon ordinary/robust switching; historical computation-adaptation result, not adaptive horizon"
+  },
+  "resource_to_milestone": {
+    "gpu": "three-seed paired formal matrix, OOD calibration, bootstrap summaries",
+    "robot_simulation": "continuous-control navigation baseline and sim-to-sim transfer study",
+    "sensors_or_small_hardware": "controlled observation-noise, delay, and velocity-estimation validation",
+    "engineering_guidance": "review of collision costs, stop conditions, evaluation fairness, and sim-to-real boundaries"
+  },
+  "claims_not_supported": [
+    "real robot safety",
+    "general-purpose navigation",
+    "pure learned success when A* or visible geometry is used",
+    "adaptive-horizon safety improvement before the formal report exists"
+  ]
+}
