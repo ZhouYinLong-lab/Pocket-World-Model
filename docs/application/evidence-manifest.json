@@ -5,7 +5,9 @@
     "public": true,
     "local_branch": "codex/v23-sync",
     "evidence_revision": "338e98de664a7d28f5b6d3c26308770cae0b50ee",
-    "evidence_revision_note": "Revision containing the consistency-correction package and the generated bootstrap summary; verified by the GitHub CI run recorded below.",
+    "evidence_revision_note": "Release-tag evidence snapshot containing the consistency-correction package and generated bootstrap summary; the final public main revision is recorded separately below.",
+    "current_main_revision": "59cce583b0708b87f834902d6d57d4f33022ac68",
+    "final_green_ci_run_id": 33612106843,
     "working_tree_clean_at_last_check": true,
     "new_commits_pushed": true,
     "push_note": "The v1 evidence baseline and subsequent correction commits are delivered to the public main branch through ordinary non-forced SSH pushes."
@@ -13,7 +15,12 @@
   "verified_execution": {
     "full_tests": {
       "command": "pytest -q",
-      "result": "145 passed; 2 warnings",
+      "result": "145 passed",
+      "warning_counts": {
+        "local": 2,
+        "github_ci": 5
+      },
+      "warning_note": "Warnings are environment-specific ONNX/PyTorch deprecations; they do not change the passing test result.",
       "checked_after_merge": true
     },
     "coverage": {
@@ -45,6 +52,12 @@
       "head_sha": "338e98de664a7d28f5b6d3c26308770cae0b50ee",
       "conclusion": "success",
       "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33611531077"
+    },
+    "final_green_github_ci": {
+      "run_id": 33612106843,
+      "head_sha": "59cce583b0708b87f834902d6d57d4f33022ac68",
+      "conclusion": "success",
+      "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33612106843"
     }
   },
   "frozen_protocol": {
@@ -66,7 +79,9 @@
     "confidence": 0.95,
     "seed": 20260902,
     "metrics": ["real_success", "collision_count_per_episode", "final_distance_px", "planning_latency_ms", "model_queries"],
-    "summary_generator": "pocketworld/adaptive_horizon_stats.py"
+    "summary_generator": "pocketworld/adaptive_horizon_stats.py",
+    "generator_commit": "b50615b",
+    "generator_blob": "4453bead849290793bcae3eee3f29a4f056983f1"
   },
   "public_resources": {
     "release_tag": "adaptive-horizon-v1",
@@ -117,7 +132,7 @@
     "claim_boundary": "v1 supports qualified computation-budget adaptation and exposes a negative obstacle-traversal result; it does not establish safer pure-learning planning."
   },
   "resource_to_milestone": {
-    "gpu": "v1 bootstrap/sensitivity revalidation plus v2 risk-conditioned, observation-noise/delay, and continuous-control experiments",
+    "gpu": "expanded-seed v2 formal runs with observation noise/delay, risk-conditioned analysis, and continuous-control/Unitree simulation",
     "robot_simulation": "continuous-control navigation baseline and sim-to-sim transfer study",
     "sensors_or_small_hardware": "controlled observation-noise, delay, and velocity-estimation validation",
     "engineering_guidance": "review of collision costs, stop conditions, evaluation fairness, and sim-to-sim boundaries"

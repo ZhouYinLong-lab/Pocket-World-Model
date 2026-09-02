@@ -33,7 +33,7 @@
 
 ## 4. 研究假设与方法
 
-可证伪假设 H1：在相同交互步数和配对任务下，在线校准 uncertainty、collision risk、route alignment 和 shift score 的 adaptive horizon，相比 fixed horizon 16 能在成功率基本不下降的情况下减少碰撞或真实失败。
+可证伪假设 H1（v2）：相比 v1 使用的候选集合风险分位数，最终选中轨迹的条件风险，能否在观测噪声、延迟与连续控制条件下提高碰撞失败辨识能力，并在不降低成功率的前提下支持计算预算适应？
 
 反例也明确：若 adaptive horizon 只减少计算量、碰撞不降，结论为计算预算适应；若成功率下降或 OOD calibration 不稳定，结论为当前信号不足以支持安全视界控制。
 

@@ -11,7 +11,7 @@ PocketWorld 是一个可观察、可复现的微型世界模型实验室：它�
 - 实现随机 shooting、局部 MPC、路线进度/剩余预算约束、route-aware planner 以及在线 shift detection。
 - 建立了固定视界、碰撞风险、路线对齐、OOD 速度/地图变化和失败案例评测工具。
 - 建立了 pytest、覆盖率、GitHub Actions、在线展示和机器可读 JSON 报告。
-- 在当前代码 revision `f35766c` 上全量测试为 `145 passed`，覆盖率基线为 `70.40%`；adaptive horizon smoke 与正式三 seed 评测均已真实执行并生成严格 JSON 摘要。
+- 最终公开 main revision `59cce58`，对应 GitHub CI run `33612106843`；全量测试为 `145 passed`，覆盖率基线为 `70.40%`。adaptive horizon smoke 与正式三 seed 评测均已真实执行并生成严格 JSON 摘要。
 
 这些工作证明的是独立的工程实现能力和研究闭环能力，不证明真实机器人上的安全性。
 
@@ -27,11 +27,11 @@ PocketWorld 是一个可观察、可复现的微型世界模型实验室：它�
 
 v1 已固定求解器并完成正式比较：固定 8/16/24/32、旧 solver gate、新 adaptive horizon 和 adaptive horizon+robust MPC；使用 calibration seeds `53,67`，final holdout seeds `11,23,41`，每个 final seed 20 个 paired episodes，同时报告 ID、地图平移和速度变化 OOD。策略根据在线可获得的校准状态标准差、碰撞概率、路线对齐误差、shift score 和近期规划压力，在 8/16/24/32 步中选择满足风险预算的最长视界，并用进入/退出阈值防止振荡。
 
-v2 不再把 GPU 需求表述为“完成 v1 正式实验”，而是验证 v1 暴露的失败机制：补充 paired bootstrap 与跨 seed 稳定性，分析 horizon 8 退化，计算最终选中轨迹的条件风险，加入观测噪声/延迟/速度估计误差，并迁移到连续控制和 Unitree 仿真。不预设新方法一定成功；v1 已表明降低 model queries 不等于降低碰撞。
+v2 不再把 GPU 需求表述为“完成 v1 正式实验”，而是验证 v1 暴露的失败机制：分析 horizon 8 退化，计算最终选中轨迹的条件风险，加入观测噪声/延迟/速度估计误差，并迁移到连续控制和 Unitree 仿真。不预设新方法一定成功；v1 已表明降低 model queries 不等于降低碰撞。
 
 ## 当前缺少什么
 
-- GPU 计算资源：对已完成的 v1 做 bootstrap/敏感性复验，并运行 v2 的噪声、延迟、风险条件和连续控制实验。
+- GPU 计算资源：扩展 seed，运行噪声/延迟 formal runs，并完成连续控制和 Unitree 仿真，而不是重复已完成的 v1 bootstrap。
 - 机器人仿真和传感器噪声平台：检查二维结论在观测延迟、噪声、速度变化和连续控制下是否仍成立。
 - 移动机器人/Unitree 工程指导：审查状态估计、局部规划、碰撞代价、控制频率和安全停机设计。
 - 受控测试设备：在不直接把未验证模型用于真实机器人运动的前提下，采集低风险传感器数据并验证观测误差模型。

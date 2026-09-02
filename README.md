@@ -123,11 +123,12 @@ first-plan diagnostic, not a strict policy-level imagination gap. For a
 same-plan imagined-versus-real claim, use the dedicated
 [imagination-gap evaluator](docs/results/evaluation-imagination-gap-v3-final.json).
 
-The v1 study is complete. The next supportable step is v2: add paired bootstrap
-intervals, explain why the policy often collapses to horizon 8, evaluate risk
-conditioned on the selected trajectory, add observation noise/delay and speed
-estimation error, and then test the mechanism in continuous-control and Unitree
-simulation. See the [support application package](docs/application/README.md).
+The v1 study is complete. The next supportable step is v2: explain why the
+policy often collapses to horizon 8, replace candidate-set risk summaries with
+the conditional risk of the finally selected trajectory, add observation
+noise/delay and speed-estimation error, and then test the mechanism in
+continuous-control and Unitree simulation. See the
+[support application package](docs/application/README.md).
 
 ### Learned route-level planning comparison
 

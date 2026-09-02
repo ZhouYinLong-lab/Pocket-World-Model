@@ -6,7 +6,7 @@ PocketWorld 已经能在个人电脑上运行，但下一阶段的关键问题�
 
 ### GPU 云计算或训练资源
 
-v1 的 fixed/adaptive horizon 配对矩阵已经完成。下一步需要 GPU 对 v1 做 bootstrap/敏感性复验，并运行观测噪声、延迟、速度估计误差和连续控制迁移实验。资源对应的成果是版本化 paired JSON、统计区间、日志、图表和失败案例，而不是只保留一组手工挑选的数字。
+v1 的 fixed/adaptive horizon 配对矩阵和 bootstrap 摘要已经完成。下一步需要 GPU 扩展 seed，并运行观测噪声、延迟、速度估计误差和连续控制迁移的 formal experiments。资源对应的成果是版本化 paired JSON、统计区间、日志、图表和失败案例，而不是只保留一组手工挑选的数字。
 
 ### Unitree 仿真模型与开发资料
 

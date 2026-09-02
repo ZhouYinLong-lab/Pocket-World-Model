@@ -5,7 +5,7 @@
 | 周期 | 工作 | 可检查成果 | 需要的帮扶 |
 |---|---|---|---|
 | 第 1–2 周 | 审查已完成 v1 的 paired JSON、重跑最小 smoke、冻结 v2 统计/风险分析协议 | v1 provenance 清单、bootstrap 配置、失败案例索引、风险评审记录 | 工程师审查实验协议 |
-| 第 3–4 周 | 对 v1 结果做 paired bootstrap、跨 seed 汇总，并分析 horizon 8 退化和最终选中轨迹条件风险 | 统计区间 JSON、固定误差—视界图、horizon 分布、风险条件报告 | GPU/云算力 |
+| 第 3–4 周 | 扩展 seed 并分析 horizon 8 退化；比较候选集合风险分位数与最终选中轨迹条件风险 | 风险条件 JSON、horizon 分布、跨 seed 稳定性报告 | GPU/云算力 |
 | 第 5–6 周 | 运行地图平移、速度变化、观测噪声、延迟 OOD；检查 coverage、Brier/NLL 和失败模式 | OOD calibration 报告、失败案例集、可复现实验命令 | GPU 与实验设计指导 |
 | 第 7–8 周 | 在安全约束下接入一个移动机器人仿真 baseline，比较离散二维与连续控制差异 | 仿真环境、普通 MPC/随机 shooting baseline、演示视频 | Unitree 仿真资料、机器人导航指导 |
 | 第 9–10 周 | 加入相机噪声、动作延迟和速度估计偏差；不接管真实机器人，仅做离线/仿真 replay | 噪声数据集、延迟消融、sim-to-sim 差距分析 | 传感器/仿真资源 |
