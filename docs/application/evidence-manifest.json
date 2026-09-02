@@ -12,11 +12,11 @@
   "verified_execution": {
     "full_tests": {
       "command": "pytest -q",
-      "result": "140 passed"
+      "result": "141 passed"
     },
     "coverage": {
       "command": "pytest --cov=pocketworld --cov-report=term-missing",
-      "result": "140 passed; total coverage 70%"
+      "result": "141 passed; total coverage 70%"
     },
     "adaptive_horizon_smoke": {
       "command": "python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --smoke --output artifacts/evaluation-adaptive-horizon-smoke.json",

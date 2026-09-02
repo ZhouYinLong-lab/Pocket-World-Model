@@ -23,7 +23,7 @@ README 和 `docs/evaluation-2026-08.md` 中已经提交的结果显示，v3-fina
 - 新评测器比较固定 8/16/24/32、旧 solver gate、新 adaptive horizon 和 robust ablation。
 - calibration/final split 已冻结为 calibration `53,67`、final `11,23,41`。
 - smoke 已真实运行：一条 final smoke case 中出现 32→8 horizon 切换，纯学习 real success 为 `0.0`；这只是管线检查，不是正式结论。
-- 全量测试 `140 passed`，覆盖率 `70%`。
+- 全量测试 `141 passed`，覆盖率基线 `70%`。
 - 完整三 seed 正式评测已完成：4 个条件、每条件 60 个 paired episodes（每个 final seed 20 个）。完整本地报告为 `artifacts/evaluation-adaptive-horizon-v1.json`，可提交的精简结果为 [`docs/results/evaluation-adaptive-horizon-v1-summary.json`](../results/evaluation-adaptive-horizon-v1-summary.json)。
 
 ## 正式 adaptive-horizon 结论
