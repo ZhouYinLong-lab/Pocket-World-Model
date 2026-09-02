@@ -42,6 +42,7 @@ pocketworld-evaluate-planner-comparison = "pocketworld.evaluate_planner_comparis
 pocketworld-evaluate-adaptive-calibration = "pocketworld.evaluate_adaptive_calibration:main"
 pocketworld-evaluate-collision-head = "pocketworld.evaluate_collision_head:main"
 pocketworld-evaluate-adaptive-horizon = "pocketworld.evaluate_adaptive_horizon:main"
+pocketworld-summarize-adaptive-horizon = "pocketworld.adaptive_horizon_stats:main"
 
 [tool.setuptools.packages.find]
 include = ["pocketworld*"]

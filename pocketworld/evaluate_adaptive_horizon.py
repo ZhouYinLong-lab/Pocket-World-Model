@@ -1025,10 +1025,15 @@ def run_adaptive_horizon_evaluation(
                 "fixed_horizon_*": "pure learned world-model random shooting with fixed imagination horizon",
                 "existing_adaptive_solver_gate": "fixed solver horizon; ordinary/robust MPC switch only",
                 "adaptive_horizon": "calibrated horizon selection; ordinary learned world-model rollout",
-                "adaptive_horizon_robust_mpc": "same horizon policy with robust local MPC, independent ablation",
-                "astar_fallback": "explicit RGB footprint geometry plus A* route proposals; not pure learning",
-            },
-            "thresholds_selected_on_final_holdout": False,
+            "adaptive_horizon_robust_mpc": "same horizon policy with robust local MPC, independent ablation",
+            "astar_fallback": "explicit RGB footprint geometry plus A* route proposals; not pure learning",
+        },
+        "imagined_success_definition": (
+            "success of the first selected plan's predicted endpoint; "
+            "not closed-loop episode success"
+        ),
+        "imagined_real_gap_comparable_at_policy_level": False,
+        "thresholds_selected_on_final_holdout": False,
             "calibration_and_final_disjoint": True,
             "student_pure_learning_calls_astar": False,
             "student_pure_learning_reads_true_collision_labels": False,

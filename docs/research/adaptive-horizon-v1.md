@@ -83,7 +83,10 @@ collisions, final distance, route completion, replans, latency, model-query
 budget, selected-horizon distribution, switch count, decision reasons,
 calibration coverage, Gaussian NLL, collision Brier score, ID/map-shift/fast-
 speed OOD conditions, per-seed summaries, and the fixed-horizon position-error
-curve.
+curve. The generated application summary additionally reports medians and
+paired percentile-bootstrap 95% intervals for adaptive-minus-fixed-16
+differences. Pairs are keyed by `(seed, map_id)`; no final-holdout label is used
+to fit thresholds.
 
 ## Results
 
@@ -116,6 +119,13 @@ The appropriate conclusion is: **adaptive horizon provides computation-budget
 adaptation and exposes a useful long-horizon trade-off, but this protocol does
 not support a safety-improvement claim for obstacle traversal.**
 
+Metric boundary: the evaluator's `imagined_success` is the success of the
+first selected plan's predicted endpoint. Because `real_success` is measured
+after closed-loop execution and replanning, the row-level
+`imagination_real_success_gap` is a first-plan diagnostic, not a strict
+policy-level imagination gap. The dedicated same-plan imagination-gap
+evaluator remains the source for that narrower claim.
+
 ## Limitations and interpretation
 
 The environment is still a deterministic 64×64 two-dimensional simulator,
@@ -147,4 +157,14 @@ The locked formal command is:
 python -m pocketworld.evaluate_adaptive_horizon \
   --protocol configs/adaptive-horizon-v1.json \
   --output artifacts/evaluation-adaptive-horizon-v1.json
+```
+
+Then regenerate the compact statistical summary:
+
+```bash
+pocketworld-summarize-adaptive-horizon \
+  artifacts/evaluation-adaptive-horizon-v1.json \
+  --output docs/results/evaluation-adaptive-horizon-v1-summary.json \
+  --resamples 2000 \
+  --bootstrap-seed 20260902
 ```
