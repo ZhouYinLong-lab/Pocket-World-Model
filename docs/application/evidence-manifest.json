@@ -4,8 +4,8 @@
     "remote": "https://github.com/ZhouYinLong-lab/Pocket-World-Model",
     "public": true,
     "local_branch": "codex/v23-sync",
-    "evidence_revision": "aea98f4258ae1e0f730efed074521205afd081a5",
-    "evidence_revision_note": "Baseline revision before this consistency-correction package; the correction commits are pushed to main after verification.",
+    "evidence_revision": "338e98de664a7d28f5b6d3c26308770cae0b50ee",
+    "evidence_revision_note": "Revision containing the consistency-correction package and the generated bootstrap summary; verified by the GitHub CI run recorded below.",
     "working_tree_clean_at_last_check": true,
     "new_commits_pushed": true,
     "push_note": "The v1 evidence baseline and subsequent correction commits are delivered to the public main branch through ordinary non-forced SSH pushes."
@@ -40,10 +40,11 @@
       "command": "python -c \"import json; [json.load(open(p, encoding='utf-8')) for p in ['docs/results/evaluation-adaptive-horizon-v1-summary.json','docs/application/evidence-manifest.json']]\"",
       "result": "strict JSON parsing passed; summary generated with allow_nan=false"
     },
-    "last_green_github_ci_before_correction": {
-      "run_id": 33576490431,
-      "head_sha": "aea98f4258ae1e0f730efed074521205afd081a5",
-      "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33576490431"
+    "last_green_github_ci": {
+      "run_id": 33611531077,
+      "head_sha": "338e98de664a7d28f5b6d3c26308770cae0b50ee",
+      "conclusion": "success",
+      "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33611531077"
     }
   },
   "frozen_protocol": {
