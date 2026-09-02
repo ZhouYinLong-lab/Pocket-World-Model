@@ -6,8 +6,9 @@
     "local_branch": "codex/v23-sync",
     "evidence_revision": "338e98de664a7d28f5b6d3c26308770cae0b50ee",
     "evidence_revision_note": "Release-tag evidence snapshot containing the consistency-correction package and generated bootstrap summary; the final public main revision is recorded separately below.",
-    "current_main_revision": "59cce583b0708b87f834902d6d57d4f33022ac68",
-    "final_green_ci_run_id": 33612106843,
+    "current_main_revision": "eaebc6a7bf35a4ee6aecaee89f2bd8d94fc2645c",
+    "current_main_revision_note": "Last main revision verified before this metadata-only manifest update.",
+    "final_green_ci_run_id": 33613595945,
     "working_tree_clean_at_last_check": true,
     "new_commits_pushed": true,
     "push_note": "The v1 evidence baseline and subsequent correction commits are delivered to the public main branch through ordinary non-forced SSH pushes."
@@ -54,8 +55,8 @@
       "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33611531077"
     },
     "final_green_github_ci": {
-      "run_id": 33612106843,
-      "head_sha": "59cce583b0708b87f834902d6d57d4f33022ac68",
+      "run_id": 33613595945,
+      "head_sha": "eaebc6a7bf35a4ee6aecaee89f2bd8d94fc2645c",
       "conclusion": "success",
       "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33612106843"
     }
