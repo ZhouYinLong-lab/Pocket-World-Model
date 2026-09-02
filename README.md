@@ -10,8 +10,8 @@
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://gymnasium.farama.org/"><img alt="Gymnasium" src="https://img.shields.io/badge/Gymnasium-custom%20environment-0081A5"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-F7BE45.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-121%20passed-419400">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-84%25-69A94E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-141%20passed-419400">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-70.40%25-69A94E">
 </p>
 
 ## Why PocketWorld?
@@ -116,8 +116,18 @@ budget adaptation result. The fixed-horizon position error curve still grows
 from **2.34 px at 8 steps** to **11.19 px at 32 steps**. See the
 [formal summary](docs/results/evaluation-adaptive-horizon-v1-summary.json).
 
-For a concise account of the current evidence, limitations, resource needs, and
-12-week next stage, see the [帮扶申请材料包](docs/application/README.md).
+Metric boundary: in this evaluator, `imagined_success` means that the first
+selected plan's predicted endpoint reaches the goal; `real_success` is the
+final result after closed-loop execution and replanning. Their difference is a
+first-plan diagnostic, not a strict policy-level imagination gap. For a
+same-plan imagined-versus-real claim, use the dedicated
+[imagination-gap evaluator](docs/results/evaluation-imagination-gap-v3-final.json).
+
+The v1 study is complete. The next supportable step is v2: add paired bootstrap
+intervals, explain why the policy often collapses to horizon 8, evaluate risk
+conditioned on the selected trajectory, add observation noise/delay and speed
+estimation error, and then test the mechanism in continuous-control and Unitree
+simulation. See the [support application package](docs/application/README.md).
 
 ### Learned route-level planning comparison
 

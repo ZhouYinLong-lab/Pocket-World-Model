@@ -2,21 +2,24 @@
   "observed_at": "2026-09-02",
   "repository": {
     "remote": "https://github.com/ZhouYinLong-lab/Pocket-World-Model",
+    "public": true,
     "local_branch": "codex/v23-sync",
-    "evidence_revision": "91dcb4c9fb9a76025881d433d6085a50d73ca15b",
-    "revision_note": "This evidence snapshot predates the material-package commit that contains this manifest.",
-    "working_tree_clean": true,
-    "new_commits_pushed": false,
-    "push_note": "Two push attempts were reset by the GitHub connection; local commits are retained."
+    "evidence_revision": "aea98f4258ae1e0f730efed074521205afd081a5",
+    "evidence_revision_note": "Baseline revision before this consistency-correction package; the correction commits are pushed to main after verification.",
+    "working_tree_clean_at_last_check": true,
+    "new_commits_pushed": true,
+    "push_note": "The v1 evidence baseline and subsequent correction commits are delivered to the public main branch through ordinary non-forced SSH pushes."
   },
   "verified_execution": {
     "full_tests": {
       "command": "pytest -q",
-      "result": "141 passed"
+      "result": "141 passed; 2 warnings",
+      "checked_after_merge": true
     },
     "coverage": {
       "command": "pytest --cov=pocketworld --cov-report=term-missing",
-      "result": "141 passed; total coverage 70%"
+      "result": "141 passed; total coverage 70.40%",
+      "interpretation": "Coverage is lower than the historical badge because the adaptive evaluator and reporting paths added substantial code; the current value is reported rather than hidden."
     },
     "adaptive_horizon_smoke": {
       "command": "python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --smoke --output artifacts/evaluation-adaptive-horizon-smoke.json",
@@ -28,41 +31,101 @@
       "status_at_last_check": "completed; process exited normally and full JSON was generated",
       "formal_result_claim_allowed": true,
       "strong_safety_claim_supported": false,
-      "summary_file": "docs/results/evaluation-adaptive-horizon-v1-summary.json"
+      "source_report_sha256": "038b371f9e140b0e816578428ab1516e6033df8df4b7c3acc6d53ddc2d5c11ea",
+      "summary_command": "pocketworld-summarize-adaptive-horizon artifacts/evaluation-adaptive-horizon-v1.json --output docs/results/evaluation-adaptive-horizon-v1-summary.json --resamples 2000 --bootstrap-seed 20260902",
+      "summary_file": "docs/results/evaluation-adaptive-horizon-v1-summary.json",
+      "imagined_success_scope": "first selected plan predicted endpoint; not closed-loop policy success"
+    },
+    "json_validation": {
+      "command": "python -c \"import json; [json.load(open(p, encoding='utf-8')) for p in ['docs/results/evaluation-adaptive-horizon-v1-summary.json','docs/application/evidence-manifest.json']]\"",
+      "result": "strict JSON parsing passed; summary generated with allow_nan=false"
+    },
+    "last_green_github_ci_before_correction": {
+      "run_id": 33576490431,
+      "head_sha": "aea98f4258ae1e0f730efed074521205afd081a5",
+      "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/actions/runs/33576490431"
     }
   },
   "frozen_protocol": {
     "train_seeds": [101, 103, 107],
     "calibration_seeds": [53, 67],
     "final_holdout_seeds": [11, 23, 41],
-    "episodes_per_final_seed": 20,
+    "episodes_per_final_seed_per_condition": 20,
+    "paired_episodes_per_condition": 60,
     "interaction_budget_steps": 48,
     "candidate_horizons": [8, 16, 24, 32],
-    "conditions": ["id", "map_shift", "speed_shift", "joint_map_and_speed_shift"],
+    "conditions": ["id", "ood_map_minus2", "ood_speed_fast", "ood_joint"],
     "thresholds_selected_on_final_holdout": false,
-    "calibration_and_final_disjoint": true
+    "calibration_and_final_disjoint": true,
+    "paired_case_key": ["seed", "map_id"]
+  },
+  "statistical_reporting": {
+    "method": "paired percentile bootstrap of treatment-minus-fixed-16 case means",
+    "resamples": 2000,
+    "confidence": 0.95,
+    "seed": 20260902,
+    "metrics": ["real_success", "collision_count_per_episode", "final_distance_px", "planning_latency_ms", "model_queries"],
+    "summary_generator": "pocketworld/adaptive_horizon_stats.py"
+  },
+  "public_resources": {
+    "release_tag": "adaptive-horizon-v1",
+    "release_url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/tag/adaptive-horizon-v1",
+    "formal_run_commit": "498947096d52b4c51afdfede144bfca28d550d89",
+    "assets": [
+      {
+        "name": "pocketworld-map-suite-v3-final.pt",
+        "role": "world-model checkpoint",
+        "size_bytes": 7094493,
+        "sha256": "7a2446718291cd61ed4a7b84d7b2a1b82e784f31b7dab711ef6a25965af93869",
+        "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/adaptive-horizon-v1/pocketworld-map-suite-v3-final.pt"
+      },
+      {
+        "name": "general-route-sketch-v28-budgeted-locked-distance-field.pt",
+        "role": "solver-reference route-field checkpoint; not used by pure-learning claims",
+        "size_bytes": 230253,
+        "sha256": "7c2a333a381eec97b5731ae767a57619bac74a2669496461c23a61126d7eaac7",
+        "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/adaptive-horizon-v1/general-route-sketch-v28-budgeted-locked-distance-field.pt"
+      },
+      {
+        "name": "evaluation-adaptive-horizon-v1.json",
+        "role": "complete formal paired report",
+        "size_bytes": 36266310,
+        "sha256": "038b371f9e140b0e816578428ab1516e6033df8df4b7c3acc6d53ddc2d5c11ea",
+        "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/adaptive-horizon-v1/evaluation-adaptive-horizon-v1.json"
+      },
+      {
+        "name": "evaluation-adaptive-horizon-v1-summary.json",
+        "role": "compact generated summary with per-seed metrics and paired bootstrap intervals",
+        "size_bytes": 390038,
+        "sha256": "3c60b3066cc8d49446a04e71bd8969b3018093ad31fc0a91f16cb26e8d937adc",
+        "url": "https://github.com/ZhouYinLong-lab/Pocket-World-Model/releases/download/adaptive-horizon-v1/evaluation-adaptive-horizon-v1-summary.json"
+      }
+    ]
   },
   "historical_results": {
-    "source": [
-      "README.md",
-      "docs/evaluation-2026-08.md",
-      "docs/results/evaluation-imagination-gap-v3-final.json"
-    ],
+    "source": ["README.md", "docs/evaluation-2026-08.md", "docs/results/evaluation-imagination-gap-v3-final.json"],
     "v3_final_24_step_imagined_real_success": "100.0% / 95.3%",
     "v3_final_32_step_imagined_real_success": "100.0% / 93.3%",
     "interpretation": "longer imagined horizons expose a measurable gap; this is not a robot safety guarantee",
     "v25_adaptive_solver_gate": "fixed-horizon ordinary/robust switching; historical computation-adaptation result, not adaptive horizon"
   },
+  "current_adaptive_horizon_conclusion": {
+    "id_pure_learning_fixed_16": {"real_success": 0.08333333333333333, "collisions_per_episode": 13.65},
+    "id_pure_learning_adaptive": {"real_success": 0.11666666666666667, "collisions_per_episode": 15.533333333333333},
+    "paired_ci_interpretation": "ID adaptive-minus-fixed-16 real-success delta is 0.0333 with 95% paired bootstrap CI [-0.0667, 0.1333]; collision delta is 1.8833 with CI [-0.4167, 4.1508]. These intervals do not support a safety-improvement claim.",
+    "claim_boundary": "v1 supports qualified computation-budget adaptation and exposes a negative obstacle-traversal result; it does not establish safer pure-learning planning."
+  },
   "resource_to_milestone": {
-    "gpu": "three-seed paired formal matrix, OOD calibration, bootstrap summaries",
+    "gpu": "v1 bootstrap/sensitivity revalidation plus v2 risk-conditioned, observation-noise/delay, and continuous-control experiments",
     "robot_simulation": "continuous-control navigation baseline and sim-to-sim transfer study",
     "sensors_or_small_hardware": "controlled observation-noise, delay, and velocity-estimation validation",
-    "engineering_guidance": "review of collision costs, stop conditions, evaluation fairness, and sim-to-real boundaries"
+    "engineering_guidance": "review of collision costs, stop conditions, evaluation fairness, and sim-to-sim boundaries"
   },
   "claims_not_supported": [
     "real robot safety",
     "general-purpose navigation",
     "pure learned success when A* or visible geometry is used",
-    "adaptive-horizon safety improvement before the formal report exists"
+    "adaptive-horizon safety improvement",
+    "strict policy-level imagination gap from the adaptive evaluator's first-plan imagined_success field"
   ]
 }

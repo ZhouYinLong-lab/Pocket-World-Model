@@ -19,7 +19,7 @@
 5. 评测：固定视界、想象—真实 gap、OOD 速度/地图变化、碰撞、成功率、延迟和三 seed 报告。
 6. 工程：Python package、CLI、pytest、coverage、GitHub Actions、可视化页面和 JSON 报告。
 
-仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。adaptive-horizon 正式协议已经完成：4 个条件、每条件 60 个 paired episodes，使用 final seeds `11,23,41`。`pytest -q` 实际输出为 `141 passed`，覆盖率基线为 `70%`。正式结果已生成精简摘要，但结论是限定性的：纯学习 adaptive horizon 降低了查询预算，却没有降低 fixed-16 的碰撞率。
+仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。adaptive-horizon v1 正式协议已经完成：4 个条件、每条件 60 个 paired episodes，使用 final seeds `11,23,41`。`pytest -q` 实际输出为 `141 passed`，覆盖率基线为 `70.40%`。正式结果已生成精简摘要和每 seed paired bootstrap 区间，但结论是限定性的：纯学习 adaptive horizon 降低了查询预算，却没有降低 fixed-16 的碰撞率。
 
 ## 3. 已知结果与问题边界
 
@@ -53,11 +53,11 @@ R_h = 0.40 U_h + 0.30 C_h + 0.15 A + 0.10 O + 0.05 P
 
 正式协议每个 final seed 至少 20 个 paired episodes，包含 ID、地图平移、速度变化和联合 OOD；固定 48-step interaction budget。固定 horizon、adaptive horizon 和 solver reference 共享初始案例和 action bank；纯学习轨道与 A* fallback 轨道分开报告。指标包括 imagined/real success、gap、collision、final distance、route completion、replanning、latency、horizon distribution/switching、coverage、Brier/NLL、跨 seed 均值和标准差。
 
-## 6. 需要帮扶的原因
+## 6. v2 需要帮扶的原因
 
 个人条件足以完成二维原型，却不足以有质量地完成下一阶段的多条件统计验证与机器人迁移。主要约束是：
 
-- GPU/云算力不足，使完整多方法、多 seed、多 OOD paired matrix 运行成本高，无法快速进行重复校验。
+- GPU/云算力不足，使已完成 v1 的统计敏感性复验、噪声/延迟 OOD 和连续控制迁移难以在有限时间内重复校验。
 - 没有经过工程验证的移动机器人仿真与传感器模型，无法评估相机噪声、延迟、速度估计和控制频率变化。
 - 缺少低风险硬件测试平台，无法把“模型误差—规划失败”链条从像素模拟扩展到受控真实观测。
 - 缺少机器人导航、模型式 RL 和安全实验设计方面的专业反馈，尤其是碰撞代价、停止策略和 sim-to-real 边界。
@@ -66,7 +66,7 @@ R_h = 0.40 U_h + 0.30 C_h + 0.15 A + 0.10 O + 0.05 P
 
 ## 7. 预期交付与负面结果处理
 
-12 周内交付一份可复现结果包、固定/自适应 horizon 对比图、OOD calibration 报告、失败案例集、移动机器人仿真 baseline、噪声/延迟实验记录、技术评审纪要和公开代码。若 H1 不成立，仍交付：
+12 周内在 v1 已完成的基础上交付一份 v2 可复现结果包、固定/自适应 horizon 的统计区间、选中轨迹风险分析、OOD calibration 报告、失败案例集、移动机器人仿真 baseline、噪声/延迟实验记录、技术评审纪要和公开代码。若 H1 不成立，仍交付：
 
 - 一个能复现 imagination-real gap 的评测工具；
 - 一个明确区分 solver gate 与 adaptive horizon 的实现；

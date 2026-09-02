@@ -1,6 +1,6 @@
 # PocketWorld 现有结果与失败案例摘要
 
-本页只汇总仓库已有结果和已验证状态，不能替代正式三 seed adaptive-horizon 报告。
+本页只汇总仓库已有结果和已验证状态；v1 正式三 seed adaptive-horizon 报告已经完成，完整报告通过申请材料中的 evidence release 公开，提交摘要同时保留来源 SHA256。
 
 ## 已经证明了什么
 
@@ -23,7 +23,7 @@ README 和 `docs/evaluation-2026-08.md` 中已经提交的结果显示，v3-fina
 - 新评测器比较固定 8/16/24/32、旧 solver gate、新 adaptive horizon 和 robust ablation。
 - calibration/final split 已冻结为 calibration `53,67`、final `11,23,41`。
 - smoke 已真实运行：一条 final smoke case 中出现 32→8 horizon 切换，纯学习 real success 为 `0.0`；这只是管线检查，不是正式结论。
-- 全量测试 `141 passed`，覆盖率基线 `70%`。
+- 全量测试 `141 passed`，覆盖率基线 `70.40%`。
 - 完整三 seed 正式评测已完成：4 个条件、每条件 60 个 paired episodes（每个 final seed 20 个）。完整本地报告为 `artifacts/evaluation-adaptive-horizon-v1.json`，可提交的精简结果为 [`docs/results/evaluation-adaptive-horizon-v1-summary.json`](../results/evaluation-adaptive-horizon-v1-summary.json)。
 
 ## 正式 adaptive-horizon 结论
@@ -33,6 +33,8 @@ README 和 `docs/evaluation-2026-08.md` 中已经提交的结果显示，v3-fina
 快速速度和联合 OOD 下，adaptive horizon 都降低了 model-query 预算，但
 没有相对 fixed-16 降低碰撞。因此不能宣称安全性提升，只能宣称“计算预算
 适应 + 暴露了短视界不足以解决障碍穿越的负面结果”。
+
+注意：adaptive evaluator 的 `imagined_success` 只表示第一次选中计划的模型预测终点是否到达目标；它与闭环 `real_success` 的差值是 first-plan diagnostic，不应写成严格的 imagined-vs-real policy gap。
 
 含 A* 的 hybrid 轨道成功率更高，但碰撞与纯学习不同，必须单独归因；
 robust-MPC ablation 的低碰撞伴随显著更高延迟，也不能归因于 horizon 本身。
