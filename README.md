@@ -106,8 +106,15 @@ note](docs/research/adaptive-horizon-v1.md) and run the smoke protocol with:
 python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --smoke
 ```
 
-The formal result is intentionally not pre-declared: reducing model queries
-alone would be reported as computation-budget adaptation, not safety gain.
+The locked formal run completed 60 paired episodes per condition across final
+seeds `11,23,41`. In the pure-learning ID track, adaptive horizon reached
+**11.7% real success / 15.53 collisions per episode**, versus fixed-16 at
+**8.3% / 13.65**; map-shift, fast-speed, and joint OOD showed the same pattern
+of lower query cost without lower collisions. The result therefore does **not**
+support a safety-improvement claim: it is a negative/qualified computation-
+budget adaptation result. The fixed-horizon position error curve still grows
+from **2.34 px at 8 steps** to **11.19 px at 32 steps**. See the
+[formal summary](docs/results/evaluation-adaptive-horizon-v1-summary.json).
 
 For a concise account of the current evidence, limitations, resource needs, and
 12-week next stage, see the [帮扶申请材料包](docs/application/README.md).

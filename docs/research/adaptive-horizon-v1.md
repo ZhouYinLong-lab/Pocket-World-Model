@@ -87,14 +87,34 @@ curve.
 
 ## Results
 
-The one-seed smoke command is verified and writes
-`artifacts/evaluation-adaptive-horizon-smoke.json`. It selected both 32 and 8
-step horizons during the episode; the pure-learning smoke case had 0.0 real
-success. This is a pipeline check, not evidence for or against the research
-hypothesis.
+The locked three-seed protocol completed with 60 paired episodes per
+condition (20 per final seed). The fixed-horizon position error curve on ID
+cases increased from **2.34 px at 8 steps** to **5.23 px at 16**, **8.30 px at
+24**, and **11.19 px at 32**. Calibration used 192 samples and measured 90%
+interval coverage of **98.4% for position** and **91.4% for velocity**; the
+collision Brier score was **0.0972**.
 
-The three-seed formal result belongs here only after the locked protocol has
-finished. No formal result is claimed by this document before that run.
+The formal result is negative for the strong safety hypothesis. In the pure
+learning ID track, adaptive horizon reached **11.7% real success** and
+**15.53 collisions/episode**, versus fixed-16's **8.3%** and
+**13.65 collisions/episode**. On map-shift, fast-speed, and joint OOD, the
+adaptive method reduced model-query cost but did not reduce collisions versus
+fixed-16. It selected horizon 8 for 450–524 replanning decisions per
+condition, while retaining a small number of long-horizon decisions.
+
+The hybrid A* track had higher success in several conditions, but adaptive
+horizon also had more collisions than hybrid fixed-16 and those results must
+not be attributed to pure learning. The robust-MPC ablation reduced collisions
+in the solver-reference track at roughly 3.2–3.4 seconds planning latency,
+compared with roughly 0.46–0.54 seconds for the existing solver gate; this is
+an independent solver trade-off, not evidence that adaptive horizon itself is
+safe.
+
+The formal JSON is summarized in
+[`docs/results/evaluation-adaptive-horizon-v1-summary.json`](../results/evaluation-adaptive-horizon-v1-summary.json).
+The appropriate conclusion is: **adaptive horizon provides computation-budget
+adaptation and exposes a useful long-horizon trade-off, but this protocol does
+not support a safety-improvement claim for obstacle traversal.**
 
 ## Limitations and interpretation
 

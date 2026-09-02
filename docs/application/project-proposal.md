@@ -19,7 +19,7 @@
 5. 评测：固定视界、想象—真实 gap、OOD 速度/地图变化、碰撞、成功率、延迟和三 seed 报告。
 6. 工程：Python package、CLI、pytest、coverage、GitHub Actions、可视化页面和 JSON 报告。
 
-仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。当前本地可核验 HEAD 为 `90689c0`；`pytest -q` 实际输出为 `140 passed`，`pytest --cov=pocketworld --cov-report=term-missing` 实际总覆盖率为 `70%`。新 adaptive-horizon smoke 已成功生成严格 JSON，但完整三 seed 正式评测在本材料编写时仍需以最终退出码和结果文件确认。
+仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。adaptive-horizon 正式协议已经完成：4 个条件、每条件 60 个 paired episodes，使用 final seeds `11,23,41`。`pytest -q` 实际输出为 `140 passed`，`pytest --cov=pocketworld --cov-report=term-missing` 实际总覆盖率为 `70%`。正式结果已生成精简摘要，但结论是限定性的：纯学习 adaptive horizon 降低了查询预算，却没有降低 fixed-16 的碰撞率。
 
 ## 3. 已知结果与问题边界
 
@@ -29,7 +29,7 @@
 - learned temporal velocity 和 calibrated uncertainty 可以被实现并在 held-out rollout 上测量 coverage、NLL 和 shift detection。
 - 障碍穿越是更难的失效模式。显式 RGB geometry/A* fallback 可以提高完成率，但它是混合方法，不是纯世界模型理解的证据。
 
-同时必须保留负面结论：历史 v25 adaptive solver gate 在固定 horizon 下只是在 ordinary MPC 和 robust MPC 之间切换；它更像计算预算适应，没有证明稳定的安全性提升。新 adaptive horizon 也可能只降低 model queries，甚至因缺少远期路线信息而降低成功率。
+同时必须保留负面结论：历史 v25 adaptive solver gate 在固定 horizon 下只是在 ordinary MPC 和 robust MPC 之间切换；它更像计算预算适应，没有证明稳定的安全性提升。新的正式三 seed 结果也没有显示 pure-learning 碰撞率优于 fixed-16，说明仅缩短 imagination horizon 不足以解决障碍穿越。
 
 ## 4. 研究假设与方法
 

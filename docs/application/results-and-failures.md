@@ -24,7 +24,18 @@ README 和 `docs/evaluation-2026-08.md` 中已经提交的结果显示，v3-fina
 - calibration/final split 已冻结为 calibration `53,67`、final `11,23,41`。
 - smoke 已真实运行：一条 final smoke case 中出现 32→8 horizon 切换，纯学习 real success 为 `0.0`；这只是管线检查，不是正式结论。
 - 全量测试 `140 passed`，覆盖率 `70%`。
-- 完整三 seed 正式评测必须以 `artifacts/evaluation-adaptive-horizon-v1.json` 的真实生成结果为准；若文件尚未存在，申请材料必须写 pending。
+- 完整三 seed 正式评测已完成：4 个条件、每条件 60 个 paired episodes（每个 final seed 20 个）。完整本地报告为 `artifacts/evaluation-adaptive-horizon-v1.json`，可提交的精简结果为 [`docs/results/evaluation-adaptive-horizon-v1-summary.json`](../results/evaluation-adaptive-horizon-v1-summary.json)。
+
+## 正式 adaptive-horizon 结论
+
+在纯学习 ID 轨道，adaptive horizon 的 real success 为 **11.7%**、碰撞为
+**15.53/episode**；fixed-16 为 **8.3%**、**13.65/episode**。地图平移、
+快速速度和联合 OOD 下，adaptive horizon 都降低了 model-query 预算，但
+没有相对 fixed-16 降低碰撞。因此不能宣称安全性提升，只能宣称“计算预算
+适应 + 暴露了短视界不足以解决障碍穿越的负面结果”。
+
+含 A* 的 hybrid 轨道成功率更高，但碰撞与纯学习不同，必须单独归因；
+robust-MPC ablation 的低碰撞伴随显著更高延迟，也不能归因于 horizon 本身。
 
 ## 失败案例的研究价值
 

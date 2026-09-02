@@ -25,8 +25,10 @@
     },
     "formal_adaptive_horizon": {
       "command": "python -m pocketworld.evaluate_adaptive_horizon --protocol configs/adaptive-horizon-v1.json --output artifacts/evaluation-adaptive-horizon-v1.json",
-      "status_at_last_check": "running; no final report file yet",
-      "formal_result_claim_allowed": false
+      "status_at_last_check": "completed; process exited normally and full JSON was generated",
+      "formal_result_claim_allowed": true,
+      "strong_safety_claim_supported": false,
+      "summary_file": "docs/results/evaluation-adaptive-horizon-v1-summary.json"
     }
   },
   "frozen_protocol": {
