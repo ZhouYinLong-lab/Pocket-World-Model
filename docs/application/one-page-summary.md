@@ -11,7 +11,7 @@ PocketWorld 是一个可观察、可复现的微型世界模型实验室：它�
 - 实现随机 shooting、局部 MPC、路线进度/剩余预算约束、route-aware planner 以及在线 shift detection。
 - 建立了固定视界、碰撞风险、路线对齐、OOD 速度/地图变化和失败案例评测工具。
 - 建立了 pytest、覆盖率、GitHub Actions、在线展示和机器可读 JSON 报告。
-- 在当前代码 revision `aea98f4` 上全量测试为 `141 passed`，覆盖率基线为 `70.40%`；adaptive horizon smoke 与正式三 seed 评测均已真实执行并生成严格 JSON 摘要。
+- 在当前代码 revision `f35766c` 上全量测试为 `145 passed`，覆盖率基线为 `70.40%`；adaptive horizon smoke 与正式三 seed 评测均已真实执行并生成严格 JSON 摘要。
 
 这些工作证明的是独立的工程实现能力和研究闭环能力，不证明真实机器人上的安全性。
 

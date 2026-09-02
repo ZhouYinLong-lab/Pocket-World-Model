@@ -19,7 +19,7 @@
 5. 评测：固定视界、想象—真实 gap、OOD 速度/地图变化、碰撞、成功率、延迟和三 seed 报告。
 6. 工程：Python package、CLI、pytest、coverage、GitHub Actions、可视化页面和 JSON 报告。
 
-仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。adaptive-horizon v1 正式协议已经完成：4 个条件、每条件 60 个 paired episodes，使用 final seeds `11,23,41`。`pytest -q` 实际输出为 `141 passed`，覆盖率基线为 `70.40%`。正式结果已生成精简摘要和每 seed paired bootstrap 区间，但结论是限定性的：纯学习 adaptive horizon 降低了查询预算，却没有降低 fixed-16 的碰撞率。
+仓库的历史提交记录、实验计划、失败结果和测试构成前期投入证据。adaptive-horizon v1 正式协议已经完成：4 个条件、每条件 60 个 paired episodes，使用 final seeds `11,23,41`。`pytest -q` 实际输出为 `145 passed`，覆盖率基线为 `70.40%`。正式结果已生成精简摘要和每 seed paired bootstrap 区间，但结论是限定性的：纯学习 adaptive horizon 降低了查询预算，却没有降低 fixed-16 的碰撞率。
 
 ## 3. 已知结果与问题边界
 

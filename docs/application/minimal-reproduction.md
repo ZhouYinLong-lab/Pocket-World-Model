@@ -13,7 +13,7 @@ pytest -q
 pytest --cov=pocketworld --cov-report=term-missing
 ```
 
-当前验证结果：`141 passed`，总覆盖率基线为 `70.40%`。
+当前验证结果：`145 passed`，总覆盖率基线为 `70.40%`。
 
 ## adaptive horizon smoke
 

@@ -13,12 +13,12 @@
   "verified_execution": {
     "full_tests": {
       "command": "pytest -q",
-      "result": "141 passed; 2 warnings",
+      "result": "145 passed; 2 warnings",
       "checked_after_merge": true
     },
     "coverage": {
       "command": "pytest --cov=pocketworld --cov-report=term-missing",
-      "result": "141 passed; total coverage 70.40%",
+      "result": "145 passed; total coverage 70.40%",
       "interpretation": "Coverage is lower than the historical badge because the adaptive evaluator and reporting paths added substantial code; the current value is reported rather than hidden."
     },
     "adaptive_horizon_smoke": {
